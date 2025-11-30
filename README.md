@@ -1,12 +1,3 @@
-# Travel Agency App
-
-A premium, mobile-responsive web application for managing travel itineraries.
-
-## Prerequisites
-
-**Node.js is required.**
-Please download and install Node.js from [nodejs.org](https://nodejs.org/).
-Select the "LTS" (Long Term Support) version.
 
 ## Setup Instructions
 
