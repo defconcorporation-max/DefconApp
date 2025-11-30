@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Users, Search, ExternalLink, TrendingUp, Calendar, DollarSign, Briefcase } from 'lucide-react';
+import { Plus, Users, Search, ExternalLink, TrendingUp, Calendar, DollarSign, Briefcase, Trash2 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { motion } from 'framer-motion';
 
@@ -94,6 +94,27 @@ const Dashboard = () => {
             }
         } catch (error) {
             console.error('Error adding client:', error);
+        }
+    };
+
+    const handleDeleteClient = async (clientId) => {
+        if (window.confirm('Are you sure you want to delete this client? This will also delete all their itinerary items.')) {
+            try {
+                const res = await fetch(`${API_URL}/api/clients/${clientId}`, {
+                    method: 'DELETE',
+                });
+                if (res.ok) {
+                    // Optimistic update
+                    setClients(clients.filter(c => c.id !== clientId));
+                    // Recalculate stats with the new list
+                    const newClients = clients.filter(c => c.id !== clientId);
+                    // We need to refetch to get updated stats correctly or filter itineraries too, 
+                    // but simply refetching is safer for consistency
+                    fetchData();
+                }
+            } catch (error) {
+                console.error('Error deleting client:', error);
+            }
         }
     };
 
@@ -227,6 +248,13 @@ const Dashboard = () => {
                                                 >
                                                     <ExternalLink size={20} />
                                                 </Link>
+                                                <button
+                                                    onClick={() => handleDeleteClient(client.id)}
+                                                    className="p-2 text-slate-500 hover:text-red-500 transition"
+                                                    title="Delete Client"
+                                                >
+                                                    <Trash2 size={20} />
+                                                </button>
                                             </div>
                                         </div>
                                     </motion.div>

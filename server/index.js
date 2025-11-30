@@ -145,6 +145,25 @@ app.put('/api/clients/:id', async (req, res) => {
     }
 });
 
+// Delete client
+app.delete('/api/clients/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const deletedClient = await Client.findOneAndDelete({ id: parseInt(id) });
+
+        if (!deletedClient) {
+            return res.status(404).json({ error: 'Client not found' });
+        }
+
+        // Cascade delete: Remove all itinerary items for this client
+        await ItineraryItem.deleteMany({ client_id: parseInt(id) });
+
+        res.json({ success: true, message: 'Client and associated data deleted' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // Get client by ID (with itinerary)
 app.get('/api/clients/:id', async (req, res) => {
     try {
