@@ -110,6 +110,55 @@ const ClientDetails = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
+        let uploadedImageUrl = formData.image_url;
+        let uploadedPassUrl = formData.pass_url;
+
+        // Upload Banner Image
+        if (file) {
+            const uploadFormData = new FormData();
+            uploadFormData.append('file', file);
+            try {
+                const res = await fetch(`${API_URL}/api/upload`, {
+                    method: 'POST',
+                    body: uploadFormData
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    uploadedImageUrl = data.url;
+                } else {
+                    alert('Failed to upload image');
+                    return;
+                }
+            } catch (error) {
+                console.error("Failed to upload image", error);
+                alert("Failed to upload image");
+                return;
+            }
+        }
+
+        // Upload Pass Document
+        if (passFile) {
+            const uploadFormData = new FormData();
+            uploadFormData.append('file', passFile);
+            try {
+                const res = await fetch(`${API_URL}/api/upload`, {
+                    method: 'POST',
+                    body: uploadFormData
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    uploadedPassUrl = data.url;
+                } else {
+                    alert('Failed to upload document');
+                    return;
+                }
+            } catch (error) {
+                console.error("Failed to upload document", error);
+                alert("Failed to upload document");
+                return;
+            }
+        }
+
         // Auto-calculate end time
         let finalEndTime = formData.end_time;
 
@@ -129,8 +178,8 @@ const ClientDetails = () => {
         const body = {
             ...formData,
             client_id: id,
-            image_url: formData.image_url,
-            pass_url: formData.pass_url,
+            image_url: uploadedImageUrl,
+            pass_url: uploadedPassUrl,
             type: activeTab,
             end_time: finalEndTime
         };
@@ -736,7 +785,7 @@ const ClientDetails = () => {
                                                         {item.image_url && (
                                                             <div className="mt-4">
                                                                 <img
-                                                                    src={item.image_url.startsWith('http') ? item.image_url : `http://localhost:3000${item.image_url}`}
+                                                                    src={item.image_url.startsWith('http') ? item.image_url : `${API_URL}${item.image_url}`}
                                                                     alt="Attachment"
                                                                     className="h-24 rounded-lg border border-white/5 object-cover"
                                                                 />
