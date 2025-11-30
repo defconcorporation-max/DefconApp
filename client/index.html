@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en" class="dark">
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Travel Agency App</title>
+</head>
+
+<body>
+  <div id="global-error" style="color: red; padding: 20px; font-family: monospace; display: none;"></div>
+  <script>
+    window.onerror = function (message, source, lineno, colno, error) {
+      const errorDiv = document.getElementById('global-error');
+      errorDiv.style.display = 'block';
+      errorDiv.innerHTML += '<h3>Global Error:</h3>' + message + '<br>Source: ' + source + ':' + lineno + '<br><br>';
+    };
+    window.onunhandledrejection = function (event) {
+      const errorDiv = document.getElementById('global-error');
+      errorDiv.style.display = 'block';
+      errorDiv.innerHTML += '<h3>Unhandled Promise Rejection:</h3>' + event.reason + '<br><br>';
+    };
+  </script>
+  <div id="root"></div>
+  <script type="module" src="/src/main.jsx"></script>
+</body>
+
+</html>
