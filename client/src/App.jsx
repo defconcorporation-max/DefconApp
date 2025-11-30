@@ -1,16 +1,9 @@
-import { Routes, Route } from 'react-router-dom';
-import Dashboard from './pages/Dashboard';
-import ClientDetails from './pages/ClientDetails';
-import ClientView from './pages/ClientView';
-import Catalog from './pages/Catalog';
-
-const Home = () => (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-primary-900 to-primary-700 text-white">
-        <h1 className="text-5xl font-bold mb-8">Travel Agency App</h1>
-        <div className="flex gap-4">
-            <a href="/dashboard" className="px-6 py-3 bg-white text-primary-900 rounded-lg font-semibold hover:bg-primary-50 transition">Agent Login</a>
-        </div>
+<div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-primary-900 to-primary-700 text-white">
+    <h1 className="text-5xl font-bold mb-8">Travel Agency App</h1>
+    <div className="flex gap-4">
+        <a href="/dashboard" className="px-6 py-3 bg-white text-primary-900 rounded-lg font-semibold hover:bg-primary-50 transition">Agent Login</a>
     </div>
+</div>
 );
 
 function App() {
