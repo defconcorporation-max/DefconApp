@@ -12,7 +12,7 @@ const CatalogView = ({ client, onUpdateClient }) => {
     const [wishlist, setWishlist] = useState(client.wishlist || []);
 
     useEffect(() => {
-        fetch(`${API_URL}/api/activities`)
+        fetch('${API_URL}/api/activities')
             .then(res => res.json())
             .then(data => setActivities(data))
             .catch(err => console.error("Failed to fetch activities", err));

@@ -30,8 +30,8 @@ const Dashboard = () => {
     const fetchData = async () => {
         try {
             const [clientsRes, itinerariesRes] = await Promise.all([
-                fetch(`${API_URL}/api/clients`),
-                fetch(`${API_URL}/api/itineraries`)
+                fetch('${API_URL}/api/clients'),
+                fetch('${API_URL}/api/itineraries')
             ]);
 
             const clientsData = await clientsRes.json();
@@ -82,7 +82,7 @@ const Dashboard = () => {
     const handleAddClient = async (e) => {
         e.preventDefault();
         try {
-            const res = await fetch(`${API_URL}/api/clients`, {
+            const res = await fetch('${API_URL}/api/clients', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(newClient),
@@ -90,7 +90,7 @@ const Dashboard = () => {
             if (res.ok) {
                 setShowAddModal(false);
                 setNewClient({ name: '', email: '', phone: '', booking_ref: '', trip_start: '', trip_end: '' });
-                fetchData();
+                fetchClients();
             }
         } catch (error) {
             console.error('Error adding client:', error);

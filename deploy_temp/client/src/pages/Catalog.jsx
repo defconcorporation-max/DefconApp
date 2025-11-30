@@ -25,7 +25,7 @@ const Catalog = () => {
 
     const fetchActivities = async () => {
         try {
-            const res = await fetch(`${API_URL}/api/activities`);
+            const res = await fetch('${API_URL}/api/activities');
             if (res.ok) {
                 const data = await res.json();
                 setActivities(data);
@@ -40,7 +40,7 @@ const Catalog = () => {
         const formData = new FormData();
         formData.append('file', file);
         try {
-            const res = await fetch(`${API_URL}/api/upload`, { method: 'POST', body: formData });
+            const res = await fetch('${API_URL}/api/upload', { method: 'POST', body: formData });
             const data = await res.json();
             return data.url;
         } catch (error) {
@@ -59,7 +59,7 @@ const Catalog = () => {
 
         const url = editingId
             ? `${API_URL}/api/activities/${editingId}`
-            : `${API_URL}/api/activities`;
+            : '${API_URL}/api/activities';
 
         const method = editingId ? 'PUT' : 'POST';
 

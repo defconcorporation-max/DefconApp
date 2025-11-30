@@ -1,0 +1,247 @@
+import express from 'express';
+import cors from 'cors';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import multer from 'multer';
+import connectDB from './config/db.js';
+import Client from './models/Client.js';
+import ItineraryItem from './models/ItineraryItem.js';
+import Activity from './models/Activity.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// Connect to MongoDB
+connectDB();
+
+// Middleware
+app.use(cors());
+app.use(express.json());
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// File Upload Setup
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, 'uploads/');
+    },
+    filename: (req, file, cb) => {
+        cb(null, Date.now() + '-' + file.originalname);
+    }
+});
+const upload = multer({ storage });
+
+// Routes
+
+// Upload Endpoint
+app.post('/api/upload', upload.single('file'), (req, res) => {
+    if (!req.file) {
+        return res.status(400).json({ error: 'No file uploaded' });
+    }
+    const fileUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+    res.json({ url: fileUrl });
+});
+
+// --- Activity Catalog Routes ---
+
+// Get all activities
+app.get('/api/activities', async (req, res) => {
+    try {
+        const activities = await Activity.find({});
+        res.json(activities);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Create activity
+app.post('/api/activities', async (req, res) => {
+    try {
+        const { title, description, image_url, duration, address, cost, included_in_pass } = req.body;
+        const newActivity = await Activity.create({
+            id: Date.now(), // Legacy ID
+            title,
+            description,
+            image_url,
+            duration,
+            address,
+            cost,
+            included_in_pass
+        });
+        res.json(newActivity);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Update activity
+app.put('/api/activities/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const updatedActivity = await Activity.findOneAndUpdate(
+            { id: parseInt(id) },
+            req.body,
+            { new: true }
+        );
+        if (!updatedActivity) {
+            return res.status(404).json({ error: 'Activity not found' });
+        }
+        res.json(updatedActivity);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// --- Client Routes ---
+
+// Get all clients
+app.get('/api/clients', async (req, res) => {
+    try {
+        const clients = await Client.find({});
+        res.json(clients);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Create client
+app.post('/api/clients', async (req, res) => {
+    try {
+        const { name, email, phone, booking_ref, trip_start, trip_end, notes, preferences } = req.body;
+        const newClient = await Client.create({
+            id: Date.now(),
+            name,
+            email,
+            phone,
+            booking_ref,
+            trip_start,
+            trip_end,
+            notes,
+            preferences
+        });
+        res.json({ id: newClient.id });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Update client
+app.put('/api/clients/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const updatedClient = await Client.findOneAndUpdate(
+            { id: parseInt(id) },
+            req.body,
+            { new: true }
+        );
+        if (!updatedClient) {
+            return res.status(404).json({ error: 'Client not found' });
+        }
+        res.json(updatedClient);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Get client by ID (with itinerary)
+app.get('/api/clients/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const client = await Client.findOne({ id: parseInt(id) });
+
+        if (!client) {
+            return res.status(404).json({ error: 'Client not found' });
+        }
+
+        const itinerary = await ItineraryItem.find({ client_id: parseInt(id) }).sort({ start_time: 1 });
+
+        // Convert Mongoose document to object to spread
+        res.json({ ...client.toObject(), itinerary });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Get ALL itineraries (for analytics)
+app.get('/api/itineraries', async (req, res) => {
+    try {
+        const itineraries = await ItineraryItem.find({});
+        res.json(itineraries);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// --- Itinerary Routes ---
+
+// Get itinerary for a client
+app.get('/api/itinerary/:client_id', async (req, res) => {
+    try {
+        const { client_id } = req.params;
+        const itinerary = await ItineraryItem.find({ client_id: parseInt(client_id) }).sort({ start_time: 1 });
+        res.json(itinerary);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Add itinerary item
+app.post('/api/itinerary', async (req, res) => {
+    try {
+        const { client_id, type, title, description, start_time, end_time, location, details, image_url, cost } = req.body;
+        const newItem = await ItineraryItem.create({
+            id: Date.now(),
+            client_id: parseInt(client_id),
+            type,
+            title,
+            description,
+            start_time,
+            end_time,
+            location,
+            details,
+            image_url,
+            cost: cost ? parseFloat(cost) : 0
+        });
+        res.json({ id: newItem.id });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Update itinerary item
+app.put('/api/itinerary/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const updatedItem = await ItineraryItem.findOneAndUpdate(
+            { id: parseInt(id) },
+            req.body,
+            { new: true }
+        );
+        if (!updatedItem) {
+            return res.status(404).json({ error: 'Item not found' });
+        }
+        res.json(updatedItem);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Delete itinerary item
+app.delete('/api/itinerary/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const deletedItem = await ItineraryItem.findOneAndDelete({ id: parseInt(id) });
+        if (!deletedItem) {
+            return res.status(404).json({ error: 'Item not found' });
+        }
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.listen(PORT, () => {
+    console.log(`Server running on http://localhost:${PORT}`);
+});
