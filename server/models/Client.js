@@ -11,6 +11,7 @@ const clientSchema = new mongoose.Schema({
     booking_ref: String,
     trip_start: Date,
     trip_end: Date,
+    pass_url: String, // Main client's unlimited pass
     notes: String,
     preferences: String,
     wishlist: [Number], // Array of Activity IDs

@@ -119,7 +119,7 @@ app.get('/api/clients', async (req, res) => {
 // Create client
 app.post('/api/clients', async (req, res) => {
     try {
-        const { name, email, phone, booking_ref, trip_start, trip_end, notes, preferences, travelers } = req.body;
+        const { name, email, phone, booking_ref, trip_start, trip_end, pass_url, notes, preferences, travelers } = req.body;
         const newClient = await Client.create({
             id: Date.now(),
             name,
@@ -128,6 +128,7 @@ app.post('/api/clients', async (req, res) => {
             booking_ref,
             trip_start,
             trip_end,
+            pass_url,
             notes,
             preferences,
             travelers: travelers || []
