@@ -1021,7 +1021,7 @@ const ClientDetails = () => {
                                 </div>
 
                                 {/* Individual Traveler Passes */}
-                                {activeTab === 'activity' && client && client.travelers && client.travelers.length > 0 && (
+                                {client && client.travelers && client.travelers.length > 0 && (
                                     <div className="mt-6 border-t border-white/10 pt-4">
                                         <h3 className="text-sm font-bold text-white mb-3 flex items-center gap-2">
                                             <Ticket size={14} className="text-primary-500" />
