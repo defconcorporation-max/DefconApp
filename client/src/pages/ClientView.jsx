@@ -1161,6 +1161,9 @@ const ClientView = () => {
                                                     <div className="text-left">
                                                         <div className="text-sm font-medium text-slate-900 dark:text-white">Attached Pass</div>
                                                         <div className="text-xs text-slate-500">Click to view full size</div>
+                                                        <div className="text-[10px] text-red-500 font-mono mt-1 break-all">
+                                                            DEBUG: {selectedEvent.image_url} | API: {API_URL}
+                                                        </div>
                                                     </div>
                                                 </div>
                                                 <ExternalLink size={16} className="text-slate-400 group-hover:text-slate-600 dark:text-slate-500 dark:group-hover:text-white transition" />
