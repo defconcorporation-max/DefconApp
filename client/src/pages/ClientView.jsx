@@ -1068,14 +1068,14 @@ const ClientView = () => {
                                 <button onClick={() => setSelectedPass(null)} className="absolute top-4 right-4 p-2 bg-black/50 text-white rounded-full hover:bg-black/70 z-10">
                                     <X size={20} />
                                 </button>
-                                <img src={getImageUrl(selectedPass.image_url)} alt={selectedPass.title} className="w-full h-auto max-h-[80vh] object-contain bg-black" />
+                                <img src={getImageUrl(selectedPass.pass_url || selectedPass.image_url)} alt={selectedPass.title} className="w-full h-auto max-h-[80vh] object-contain bg-black" />
                                 <div className="p-4 bg-dark-800 flex justify-between items-center">
                                     <div>
                                         <h3 className="text-white font-bold">{selectedPass.title}</h3>
                                         <p className="text-slate-400 text-sm">Pass / Ticket</p>
                                     </div>
                                     <a
-                                        href={getImageUrl(selectedPass.image_url)}
+                                        href={getImageUrl(selectedPass.pass_url || selectedPass.image_url)}
                                         download
                                         className="flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-500 text-white rounded-lg font-bold transition"
                                         onClick={(e) => e.stopPropagation()}
