@@ -593,7 +593,7 @@ const ClientDetails = () => {
                                 <div key={index} className="bg-dark-800/40 border border-pink-500/20 rounded-xl p-4 flex gap-4 group hover:bg-dark-800/60 transition">
                                     <div className="w-16 h-16 rounded-lg bg-dark-900 overflow-hidden shrink-0">
                                         {item.image_url ? (
-                                            <img src={item.image_url} alt={item.title} className="w-full h-full object-cover" />
+                                            <img src={item.image_url.startsWith('http') ? item.image_url : `${API_URL}${item.image_url}`} alt={item.title} className="w-full h-full object-cover" />
                                         ) : (
                                             <div className="w-full h-full flex items-center justify-center text-pink-500/20">
                                                 <Heart size={24} />

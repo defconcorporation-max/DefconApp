@@ -126,7 +126,7 @@ const Catalog = () => {
                         <div key={activity.id} className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden flex flex-col group relative">
                             <div className="h-48 bg-slate-100 relative">
                                 {activity.image_url ? (
-                                    <img src={activity.image_url} alt={activity.title} className="w-full h-full object-cover" />
+                                    <img src={activity.image_url.startsWith('http') ? activity.image_url : `${API_URL}${activity.image_url}`} alt={activity.title} className="w-full h-full object-cover" />
                                 ) : (
                                     <div className="flex items-center justify-center h-full text-slate-300">
                                         <Image size={48} />

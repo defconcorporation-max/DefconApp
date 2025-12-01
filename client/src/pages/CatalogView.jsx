@@ -84,7 +84,7 @@ const CatalogView = ({ client, onUpdateClient }) => {
                         >
                             <div className="aspect-video bg-dark-900 relative">
                                 {activity.image_url ? (
-                                    <img src={activity.image_url} alt={activity.title} className="w-full h-full object-cover" />
+                                    <img src={activity.image_url.startsWith('http') ? activity.image_url : `${API_URL}${activity.image_url}`} alt={activity.title} className="w-full h-full object-cover" />
                                 ) : (
                                     <div className="w-full h-full flex items-center justify-center text-slate-600">
                                         <Heart size={32} />
@@ -137,7 +137,7 @@ const CatalogView = ({ client, onUpdateClient }) => {
 
                         <div className="h-64 w-full relative bg-dark-800">
                             {selectedActivity.image_url ? (
-                                <img src={selectedActivity.image_url} alt={selectedActivity.title} className="w-full h-full object-cover" />
+                                <img src={selectedActivity.image_url.startsWith('http') ? selectedActivity.image_url : `${API_URL}${selectedActivity.image_url}`} alt={selectedActivity.title} className="w-full h-full object-cover" />
                             ) : (
                                 <div className="w-full h-full flex items-center justify-center text-slate-700">
                                     <Heart size={48} />
