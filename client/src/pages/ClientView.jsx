@@ -53,6 +53,24 @@ const ClientView = () => {
     const [selectedPass, setSelectedPass] = useState(null); // For pass modal
     const [selectedEvent, setSelectedEvent] = useState(null); // For event detail modal
 
+    const getImageUrl = (url) => {
+        if (!url) return null;
+        // If it's a Cloudinary URL, return as is
+        if (url.includes('cloudinary.com')) return url;
+
+        // If it's a localhost URL, strip the domain to make it relative
+        let cleanUrl = url;
+        if (url.includes('localhost:3000')) {
+            cleanUrl = url.replace('http://localhost:3000', '').replace('localhost:3000', '');
+        }
+
+        // If it starts with http (and wasn't localhost), return as is
+        if (cleanUrl.startsWith('http')) return cleanUrl;
+
+        // Otherwise, prepend API_URL (ensure single slash)
+        return `${API_URL}/${cleanUrl.replace(/^\//, '')}`;
+    };
+
     const [showIntro, setShowIntro] = useState(true);
     const [calendarView, setCalendarView] = useState('week');
     const [darkMode, setDarkMode] = useState(true);
@@ -542,7 +560,7 @@ const ClientView = () => {
             <div className="flex gap-4">
                 <div className="w-24 h-24 rounded-xl bg-slate-200 dark:bg-white/5 overflow-hidden flex-shrink-0">
                     {hotel.image_url ? (
-                        <img src={hotel.image_url.startsWith('http') ? hotel.image_url : `${API_URL}/${hotel.image_url.replace(/^\//, '')}`} alt={hotel.title} className="w-full h-full object-cover" />
+                        <img src={getImageUrl(hotel.image_url)} alt={hotel.title} className="w-full h-full object-cover" />
                     ) : (
                         <div className="w-full h-full flex items-center justify-center text-slate-400">
                             <Hotel size={24} />
@@ -694,7 +712,7 @@ const ClientView = () => {
                                         {item.image_url && (
                                             <div
                                                 className="absolute inset-0 z-0 opacity-10 dark:opacity-20 group-hover:opacity-15 dark:group-hover:opacity-25 transition-opacity bg-cover bg-center"
-                                                style={{ backgroundImage: `url(${item.image_url.startsWith('http') ? item.image_url : `${API_URL}/${item.image_url.replace(/^\//, '')}`})` }}
+                                                style={{ backgroundImage: `url(${getImageUrl(item.image_url)})` }}
                                             ></div>
                                         )}
 
@@ -1047,14 +1065,14 @@ const ClientView = () => {
                                 <button onClick={() => setSelectedPass(null)} className="absolute top-4 right-4 p-2 bg-black/50 text-white rounded-full hover:bg-black/70 z-10">
                                     <X size={20} />
                                 </button>
-                                <img src={selectedPass.image_url.startsWith('http') ? selectedPass.image_url : `${API_URL}/${selectedPass.image_url.replace(/^\//, '')}`} alt={selectedPass.title} className="w-full h-auto max-h-[80vh] object-contain bg-black" />
+                                <img src={getImageUrl(selectedPass.image_url)} alt={selectedPass.title} className="w-full h-auto max-h-[80vh] object-contain bg-black" />
                                 <div className="p-4 bg-dark-800 flex justify-between items-center">
                                     <div>
                                         <h3 className="text-white font-bold">{selectedPass.title}</h3>
                                         <p className="text-slate-400 text-sm">Pass / Ticket</p>
                                     </div>
                                     <a
-                                        href={selectedPass.image_url.startsWith('http') ? selectedPass.image_url : `${API_URL}/${selectedPass.image_url.replace(/^\//, '')}`}
+                                        href={getImageUrl(selectedPass.image_url)}
                                         download
                                         className="flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-500 text-white rounded-lg font-bold transition"
                                         onClick={(e) => e.stopPropagation()}
@@ -1086,7 +1104,7 @@ const ClientView = () => {
                                     }`}>
                                     {selectedEvent.image_url && (
                                         <>
-                                            <img src={selectedEvent.image_url.startsWith('http') ? selectedEvent.image_url : `${API_URL}/${selectedEvent.image_url.replace(/^\//, '')}`} alt={selectedEvent.title} className="w-full h-full object-cover opacity-50" />
+                                            <img src={getImageUrl(selectedEvent.image_url)} alt={selectedEvent.title} className="w-full h-full object-cover opacity-50" />
                                             <div className="absolute inset-0 bg-gradient-to-t from-dark-900 to-transparent"></div>
                                         </>
                                     )}
@@ -1156,12 +1174,12 @@ const ClientView = () => {
                                             >
                                                 <div className="flex items-center gap-3">
                                                     <div className="w-10 h-10 rounded-lg bg-slate-200 dark:bg-dark-900 overflow-hidden">
-                                                        <img src={selectedEvent.image_url.startsWith('http') ? selectedEvent.image_url : `${API_URL}/${selectedEvent.image_url.replace(/^\//, '')}`} className="w-full h-full object-cover" alt="Attachment" />
+                                                        <img src={getImageUrl(selectedEvent.image_url)} className="w-full h-full object-cover" alt="Attachment" />
                                                     </div>
                                                     <div className="text-left">
                                                         <div className="text-sm font-medium text-slate-900 dark:text-white">Attached Pass</div>
                                                         <div className="text-xs text-slate-500">Click to view full size</div>
-                                                        <div className="text-[10px] text-red-500 font-mono mt-1 break-all">
+                                                        <div className="text-[10px] text-red-500 font-mono mt-1 break-all hidden">
                                                             DEBUG: {selectedEvent.image_url} | API: {API_URL}
                                                         </div>
                                                     </div>
