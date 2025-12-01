@@ -98,6 +98,26 @@ const ClientDetails = () => {
         }
     };
 
+    const uploadFile = async (file) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        try {
+            const res = await fetch(`${API_URL}/api/upload`, {
+                method: 'POST',
+                body: formData
+            });
+            if (res.ok) {
+                const data = await res.json();
+                return data.url;
+            }
+            throw new Error('Upload failed');
+        } catch (error) {
+            console.error("Upload error:", error);
+            alert("Failed to upload file");
+            return null;
+        }
+    };
+
     const handleFlightLookup = () => {
         const flightNum = formData.flight_number;
         if (!flightNum) return;
@@ -1165,38 +1185,20 @@ const ClientDetails = () => {
                                 <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Notes</label>
                                 <textarea
                                     className="w-full px-4 py-3 bg-dark-900 border border-dark-700 text-white rounded-lg focus:ring-1 focus:ring-primary-500 focus:border-primary-500 h-20 transition-all"
-                                    value={client.notes || ''}
-                                    onChange={e => setClient({ ...client, notes: e.target.value })}
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Preferences</label>
-                                <textarea
-                                    className="w-full px-4 py-3 bg-dark-900 border border-dark-700 text-white rounded-lg focus:ring-1 focus:ring-primary-500 focus:border-primary-500 h-20 transition-all"
-                                    value={client.preferences || ''}
-                                    onChange={e => setClient({ ...client, preferences: e.target.value })}
-                                />
-                            </div>
-                            <div className="flex gap-3 mt-8">
-                                <button
-                                    type="button"
-                                    onClick={() => setShowEditClientModal(false)}
-                                    className="flex-1 px-4 py-3 border border-dark-600 text-slate-300 rounded-lg hover:bg-dark-700 transition font-medium"
-                                >
-                                    Cancel
                                 </button>
-                                <button
-                                    type="submit"
-                                    className="flex-1 px-4 py-3 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition font-medium shadow-lg shadow-primary-500/20"
-                                >
-                                    Save Changes
-                                </button>
-                            </div>
-                        </form>
-                    </motion.div>
+                            <button
+                                type="submit"
+                                className="flex-1 px-4 py-3 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition font-medium shadow-lg shadow-primary-500/20"
+                            >
+                                Save Changes
+                            </button>
+                        </div>
+                    </form>
+                </motion.div>
                 </div>
-            )}
-        </div>
+    )
+}
+        </div >
     );
 };
 
