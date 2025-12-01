@@ -1249,7 +1249,7 @@ const ClientDetails = () => {
                                         type="date"
                                         required
                                         className="w-full px-4 py-3 bg-dark-900 border border-dark-700 text-white rounded-lg focus:ring-1 focus:ring-primary-500 focus:border-primary-500 [color-scheme:dark] transition-all"
-                                        value={client.trip_start || ''}
+                                        value={client.trip_start ? moment.utc(client.trip_start).format('YYYY-MM-DD') : ''}
                                         onChange={e => setClient({ ...client, trip_start: e.target.value })}
                                     />
                                 </div>
@@ -1259,7 +1259,7 @@ const ClientDetails = () => {
                                         type="date"
                                         required
                                         className="w-full px-4 py-3 bg-dark-900 border border-dark-700 text-white rounded-lg focus:ring-1 focus:ring-primary-500 focus:border-primary-500 [color-scheme:dark] transition-all"
-                                        value={client.trip_end || ''}
+                                        value={client.trip_end ? moment.utc(client.trip_end).format('YYYY-MM-DD') : ''}
                                         onChange={e => setClient({ ...client, trip_end: e.target.value })}
                                     />
                                 </div>

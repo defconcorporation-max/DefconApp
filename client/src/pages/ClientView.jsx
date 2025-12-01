@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { Calendar as CalendarIcon, Clock, MapPin, ArrowLeft, Ticket, Plane, Hotel, Grid, List, Download, Mail, ExternalLink, X, Info, Map as MapIcon, Cloud, Sun, Moon, Wind, Droplets } from 'lucide-react';
+import { Calendar as CalendarIcon, Clock, MapPin, ArrowLeft, Ticket, Plane, Hotel, Grid, List, Download, Mail, ExternalLink, X, Info, Map as MapIcon, Cloud, Sun, Moon, Wind, Droplets, FileText } from 'lucide-react';
 import { format, parseISO, startOfWeek, getDay } from 'date-fns';
 import { Calendar, dateFnsLocalizer } from 'react-big-calendar';
 import enUS from 'date-fns/locale/en-US';
@@ -517,45 +517,49 @@ const ClientView = () => {
         );
     };
 
-    const FlightCard = ({ flight }) => (
-        <div className="bg-white dark:bg-dark-800/60 border border-slate-200 dark:border-white/5 rounded-2xl p-5 mb-4 shadow-sm dark:shadow-none relative overflow-hidden group">
-            <div className="absolute top-0 left-0 w-1 h-full bg-blue-500"></div>
-            <div className="flex justify-between items-start mb-4">
-                <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-500">
-                        <Plane size={20} />
+    const FlightCard = ({ flight }) => {
+        const isFarFuture = moment(flight.start_time).diff(moment(), 'days') > 30;
+
+        return (
+            <div className="bg-white dark:bg-dark-800/60 border border-slate-200 dark:border-white/5 rounded-2xl p-5 mb-4 shadow-sm dark:shadow-none relative overflow-hidden group">
+                <div className="absolute top-0 left-0 w-1 h-full bg-blue-500"></div>
+                <div className="flex justify-between items-start mb-4">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-500">
+                            <Plane size={20} />
+                        </div>
+                        <div>
+                            <h3 className="font-bold text-slate-900 dark:text-white">{flight.title}</h3>
+                            <p className="text-xs text-slate-500 uppercase tracking-wider">Flight</p>
+                        </div>
                     </div>
+                    {flight.flight_number && !isFarFuture && (
+                        <div className="px-3 py-1 bg-slate-100 dark:bg-white/5 rounded-lg text-xs font-mono font-bold text-slate-600 dark:text-slate-300">
+                            {flight.flight_number}
+                        </div>
+                    )}
+                </div>
+                <div className="flex justify-between items-center text-sm">
                     <div>
-                        <h3 className="font-bold text-slate-900 dark:text-white">{flight.title}</h3>
-                        <p className="text-xs text-slate-500 uppercase tracking-wider">Flight</p>
+                        <div className="text-slate-500 text-xs mb-1">Departure</div>
+                        <div className="font-bold text-slate-900 dark:text-white">{moment(flight.start_time).format('h:mm A')}</div>
+                        <div className="text-slate-400 text-xs">{moment(flight.start_time).format('MMM D')}</div>
                     </div>
-                </div>
-                {flight.flight_number && (
-                    <div className="px-3 py-1 bg-slate-100 dark:bg-white/5 rounded-lg text-xs font-mono font-bold text-slate-600 dark:text-slate-300">
-                        {flight.flight_number}
+                    <div className="flex-1 px-4 flex flex-col items-center">
+                        <div className="w-full h-px bg-slate-200 dark:bg-white/10 relative">
+                            <Plane size={12} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-slate-400 rotate-90" />
+                        </div>
+                        <div className="text-[10px] text-slate-400 mt-1">{flight.duration || 'Direct'}</div>
                     </div>
-                )}
-            </div>
-            <div className="flex justify-between items-center text-sm">
-                <div>
-                    <div className="text-slate-500 text-xs mb-1">Departure</div>
-                    <div className="font-bold text-slate-900 dark:text-white">{moment(flight.start_time).format('h:mm A')}</div>
-                    <div className="text-slate-400 text-xs">{moment(flight.start_time).format('MMM D')}</div>
-                </div>
-                <div className="flex-1 px-4 flex flex-col items-center">
-                    <div className="w-full h-px bg-slate-200 dark:bg-white/10 relative">
-                        <Plane size={12} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-slate-400 rotate-90" />
+                    <div className="text-right">
+                        <div className="text-slate-500 text-xs mb-1">Arrival</div>
+                        <div className="font-bold text-slate-900 dark:text-white">{moment(flight.end_time).format('h:mm A')}</div>
+                        <div className="text-slate-400 text-xs">{moment(flight.end_time).format('MMM D')}</div>
                     </div>
-                    <div className="text-[10px] text-slate-400 mt-1">{flight.duration || 'Direct'}</div>
-                </div>
-                <div className="text-right">
-                    <div className="text-slate-500 text-xs mb-1">Arrival</div>
-                    <div className="font-bold text-slate-900 dark:text-white">{moment(flight.end_time).format('h:mm A')}</div>
-                    <div className="text-slate-400 text-xs">{moment(flight.end_time).format('MMM D')}</div>
                 </div>
             </div>
-        </div>
-    );
+        );
+    };
 
     const HotelCard = ({ hotel }) => (
         <div className="bg-white dark:bg-dark-800/60 border border-slate-200 dark:border-white/5 rounded-2xl p-5 mb-4 shadow-sm dark:shadow-none relative overflow-hidden group">
@@ -678,7 +682,7 @@ const ClientView = () => {
         const sortedDates = Object.keys(groupedActivities).sort();
 
         return (
-            <div className="space-y-8 relative" id="itinerary-content-export">
+            <div className="space-y-8" id="itinerary-content-export">
                 {/* Flights & Hotels Section */}
                 {(flights.length > 0 || hotels.length > 0) && (
                     <div className="mb-8 space-y-4">
@@ -687,80 +691,84 @@ const ClientView = () => {
                     </div>
                 )}
 
-                <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-gradient-to-b from-primary-500 via-purple-500 to-transparent opacity-30"></div>
+                <div className="relative">
+                    <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-gradient-to-b from-primary-500 via-purple-500 to-transparent opacity-30"></div>
 
-                {sortedDates.map(date => (
-                    <div key={date} className="relative">
-                        {/* Day Header */}
-                        <div className="flex items-center gap-4 mb-6 mt-8 pl-12 relative">
-                            <div className="absolute left-[7px] top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-dark-900 border-4 border-primary-500 z-10 shadow-[0_0_10px_rgba(249,115,22,0.5)]"></div>
-                            <h3 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                                {moment(date).format('dddd, MMMM D')}
-                                <span className="text-xs font-normal text-slate-500 px-2 py-1 bg-slate-100 dark:bg-white/10 rounded-lg uppercase tracking-wider">
-                                    Day {moment(date).diff(moment(client.trip_start).startOf('day'), 'days') + 1}
-                                </span>
-                            </h3>
-                        </div>
+                    {sortedDates.map(date => (
+                        <div key={date} className="relative">
+                            {/* Day Header */}
+                            <div className="flex items-center gap-4 mb-6 mt-8 pl-12 relative">
+                                <div className="absolute left-[7px] top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-dark-900 border-4 border-primary-500 z-10 shadow-[0_0_10px_rgba(249,115,22,0.5)]"></div>
+                                <h3 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                                    {moment(date).format('dddd, MMMM D')}
+                                    <span className="text-xs font-normal text-slate-500 px-2 py-1 bg-slate-100 dark:bg-white/10 rounded-lg uppercase tracking-wider">
+                                        Day {moment(date).diff(moment(client.trip_start).startOf('day'), 'days') + 1}
+                                    </span>
+                                </h3>
+                            </div>
 
-                        {/* Activities for this day */}
-                        <div className="space-y-6">
-                            {groupedActivities[date].map((item) => (
-                                <div key={item.id} className="relative pl-12 group">
-                                    <div className="absolute left-[13px] top-6 w-2 h-2 rounded-full bg-slate-300 dark:bg-slate-600 z-10 group-hover:bg-primary-500 transition-colors"></div>
-                                    <div
-                                        className="bg-white dark:bg-dark-800/60 border border-slate-200 dark:border-white/5 rounded-2xl p-5 hover:bg-slate-50 dark:hover:bg-dark-800 transition cursor-pointer group-hover:border-primary-500/30 group-hover:shadow-lg group-hover:shadow-primary-500/5 backdrop-blur-sm shadow-sm dark:shadow-none relative overflow-hidden"
-                                        onClick={() => setSelectedEvent(item)}
-                                    >
-                                        {/* Background Image with Low Opacity */}
-                                        {item.image_url && (
-                                            <div
-                                                className="absolute inset-0 z-0 opacity-10 dark:opacity-20 group-hover:opacity-15 dark:group-hover:opacity-25 transition-opacity bg-cover bg-center"
-                                                style={{ backgroundImage: `url(${getImageUrl(item.image_url)})` }}
-                                            ></div>
-                                        )}
+                            {/* Activities for this day */}
+                            <div className="space-y-6">
+                                {groupedActivities[date].map((item) => (
+                                    <div key={item.id} className="relative pl-12 group">
+                                        <div className="absolute left-[13px] top-6 w-2 h-2 rounded-full bg-slate-300 dark:bg-slate-600 z-10 group-hover:bg-primary-500 transition-colors"></div>
+                                        <div
+                                            className="bg-white dark:bg-dark-800/60 border border-slate-200 dark:border-white/5 rounded-2xl p-5 hover:bg-slate-50 dark:hover:bg-dark-800 transition cursor-pointer group-hover:border-primary-500/30 group-hover:shadow-lg group-hover:shadow-primary-500/5 backdrop-blur-sm shadow-sm dark:shadow-none relative overflow-hidden"
+                                            onClick={() => setSelectedEvent(item)}
+                                        >
+                                            {/* Background Image with Low Opacity */}
+                                            {item.image_url && (
+                                                <div
+                                                    className="absolute inset-0 z-0 opacity-10 dark:opacity-20 group-hover:opacity-15 dark:group-hover:opacity-25 transition-opacity bg-cover bg-center"
+                                                    style={{ backgroundImage: `url(${getImageUrl(item.image_url)})` }}
+                                                ></div>
+                                            )}
 
-                                        <div className="relative z-10">
-                                            <div className="flex justify-between items-start mb-2">
-                                                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold uppercase tracking-wider bg-primary-500/10 dark:bg-primary-500/20 text-primary-600 dark:text-primary-400 border border-primary-500/20">
-                                                    <Ticket size={12} />
-                                                    {item.type || 'Activity'}
-                                                </div>
-                                                <div className="text-slate-500 text-xs font-mono">{moment(item.start_time).format('h:mm A')}</div>
-                                            </div>
-                                            <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-1 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">{item.title}</h3>
-                                            <div className="flex items-center gap-4 text-sm text-slate-500 dark:text-slate-400 mb-3">
-                                                <div className="flex items-center gap-1.5">
-                                                    <Clock size={14} className="text-primary-500" />
-                                                    {moment(item.start_time).format('h:mm A')}
-                                                </div>
-                                                {item.location && (
-                                                    <div className="flex items-center gap-1.5">
-                                                        <MapPin size={14} className="text-primary-500" />
-                                                        <AddressLink location={item.location} />
+                                            <div className="relative z-10">
+                                                <div className="flex justify-between items-start mb-2">
+                                                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold uppercase tracking-wider bg-primary-500/10 dark:bg-primary-500/20 text-primary-600 dark:text-primary-400 border border-primary-500/20">
+                                                        <Ticket size={12} />
+                                                        {item.type || 'Activity'}
                                                     </div>
+                                                    <div className="text-slate-500 text-xs font-mono">{moment(item.start_time).format('h:mm A')}</div>
+                                                </div>
+                                                <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-1 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">{item.title}</h3>
+                                                <div className="flex items-center gap-4 text-sm text-slate-500 dark:text-slate-400 mb-3">
+                                                    <div className="flex items-center gap-1.5">
+                                                        <Clock size={14} className="text-primary-500" />
+                                                        {moment(item.start_time).format('h:mm A')}
+                                                    </div>
+                                                    {item.location && (
+                                                        <div className="flex items-center gap-1.5">
+                                                            <MapPin size={14} className="text-primary-500" />
+                                                            <AddressLink location={item.location} />
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                {item.description && (
+                                                    <p className="text-slate-600 dark:text-slate-300 text-sm leading-relaxed line-clamp-2">{item.description}</p>
                                                 )}
                                             </div>
-                                            {item.description && (
-                                                <p className="text-slate-600 dark:text-slate-300 text-sm leading-relaxed line-clamp-2">{item.description}</p>
-                                            )}
                                         </div>
                                     </div>
-                                </div>
-                            ))}
+                                ))}
+                            </div>
                         </div>
-                    </div>
-                ))}
+
+                    ))}
+                </div>
 
                 <div className="pl-12 pt-4">
                     <button onClick={handleExportPDF} className="flex items-center gap-2 text-slate-500 hover:text-slate-900 dark:hover:text-white transition text-sm">
                         <Download size={16} /> {t('common.download')} PDF
                     </button>
                 </div>
-            </div>
+            </div >
         );
     };
 
     const DestinationMap = ({ items }) => {
+        console.log('DestinationMap items:', items);
         const [geocodedItems, setGeocodedItems] = useState([]);
         const [loading, setLoading] = useState(true);
 
