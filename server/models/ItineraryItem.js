@@ -24,6 +24,7 @@ const itineraryItemSchema = new mongoose.Schema({
     location: String,
     details: String,
     image_url: String,
+    pass_url: String,
     cost: Number
 }, {
     timestamps: true
