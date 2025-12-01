@@ -1015,15 +1015,15 @@ const ClientView = () => {
 
                             {activeTab === 'passes' && (
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    {itinerary.filter(i => i.image_url).length > 0 ? (
-                                        itinerary.filter(i => i.image_url).map(item => (
+                                    {itinerary.filter(i => i.pass_url || (i.type === 'flight' && i.image_url)).length > 0 ? (
+                                        itinerary.filter(i => i.pass_url || (i.type === 'flight' && i.image_url)).map(item => (
                                             <div
                                                 key={item.id}
                                                 className="bg-white dark:bg-dark-800/60 border border-slate-200 dark:border-white/5 rounded-2xl overflow-hidden group hover:border-primary-500/30 transition cursor-pointer shadow-sm dark:shadow-none"
                                                 onClick={() => setSelectedPass(item)}
                                             >
                                                 <div className="h-48 overflow-hidden relative">
-                                                    <img src={item.image_url} alt={item.title} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
+                                                    <img src={getImageUrl(item.pass_url || item.image_url)} alt={item.title} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
                                                     <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 to-transparent dark:from-dark-900/80 opacity-60"></div>
                                                     <div className="absolute bottom-3 left-3 right-3">
                                                         <h3 className="text-white font-bold truncate">{item.title}</h3>
