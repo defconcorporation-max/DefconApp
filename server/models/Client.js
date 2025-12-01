@@ -13,7 +13,11 @@ const clientSchema = new mongoose.Schema({
     trip_end: Date,
     notes: String,
     preferences: String,
-    wishlist: [Number] // Array of Activity IDs
+    wishlist: [Number], // Array of Activity IDs
+    travelers: [{
+        name: String,
+        pass_url: String
+    }]
 }, {
     timestamps: true
 });
