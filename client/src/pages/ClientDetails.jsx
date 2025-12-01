@@ -51,7 +51,8 @@ const ClientDetails = () => {
         cost: '',
         duration: '60',
         flight_number: '',
-        pass_url: ''
+        pass_url: '',
+        included_in_pass: false
     });
     const [file, setFile] = useState(null);
     const [passFile, setPassFile] = useState(null);
@@ -275,7 +276,8 @@ const ClientDetails = () => {
                 cost: item.cost || '',
                 duration: duration,
                 flight_number: item.flight_number || '',
-                pass_url: item.pass_url || ''
+                pass_url: item.pass_url || '',
+                included_in_pass: item.included_in_pass || false
             });
             setFile(null);
             setPassFile(null);
@@ -292,7 +294,8 @@ const ClientDetails = () => {
                 cost: '',
                 duration: '60',
                 flight_number: '',
-                pass_url: ''
+                pass_url: '',
+                included_in_pass: false
             });
             setFile(null);
             setPassFile(null);
@@ -970,6 +973,18 @@ const ClientDetails = () => {
                                     value={formData.cost || ''}
                                     onChange={e => setFormData({ ...formData, cost: e.target.value })}
                                 />
+                                <div className="mt-3 flex items-center gap-2">
+                                    <input
+                                        type="checkbox"
+                                        id="included_in_pass"
+                                        className="w-4 h-4 rounded border-dark-600 text-primary-500 focus:ring-primary-500 bg-dark-900"
+                                        checked={formData.included_in_pass || false}
+                                        onChange={e => setFormData({ ...formData, included_in_pass: e.target.checked })}
+                                    />
+                                    <label htmlFor="included_in_pass" className="text-sm text-slate-300 cursor-pointer select-none">
+                                        Included in Unlimited Pass?
+                                    </label>
+                                </div>
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
