@@ -361,6 +361,9 @@ const ClientView = () => {
         useEffect(() => {
             const interval = setInterval(() => {
                 const now = new Date().getTime();
+                // Ensure targetDate is treated as local time of the destination if possible, or just standard date parsing
+                // If targetDate is ISO string (UTC), new Date(targetDate) converts to local time of browser.
+                // If we want to count down to a specific moment, this is generally correct.
                 const distance = new Date(targetDate).getTime() - now;
 
                 if (distance < 0) {
@@ -1164,8 +1167,8 @@ const ClientView = () => {
                                         </div>
                                     )}
 
-                                    {/* Attachments */}
-                                    {selectedEvent.image_url && (
+                                    {/* Attachments - Only show if there is a pass_url or if image_url is treated as attachment (legacy) AND it's not just the banner */}
+                                    {(selectedEvent.pass_url || (selectedEvent.image_url && selectedEvent.type === 'flight')) && (
                                         <div>
                                             <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-2">Attachments</h3>
                                             <button
@@ -1174,7 +1177,7 @@ const ClientView = () => {
                                             >
                                                 <div className="flex items-center gap-3">
                                                     <div className="w-10 h-10 rounded-lg bg-slate-200 dark:bg-dark-900 overflow-hidden">
-                                                        <img src={getImageUrl(selectedEvent.image_url)} className="w-full h-full object-cover" alt="Attachment" />
+                                                        <img src={getImageUrl(selectedEvent.pass_url || selectedEvent.image_url)} className="w-full h-full object-cover" alt="Attachment" />
                                                     </div>
                                                     <div className="text-left">
                                                         <div className="text-sm font-medium text-slate-900 dark:text-white">Attached Pass</div>
