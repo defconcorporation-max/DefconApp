@@ -56,6 +56,7 @@ const ClientDetails = () => {
     });
     const [file, setFile] = useState(null);
     const [passFile, setPassFile] = useState(null);
+    const [travelerPassFiles, setTravelerPassFiles] = useState({});
 
     useEffect(() => {
         fetchClient();
@@ -199,6 +200,32 @@ const ClientDetails = () => {
             }
         }
 
+        // Upload Traveler Passes
+        let finalTravelerPasses = formData.traveler_passes || [];
+
+        if (client && client.travelers) {
+            const newTravelerPasses = await Promise.all(client.travelers.map(async (traveler, idx) => {
+                let passUrl = finalTravelerPasses.find(p => p.name === traveler.name)?.pass_url || '';
+
+                if (travelerPassFiles[idx]) {
+                    const uploadFormData = new FormData();
+                    uploadFormData.append('file', travelerPassFiles[idx]);
+                    try {
+                        const res = await fetch(`${API_URL}/api/upload`, { method: 'POST', body: uploadFormData });
+                        if (res.ok) {
+                            const data = await res.json();
+                            passUrl = data.url;
+                        }
+                    } catch (e) {
+                        console.error("Failed to upload traveler pass", e);
+                    }
+                }
+
+                return { name: traveler.name, pass_url: passUrl };
+            }));
+            finalTravelerPasses = newTravelerPasses;
+        }
+
         // Auto-calculate end time
         let finalEndTime = formData.end_time;
 
@@ -220,6 +247,8 @@ const ClientDetails = () => {
             client_id: id,
             image_url: uploadedImageUrl,
             pass_url: uploadedPassUrl,
+            included_in_pass: formData.included_in_pass,
+            traveler_passes: finalTravelerPasses,
             type: activeTab,
             end_time: finalEndTime
         };
@@ -277,10 +306,12 @@ const ClientDetails = () => {
                 duration: duration,
                 flight_number: item.flight_number || '',
                 pass_url: item.pass_url || '',
-                included_in_pass: item.included_in_pass || false
+                included_in_pass: item.included_in_pass || false,
+                traveler_passes: item.traveler_passes || []
             });
             setFile(null);
             setPassFile(null);
+            setTravelerPassFiles({});
         } else {
             setEditingItem(null);
             setFormData({
@@ -295,10 +326,12 @@ const ClientDetails = () => {
                 duration: '60',
                 flight_number: '',
                 pass_url: '',
-                included_in_pass: false
+                included_in_pass: false,
+                traveler_passes: []
             });
             setFile(null);
             setPassFile(null);
+            setTravelerPassFiles({});
         }
         setShowAddModal(true);
     };
@@ -308,6 +341,7 @@ const ClientDetails = () => {
         setEditingItem(null);
         setFile(null);
         setPassFile(null);
+        setTravelerPassFiles({});
     };
 
     const handleUpdateClient = async (e) => {
@@ -985,6 +1019,38 @@ const ClientDetails = () => {
                                         Included in Unlimited Pass?
                                     </label>
                                 </div>
+
+                                {/* Individual Traveler Passes */}
+                                {activeTab === 'activity' && client && client.travelers && client.travelers.length > 0 && (
+                                    <div className="mt-6 border-t border-white/10 pt-4">
+                                        <h3 className="text-sm font-bold text-white mb-3 flex items-center gap-2">
+                                            <Ticket size={14} className="text-primary-500" />
+                                            Individual Traveler Passes
+                                        </h3>
+                                        <p className="text-xs text-slate-500 mb-4">
+                                            Upload specific tickets/passes for each traveler for this activity.
+                                        </p>
+                                        <div className="space-y-3">
+                                            {client.travelers.map((traveler, idx) => (
+                                                <div key={idx} className="bg-dark-900/50 p-3 rounded-lg border border-white/5">
+                                                    <div className="flex justify-between items-center mb-2">
+                                                        <span className="text-sm font-medium text-slate-300">{traveler.name}</span>
+                                                        {formData.traveler_passes?.find(p => p.name === traveler.name)?.pass_url && (
+                                                            <span className="text-xs text-emerald-400 flex items-center gap-1 font-medium bg-emerald-500/10 px-2 py-0.5 rounded">
+                                                                Pass Uploaded
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <input
+                                                        type="file"
+                                                        onChange={(e) => setTravelerPassFiles({ ...travelerPassFiles, [idx]: e.target.files[0] })}
+                                                        className="block w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-primary-500/10 file:text-primary-500 hover:file:bg-primary-500/20 cursor-pointer"
+                                                    />
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">

@@ -1049,24 +1049,49 @@ const ClientView = () => {
                                             {t('Activity Tickets')}
                                         </h3>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            {itinerary.filter(i => i.pass_url || (i.type === 'flight' && i.image_url)).length > 0 ? (
-                                                itinerary.filter(i => i.pass_url || (i.type === 'flight' && i.image_url)).map(item => (
-                                                    <div
-                                                        key={item.id}
-                                                        className="bg-white dark:bg-dark-800/60 border border-slate-200 dark:border-white/5 rounded-2xl overflow-hidden group hover:border-primary-500/30 transition cursor-pointer shadow-sm dark:shadow-none"
-                                                        onClick={() => setSelectedPass(item)}
-                                                    >
-                                                        <div className="h-48 overflow-hidden relative">
-                                                            <img src={getImageUrl(item.pass_url || item.image_url)} alt={item.title} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
-                                                            <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 to-transparent dark:from-dark-900/80 opacity-60"></div>
-                                                            <div className="absolute bottom-3 left-3 right-3">
-                                                                <h3 className="text-white font-bold truncate">{item.title}</h3>
-                                                                <p className="text-xs text-slate-200 dark:text-slate-300 flex items-center gap-1">
-                                                                    <Clock size={10} /> {moment(item.start_time).format('MMM D, h:mm A')}
-                                                                </p>
+                                            {itinerary.filter(i => i.pass_url || (i.type === 'flight' && i.image_url) || (i.traveler_passes && i.traveler_passes.length > 0)).length > 0 ? (
+                                                itinerary.filter(i => i.pass_url || (i.type === 'flight' && i.image_url) || (i.traveler_passes && i.traveler_passes.length > 0)).map(item => (
+                                                    <React.Fragment key={item.id}>
+                                                        {/* Main Pass/Attachment */}
+                                                        {(item.pass_url || (item.type === 'flight' && item.image_url)) && (
+                                                            <div
+                                                                className="bg-white dark:bg-dark-800/60 border border-slate-200 dark:border-white/5 rounded-2xl overflow-hidden group hover:border-primary-500/30 transition cursor-pointer shadow-sm dark:shadow-none"
+                                                                onClick={() => setSelectedPass(item)}
+                                                            >
+                                                                <div className="h-48 overflow-hidden relative">
+                                                                    <img src={getImageUrl(item.pass_url || item.image_url)} alt={item.title} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
+                                                                    <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 to-transparent dark:from-dark-900/80 opacity-60"></div>
+                                                                    <div className="absolute bottom-3 left-3 right-3">
+                                                                        <h3 className="text-white font-bold truncate">{item.title}</h3>
+                                                                        <p className="text-xs text-slate-200 dark:text-slate-300 flex items-center gap-1">
+                                                                            <Clock size={10} /> {moment(item.start_time).format('MMM D, h:mm A')}
+                                                                        </p>
+                                                                    </div>
+                                                                </div>
                                                             </div>
-                                                        </div>
-                                                    </div>
+                                                        )}
+
+                                                        {/* Traveler Passes */}
+                                                        {item.traveler_passes && item.traveler_passes.map((tp, idx) => (
+                                                            <div
+                                                                key={`${item.id}_${idx}`}
+                                                                className="bg-white dark:bg-dark-800/60 border border-slate-200 dark:border-white/5 rounded-2xl overflow-hidden group hover:border-primary-500/30 transition cursor-pointer shadow-sm dark:shadow-none"
+                                                                onClick={() => setSelectedPass({ title: `${tp.name} - ${item.title}`, pass_url: tp.pass_url, type: 'pass' })}
+                                                            >
+                                                                <div className="h-48 overflow-hidden relative">
+                                                                    <img src={getImageUrl(tp.pass_url)} alt={item.title} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
+                                                                    <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 to-transparent dark:from-dark-900/80 opacity-60"></div>
+                                                                    <div className="absolute bottom-3 left-3 right-3">
+                                                                        <h3 className="text-white font-bold truncate">{item.title}</h3>
+                                                                        <p className="text-xs text-primary-400 font-bold uppercase tracking-wider mb-1">{tp.name}</p>
+                                                                        <p className="text-xs text-slate-200 dark:text-slate-300 flex items-center gap-1">
+                                                                            <Clock size={10} /> {moment(item.start_time).format('MMM D, h:mm A')}
+                                                                        </p>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </React.Fragment>
                                                 ))
                                             ) : (
                                                 <div className="col-span-2 text-center py-12 bg-slate-50 dark:bg-dark-800/30 rounded-2xl border border-slate-200 dark:border-white/5 border-dashed">
@@ -1233,6 +1258,33 @@ const ClientView = () => {
                                                             <ExternalLink size={16} className="text-slate-400 group-hover:text-slate-600 dark:text-slate-500 dark:group-hover:text-white transition" />
                                                         </button>
                                                     )
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Individual Traveler Passes for this Activity */}
+                                    {selectedEvent.traveler_passes && selectedEvent.traveler_passes.length > 0 && (
+                                        <div className="mt-6">
+                                            <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-2">Traveler Tickets</h3>
+                                            <div className="space-y-2">
+                                                {selectedEvent.traveler_passes.map((tp, idx) => (
+                                                    <button
+                                                        key={idx}
+                                                        onClick={() => { setSelectedPass({ title: `${tp.name} - ${selectedEvent.title}`, pass_url: tp.pass_url, type: 'pass' }); setSelectedEvent(null); }}
+                                                        className="w-full flex items-center justify-between p-3 bg-slate-50 dark:bg-dark-800/50 border border-slate-200 dark:border-white/5 rounded-xl hover:bg-slate-100 dark:hover:bg-dark-800 transition group"
+                                                    >
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="w-10 h-10 rounded-lg bg-slate-200 dark:bg-dark-900 overflow-hidden">
+                                                                <img src={getImageUrl(tp.pass_url)} className="w-full h-full object-cover" alt="Ticket" />
+                                                            </div>
+                                                            <div className="text-left">
+                                                                <div className="text-sm font-medium text-slate-900 dark:text-white">{tp.name}</div>
+                                                                <div className="text-xs text-slate-500">Ticket</div>
+                                                            </div>
+                                                        </div>
+                                                        <ExternalLink size={16} className="text-slate-400 group-hover:text-slate-600 dark:text-slate-500 dark:group-hover:text-white transition" />
+                                                    </button>
                                                 ))}
                                             </div>
                                         </div>

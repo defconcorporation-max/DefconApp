@@ -221,7 +221,7 @@ app.get('/api/itinerary/:client_id', async (req, res) => {
 // Add itinerary item
 app.post('/api/itinerary', async (req, res) => {
     try {
-        const { client_id, type, title, description, start_time, end_time, location, details, image_url, pass_url, included_in_pass, cost } = req.body;
+        const { client_id, type, title, description, start_time, end_time, location, details, image_url, pass_url, included_in_pass, traveler_passes, cost } = req.body;
         const newItem = await ItineraryItem.create({
             id: Date.now(),
             client_id: parseInt(client_id),
@@ -235,6 +235,7 @@ app.post('/api/itinerary', async (req, res) => {
             image_url,
             pass_url,
             included_in_pass: included_in_pass || false,
+            traveler_passes: traveler_passes || [],
             cost: cost ? parseFloat(cost) : 0
         });
         res.json({ id: newItem.id });

@@ -29,6 +29,10 @@ const itineraryItemSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     },
+    traveler_passes: [{
+        name: String,
+        pass_url: String
+    }],
     cost: Number
 }, {
     timestamps: true
