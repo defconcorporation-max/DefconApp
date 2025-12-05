@@ -1111,8 +1111,11 @@ const ClientDetails = () => {
                                                 type="checkbox"
                                                 id="is_flexible"
                                                 className="w-4 h-4 rounded border-dark-600 text-primary-500 focus:ring-primary-500 bg-dark-900"
-                                                checked={formData.is_flexible || false}
-                                                onChange={e => setFormData({ ...formData, is_flexible: e.target.checked })}
+                                                checked={!!formData.is_flexible}
+                                                onChange={e => {
+                                                    console.log('Toggling flexible:', e.target.checked);
+                                                    setFormData(prev => ({ ...prev, is_flexible: e.target.checked }));
+                                                }}
                                             />
                                             <label htmlFor="is_flexible" className="text-xs text-slate-400 cursor-pointer select-none uppercase tracking-wider">
                                                 Flexible Start Time

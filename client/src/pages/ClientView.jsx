@@ -419,8 +419,8 @@ const ClientView = () => {
             }
 
             // Format dates for API (YYYY-MM-DD)
-            const startDate = moment(tripStart).format('YYYY-MM-DD');
-            const endDate = moment(tripEnd).format('YYYY-MM-DD');
+            const startDate = moment.utc(tripStart).format('YYYY-MM-DD');
+            const endDate = moment.utc(tripEnd).format('YYYY-MM-DD');
 
             setStatus('loading');
             fetch(`https://api.open-meteo.com/v1/forecast?latitude=36.1699&longitude=-115.1398&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=auto&start_date=${startDate}&end_date=${endDate}`)
