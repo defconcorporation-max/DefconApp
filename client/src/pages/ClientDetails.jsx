@@ -52,7 +52,8 @@ const ClientDetails = () => {
         duration: '60',
         flight_number: '',
         pass_url: '',
-        included_in_pass: false
+        included_in_pass: false,
+        is_flexible: false
     });
     const [file, setFile] = useState(null);
     const [passFile, setPassFile] = useState(null);
@@ -1106,18 +1107,17 @@ const ClientDetails = () => {
                                                 return <option key={mins} value={mins}>{label.trim()}</option>;
                                             })}
                                         </select>
-                                        <div className="mt-2 flex items-center gap-2">
-                                            <input
-                                                type="checkbox"
-                                                id="is_flexible"
-                                                className="w-4 h-4 rounded border-dark-600 text-primary-500 focus:ring-primary-500 bg-dark-900"
-                                                checked={!!formData.is_flexible}
-                                                onChange={e => {
-                                                    console.log('Toggling flexible:', e.target.checked);
-                                                    setFormData(prev => ({ ...prev, is_flexible: e.target.checked }));
-                                                }}
-                                            />
-                                            <label htmlFor="is_flexible" className="text-xs text-slate-400 cursor-pointer select-none uppercase tracking-wider">
+                                        <div className="mt-2">
+                                            <label className="flex items-center gap-2 text-xs text-slate-400 cursor-pointer select-none uppercase tracking-wider">
+                                                <input
+                                                    type="checkbox"
+                                                    className="w-4 h-4 rounded border-dark-600 text-primary-500 focus:ring-primary-500 bg-dark-900"
+                                                    checked={!!formData.is_flexible}
+                                                    onChange={e => {
+                                                        console.log('Toggling flexible:', e.target.checked);
+                                                        setFormData(prev => ({ ...prev, is_flexible: e.target.checked }));
+                                                    }}
+                                                />
                                                 Flexible Start Time
                                             </label>
                                         </div>
