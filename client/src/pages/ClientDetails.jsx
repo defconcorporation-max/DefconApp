@@ -250,6 +250,7 @@ const ClientDetails = () => {
             pass_url: uploadedPassUrl,
             included_in_pass: formData.included_in_pass,
             traveler_passes: finalTravelerPasses,
+            is_flexible: formData.is_flexible,
             type: activeTab,
             start_time: formData.start_time ? new Date(formData.start_time).toISOString() : null,
             end_time: finalEndTime ? new Date(finalEndTime).toISOString() : null
@@ -309,6 +310,7 @@ const ClientDetails = () => {
                 flight_number: item.flight_number || '',
                 pass_url: item.pass_url || '',
                 included_in_pass: item.included_in_pass || false,
+                is_flexible: item.is_flexible || false,
                 traveler_passes: item.traveler_passes || []
             });
             setFile(null);
@@ -329,6 +331,7 @@ const ClientDetails = () => {
                 flight_number: '',
                 pass_url: '',
                 included_in_pass: false,
+                is_flexible: false,
                 traveler_passes: []
             });
             setFile(null);
@@ -1103,6 +1106,18 @@ const ClientDetails = () => {
                                                 return <option key={mins} value={mins}>{label.trim()}</option>;
                                             })}
                                         </select>
+                                        <div className="mt-2 flex items-center gap-2">
+                                            <input
+                                                type="checkbox"
+                                                id="is_flexible"
+                                                className="w-4 h-4 rounded border-dark-600 text-primary-500 focus:ring-primary-500 bg-dark-900"
+                                                checked={formData.is_flexible || false}
+                                                onChange={e => setFormData({ ...formData, is_flexible: e.target.checked })}
+                                            />
+                                            <label htmlFor="is_flexible" className="text-xs text-slate-400 cursor-pointer select-none uppercase tracking-wider">
+                                                Flexible Start Time
+                                            </label>
+                                        </div>
                                     </div>
                                 )}
                             </div>

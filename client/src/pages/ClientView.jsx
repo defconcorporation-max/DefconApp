@@ -407,7 +407,8 @@ const ClientView = () => {
         useEffect(() => {
             if (!tripStart || !tripEnd) return;
 
-            const start = moment(tripStart);
+            // Use UTC to avoid timezone shifting the start date back a day
+            const start = moment.utc(tripStart);
             const now = moment();
             const daysUntilTrip = start.diff(now, 'days');
 
@@ -736,7 +737,11 @@ const ClientView = () => {
                                                 <div className="flex items-center gap-4 text-sm text-slate-500 dark:text-slate-400 mb-3">
                                                     <div className="flex items-center gap-1.5">
                                                         <Clock size={14} className="text-primary-500" />
-                                                        {moment(item.start_time).format('h:mm A')}
+                                                        {item.is_flexible ? (
+                                                            <span className="italic text-primary-500 font-medium">Flexible</span>
+                                                        ) : (
+                                                            moment(item.start_time).format('h:mm A')
+                                                        )}
                                                     </div>
                                                     {item.location && (
                                                         <div className="flex items-center gap-1.5">
