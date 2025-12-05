@@ -234,7 +234,8 @@ const ClientDetails = () => {
         } else if ((formData.type === 'flight' || formData.type === 'hotel') && !finalEndTime && formData.start_time) {
             const start = new Date(formData.start_time);
             start.setHours(start.getHours() + 1);
-            finalEndTime = start.toISOString().slice(0, 16);
+            // Keep strictly local string for finalEndTime variable
+            finalEndTime = moment(start).format('YYYY-MM-DDTHH:mm');
         }
 
         const method = editingItem ? 'PUT' : 'POST';
@@ -250,7 +251,8 @@ const ClientDetails = () => {
             included_in_pass: formData.included_in_pass,
             traveler_passes: finalTravelerPasses,
             type: activeTab,
-            end_time: finalEndTime
+            start_time: formData.start_time ? new Date(formData.start_time).toISOString() : null,
+            end_time: finalEndTime ? new Date(finalEndTime).toISOString() : null
         };
 
         try {
