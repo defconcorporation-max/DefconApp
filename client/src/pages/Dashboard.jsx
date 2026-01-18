@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Users, Search, ExternalLink, TrendingUp, Calendar, DollarSign, Briefcase, Trash2 } from 'lucide-react';
+import { Plus, Users, Search, ExternalLink, TrendingUp, Calendar, DollarSign, Briefcase, Trash2, Archive, RefreshCcw } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { motion } from 'framer-motion';
 
@@ -17,7 +17,9 @@ import API_URL from '../config';
 const Dashboard = () => {
     const navigate = useNavigate();
     const [clients, setClients] = useState([]);
+    const [itineraries, setItineraries] = useState([]); // Store all itineraries to checks for "completeness"
     const [viewMode, setViewMode] = useState('list'); // 'list' | 'calendar'
+    const [showArchived, setShowArchived] = useState(false);
     const [showAddModal, setShowAddModal] = useState(false);
     const [newClient, setNewClient] = useState({ name: '', email: '', phone: '', booking_ref: '', trip_start: '', trip_end: '' });
     const [stats, setStats] = useState({ totalClients: 0, activeTrips: 0, upcomingDepartures: 0, revenue: 0 });
@@ -38,6 +40,7 @@ const Dashboard = () => {
             const itinerariesData = await itinerariesRes.json();
 
             setClients(clientsData);
+            setItineraries(itinerariesData);
             calculateStats(clientsData, itinerariesData);
         } catch (error) {
             console.error('Error fetching data:', error);
@@ -118,6 +121,29 @@ const Dashboard = () => {
         }
     };
 
+    const handleToggleArchive = async (client) => {
+        try {
+            const updatedClient = { ...client, isArchived: !client.isArchived };
+            const res = await fetch(`${API_URL}/api/clients/${client.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(updatedClient),
+            });
+
+            if (res.ok) {
+                // Optimistic update
+                setClients(clients.map(c => c.id === client.id ? updatedClient : c));
+            }
+        } catch (error) {
+            console.error('Error updating client archive status:', error);
+        }
+    };
+
+    // Filter clients based on archive status
+    const filteredClients = clients.filter(client =>
+        showArchived ? client.isArchived : !client.isArchived
+    );
+
     const containerVariants = {
         hidden: { opacity: 0 },
         visible: {
@@ -181,7 +207,9 @@ const Dashboard = () => {
                     >
                         <div className="flex justify-between items-center mb-6">
                             <div className="flex items-center gap-4">
-                                <h2 className="text-xl font-bold text-white">Recent Clients</h2>
+                                <h2 className="text-xl font-bold text-white">
+                                    {showArchived ? 'Archived Clients' : 'Recent Clients'}
+                                </h2>
                                 <div className="flex gap-1 bg-dark-800/50 p-1 rounded-lg border border-white/5">
                                     <button
                                         onClick={() => setViewMode('list')}
@@ -199,73 +227,100 @@ const Dashboard = () => {
                                     </button>
                                 </div>
                             </div>
-                            <div className="relative">
-                                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500" size={18} />
-                                <input
-                                    type="text"
-                                    placeholder="Search clients..."
-                                    className="pl-10 pr-4 py-2 bg-dark-800/50 border border-white/5 rounded-full text-sm text-white focus:ring-1 focus:ring-primary-500 focus:border-transparent outline-none w-64 transition-all focus:w-72"
-                                />
+                            <div className="flex items-center gap-3">
+                                <button
+                                    onClick={() => setShowArchived(!showArchived)}
+                                    className={`text-xs font-medium px-3 py-1.5 rounded-full transition border ${showArchived
+                                        ? 'bg-primary-500/20 text-primary-400 border-primary-500/50'
+                                        : 'bg-dark-800 text-slate-400 border-white/5 hover:text-white'}`}
+                                >
+                                    {showArchived ? 'Show Active' : 'Show Archived'}
+                                </button>
+                                <div className="relative">
+                                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500" size={18} />
+                                    <input
+                                        type="text"
+                                        placeholder="Search clients..."
+                                        className="pl-10 pr-4 py-2 bg-dark-800/50 border border-white/5 rounded-full text-sm text-white focus:ring-1 focus:ring-primary-500 focus:border-transparent outline-none w-48 transition-all focus:w-64"
+                                    />
+                                </div>
                             </div>
                         </div>
 
                         {viewMode === 'list' ? (
                             <div className="grid grid-cols-1 gap-4">
-                                {clients.map((client) => (
-                                    <motion.div
-                                        key={client.id}
-                                        variants={itemVariants}
-                                        className="bg-dark-800/40 rounded-xl p-5 hover:bg-dark-800 transition group flex items-center justify-between border border-transparent hover:border-white/5"
-                                    >
-                                        <div className="flex items-center gap-4">
-                                            <div className="w-10 h-10 rounded-full bg-dark-700 flex items-center justify-center text-primary-500 font-bold">
-                                                {client.name.charAt(0)}
-                                            </div>
-                                            <div>
-                                                <h3 className="text-lg font-semibold text-white group-hover:text-primary-400 transition">{client.name}</h3>
-                                                <p className="text-sm text-slate-500">{client.email}</p>
-                                            </div>
-                                        </div>
+                                {filteredClients.map((client) => {
+                                    const clientItineraryCount = itineraries.filter(i => i.client_id === client.id).length;
+                                    const isComplete = clientItineraryCount > 0;
 
-                                        <div className="flex items-center gap-6">
-                                            <div className="text-right hidden sm:block">
-                                                <p className="text-xs text-slate-500 uppercase tracking-wider">Reference</p>
-                                                <p className="text-sm text-white font-mono">{client.booking_ref}</p>
+                                    return (
+                                        <motion.div
+                                            key={client.id}
+                                            variants={itemVariants}
+                                            className={`bg-dark-800/40 rounded-xl p-5 hover:bg-dark-800 transition group flex items-center justify-between border border-transparent hover:border-white/5 ${!isComplete ? 'opacity-50 hover:opacity-100' : ''}`}
+                                        >
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-10 h-10 rounded-full bg-dark-700 flex items-center justify-center text-primary-500 font-bold">
+                                                    {client.name.charAt(0)}
+                                                </div>
+                                                <div>
+                                                    <h3 className="text-lg font-semibold text-white group-hover:text-primary-400 transition">{client.name}</h3>
+                                                    <p className="text-sm text-slate-500">{client.email}</p>
+                                                    {!isComplete && (
+                                                        <span className="text-[10px] uppercase tracking-wider text-orange-400 font-bold mt-1 inline-block">Pending Schedule</span>
+                                                    )}
+                                                </div>
                                             </div>
 
-                                            <div className="flex gap-2">
-                                                <Link
-                                                    to={`/dashboard/client/${client.id}`}
-                                                    className="px-4 py-2 bg-white/5 text-slate-200 rounded-lg hover:bg-white/10 transition text-sm font-medium"
-                                                >
-                                                    Manage
-                                                </Link>
-                                                <Link
-                                                    to={`/client/${client.id}`}
-                                                    target="_blank"
-                                                    className="p-2 text-slate-500 hover:text-primary-400 transition"
-                                                    title="View Client App"
-                                                >
-                                                    <ExternalLink size={20} />
-                                                </Link>
-                                                <button
-                                                    onClick={() => handleDeleteClient(client.id)}
-                                                    className="p-2 text-slate-500 hover:text-red-500 transition"
-                                                    title="Delete Client"
-                                                >
-                                                    <Trash2 size={20} />
-                                                </button>
+                                            <div className="flex items-center gap-6">
+                                                <div className="text-right hidden sm:block">
+                                                    <p className="text-xs text-slate-500 uppercase tracking-wider">Reference</p>
+                                                    <p className="text-sm text-white font-mono">{client.booking_ref}</p>
+                                                </div>
+
+                                                <div className="flex gap-2">
+                                                    <Link
+                                                        to={`/dashboard/client/${client.id}`}
+                                                        className="px-4 py-2 bg-white/5 text-slate-200 rounded-lg hover:bg-white/10 transition text-sm font-medium"
+                                                    >
+                                                        Manage
+                                                    </Link>
+                                                    <Link
+                                                        to={`/client/${client.id}`}
+                                                        target="_blank"
+                                                        className="p-2 text-slate-500 hover:text-primary-400 transition"
+                                                        title="View Client App"
+                                                    >
+                                                        <ExternalLink size={20} />
+                                                    </Link>
+                                                    <button
+                                                        onClick={() => handleToggleArchive(client)}
+                                                        className={`p-2 transition ${client.isArchived ? 'text-green-500 hover:text-green-400' : 'text-slate-500 hover:text-orange-400'}`}
+                                                        title={client.isArchived ? "Unarchive" : "Archive"}
+                                                    >
+                                                        {client.isArchived ? <RefreshCcw size={20} /> : <Archive size={20} />}
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleDeleteClient(client.id)}
+                                                        className="p-2 text-slate-500 hover:text-red-500 transition"
+                                                        title="Delete Client"
+                                                    >
+                                                        <Trash2 size={20} />
+                                                    </button>
+                                                </div>
                                             </div>
-                                        </div>
-                                    </motion.div>
-                                ))}
-                                {clients.length === 0 && (
+                                        </motion.div>
+                                    );
+                                })}
+                                {filteredClients.length === 0 && (
                                     <div className="text-center py-16 bg-dark-800/30 rounded-xl border border-dashed border-white/10">
                                         <div className="bg-dark-800 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
                                             <Users className="text-slate-600" size={32} />
                                         </div>
-                                        <h3 className="text-lg font-medium text-white">No clients yet</h3>
-                                        <p className="text-slate-500 mt-2">Get started by adding your first client.</p>
+                                        <h3 className="text-lg font-medium text-white">No clients found</h3>
+                                        <p className="text-slate-500 mt-2">
+                                            {showArchived ? "No archived clients." : "Get started by adding your first client."}
+                                        </p>
                                     </div>
                                 )}
                             </div>

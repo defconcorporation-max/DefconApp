@@ -15,6 +15,10 @@ const clientSchema = new mongoose.Schema({
     notes: String,
     preferences: String,
     wishlist: [Number], // Array of Activity IDs
+    isArchived: {
+        type: Boolean,
+        default: false
+    },
     travelers: [{
         name: String,
         pass_url: String
