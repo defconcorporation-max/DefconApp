@@ -754,6 +754,55 @@ const ClientDetails = () => {
                     {/* Main Content Area */}
                     <div className="lg:col-span-2 space-y-8">
 
+                        {/* Financial Summary Card */}
+                        {itinerary.length > 0 && (
+                            <div className="bg-dark-800/50 backdrop-blur-sm border border-white/5 rounded-xl p-5 mb-8">
+                                <h3 className="text-sm font-bold text-white mb-4 flex items-center gap-2">
+                                    <div className="p-1 bg-emerald-500/10 rounded text-emerald-400">
+                                        $
+                                    </div>
+                                    Financial Summary
+                                </h3>
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                    <div className="bg-dark-900/50 rounded-lg p-3 border border-white/5">
+                                        <div className="text-xs text-slate-500 mb-1">Total Sales</div>
+                                        <div className="text-lg font-bold text-white">
+                                            ${itinerary.reduce((sum, item) => sum + (item.cost || 0), 0).toFixed(2)}
+                                        </div>
+                                    </div>
+                                    <div className="bg-dark-900/50 rounded-lg p-3 border border-white/5">
+                                        <div className="text-xs text-slate-500 mb-1">Total Cost</div>
+                                        <div className="text-lg font-bold text-slate-300">
+                                            ${itinerary.reduce((sum, item) => sum + (item.costPrice || 0), 0).toFixed(2)}
+                                        </div>
+                                    </div>
+                                    <div className="bg-dark-900/50 rounded-lg p-3 border border-white/5">
+                                        <div className="text-xs text-slate-500 mb-1">Total Commission</div>
+                                        <div className="text-lg font-bold text-blue-400">
+                                            ${itinerary.reduce((sum, item) => {
+                                                const comm = item.commissionType === 'fixed'
+                                                    ? (item.commissionValue || 0)
+                                                    : ((item.cost || 0) * (item.commissionValue || 0) / 100);
+                                                return sum + comm;
+                                            }, 0).toFixed(2)}
+                                        </div>
+                                    </div>
+                                    <div className="bg-emerald-500/10 rounded-lg p-3 border border-emerald-500/20">
+                                        <div className="text-xs text-emerald-400 mb-1">Total Profit</div>
+                                        <div className="text-lg font-bold text-emerald-400">
+                                            ${itinerary.reduce((sum, item) => {
+                                                const comm = item.commissionType === 'fixed'
+                                                    ? (item.commissionValue || 0)
+                                                    : ((item.cost || 0) * (item.commissionValue || 0) / 100);
+                                                const profit = ((item.cost || 0) - (item.costPrice || 0)) + (item.serviceFee || 0) + comm;
+                                                return sum + profit;
+                                            }, 0).toFixed(2)}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
                         {/* Trip Highlights (Flights & Hotels) */}
                         {(itinerary.some(i => i.type === 'flight') || itinerary.some(i => i.type === 'hotel')) && (
                             <motion.div
@@ -761,53 +810,6 @@ const ClientDetails = () => {
                                 animate={{ opacity: 1, y: 0 }}
                                 className="space-y-4"
                             >
-                                {/* Financial Summary Card */}
-                                <div className="bg-dark-800/50 backdrop-blur-sm border border-white/5 rounded-xl p-5">
-                                    <h3 className="text-sm font-bold text-white mb-4 flex items-center gap-2">
-                                        <div className="p-1 bg-emerald-500/10 rounded text-emerald-400">
-                                            $
-                                        </div>
-                                        Financial Summary
-                                    </h3>
-                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                        <div className="bg-dark-900/50 rounded-lg p-3 border border-white/5">
-                                            <div className="text-xs text-slate-500 mb-1">Total Sales</div>
-                                            <div className="text-lg font-bold text-white">
-                                                ${itinerary.reduce((sum, item) => sum + (item.cost || 0), 0).toFixed(2)}
-                                            </div>
-                                        </div>
-                                        <div className="bg-dark-900/50 rounded-lg p-3 border border-white/5">
-                                            <div className="text-xs text-slate-500 mb-1">Total Cost</div>
-                                            <div className="text-lg font-bold text-slate-300">
-                                                ${itinerary.reduce((sum, item) => sum + (item.costPrice || 0), 0).toFixed(2)}
-                                            </div>
-                                        </div>
-                                        <div className="bg-dark-900/50 rounded-lg p-3 border border-white/5">
-                                            <div className="text-xs text-slate-500 mb-1">Total Commission</div>
-                                            <div className="text-lg font-bold text-blue-400">
-                                                ${itinerary.reduce((sum, item) => {
-                                                    const comm = item.commissionType === 'fixed'
-                                                        ? (item.commissionValue || 0)
-                                                        : ((item.cost || 0) * (item.commissionValue || 0) / 100);
-                                                    return sum + comm;
-                                                }, 0).toFixed(2)}
-                                            </div>
-                                        </div>
-                                        <div className="bg-emerald-500/10 rounded-lg p-3 border border-emerald-500/20">
-                                            <div className="text-xs text-emerald-400 mb-1">Total Profit</div>
-                                            <div className="text-lg font-bold text-emerald-400">
-                                                ${itinerary.reduce((sum, item) => {
-                                                    const comm = item.commissionType === 'fixed'
-                                                        ? (item.commissionValue || 0)
-                                                        : ((item.cost || 0) * (item.commissionValue || 0) / 100);
-                                                    const profit = ((item.cost || 0) - (item.costPrice || 0)) + (item.serviceFee || 0) + comm;
-                                                    return sum + profit;
-                                                }, 0).toFixed(2)}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
                                 <h2 className="text-lg font-bold text-white flex items-center gap-2">
                                     <span className="w-1 h-6 bg-primary-500 rounded-full"></span>
                                     Trip Highlights
@@ -1012,362 +1014,363 @@ const ClientDetails = () => {
                         </div>
                     </div>
                 </div>
-            </main>
+            </main >
 
             {/* Add/Edit Item Modal */}
-            {showAddModal && (
-                <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 overflow-y-auto backdrop-blur-sm">
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        className="bg-dark-800 rounded-2xl max-w-2xl w-full p-8 border border-white/10 shadow-2xl my-8"
-                    >
-                        <h2 className="text-2xl font-bold mb-6 text-white">{editingItem ? 'Edit Itinerary Item' : `Add ${activeTab === 'flight' ? 'Flight' : activeTab === 'hotel' ? 'Hotel' : 'Activity'}`}</h2>
+            {
+                showAddModal && (
+                    <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 overflow-y-auto backdrop-blur-sm">
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            className="bg-dark-800 rounded-2xl max-w-2xl w-full p-8 border border-white/10 shadow-2xl my-8"
+                        >
+                            <h2 className="text-2xl font-bold mb-6 text-white">{editingItem ? 'Edit Itinerary Item' : `Add ${activeTab === 'flight' ? 'Flight' : activeTab === 'hotel' ? 'Hotel' : 'Activity'}`}</h2>
 
-                        <form onSubmit={handleSubmit} className="space-y-5">
+                            <form onSubmit={handleSubmit} className="space-y-5">
 
-                            {/* Catalog Selection for Activities */}
-                            {activeTab === 'activity' && activities.length > 0 && (
-                                <div className="bg-dark-900/50 p-4 rounded-lg border border-white/5 mb-4">
-                                    <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-2">Select from Catalog (Optional)</label>
-                                    <select
-                                        className="w-full px-3 py-2 bg-dark-800 border border-dark-600 text-white rounded-lg focus:ring-1 focus:ring-primary-500 outline-none"
-                                        onChange={(e) => {
-                                            const activity = activities.find(a => a.id === parseInt(e.target.value));
-                                            if (activity) {
-                                                setFormData({
-                                                    ...formData,
-                                                    title: activity.title,
-                                                    description: activity.description,
-                                                    image_url: activity.image_url
-                                                });
-                                            }
-                                        }}
-                                    >
-                                        <option value="">-- Choose a pre-made activity --</option>
-                                        {activities.map(act => (
-                                            <option key={act.id} value={act.id}>{act.title}</option>
-                                        ))}
-                                    </select>
-                                </div>
-                            )}
+                                {/* Catalog Selection for Activities */}
+                                {activeTab === 'activity' && activities.length > 0 && (
+                                    <div className="bg-dark-900/50 p-4 rounded-lg border border-white/5 mb-4">
+                                        <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-2">Select from Catalog (Optional)</label>
+                                        <select
+                                            className="w-full px-3 py-2 bg-dark-800 border border-dark-600 text-white rounded-lg focus:ring-1 focus:ring-primary-500 outline-none"
+                                            onChange={(e) => {
+                                                const activity = activities.find(a => a.id === parseInt(e.target.value));
+                                                if (activity) {
+                                                    setFormData({
+                                                        ...formData,
+                                                        title: activity.title,
+                                                        description: activity.description,
+                                                        image_url: activity.image_url
+                                                    });
+                                                }
+                                            }}
+                                        >
+                                            <option value="">-- Choose a pre-made activity --</option>
+                                            {activities.map(act => (
+                                                <option key={act.id} value={act.id}>{act.title}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                )}
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                <div>
-                                    <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Title</label>
-                                    <input
-                                        type="text"
-                                        required
-                                        placeholder={activeTab === 'flight' ? 'Flight to Paris' : activeTab === 'hotel' ? 'Ritz Carlton' : 'Louvre Museum'}
-                                        className="w-full px-4 py-3 bg-dark-900 border border-dark-700 text-white rounded-lg placeholder-slate-600 focus:ring-1 focus:ring-primary-500 focus:border-primary-500 transition-all"
-                                        value={formData.title}
-                                        onChange={e => setFormData({ ...formData, title: e.target.value })}
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Location</label>
-                                    <input
-                                        type="text"
-                                        className="w-full px-4 py-3 bg-dark-900 border border-dark-700 text-white rounded-lg placeholder-slate-600 focus:ring-1 focus:ring-primary-500 focus:border-primary-500 transition-all"
-                                        value={formData.location}
-                                        onChange={e => setFormData({ ...formData, location: e.target.value })}
-                                    />
-                                </div>
-                            </div>
-
-                            {activeTab === 'flight' && (
-                                <div>
-                                    <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Flight Number <span className="text-red-500">*</span></label>
-                                    <div className="flex gap-2">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                    <div>
+                                        <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Title</label>
                                         <input
                                             type="text"
                                             required
-                                            placeholder="e.g. AA123"
+                                            placeholder={activeTab === 'flight' ? 'Flight to Paris' : activeTab === 'hotel' ? 'Ritz Carlton' : 'Louvre Museum'}
                                             className="w-full px-4 py-3 bg-dark-900 border border-dark-700 text-white rounded-lg placeholder-slate-600 focus:ring-1 focus:ring-primary-500 focus:border-primary-500 transition-all"
-                                            value={formData.flight_number}
-                                            onChange={e => setFormData({ ...formData, flight_number: e.target.value })}
+                                            value={formData.title}
+                                            onChange={e => setFormData({ ...formData, title: e.target.value })}
                                         />
-                                        <button
-                                            type="button"
-                                            onClick={handleFlightLookup}
-                                            className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-medium transition whitespace-nowrap"
-                                        >
-                                            Fetch Info
-                                        </button>
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Location</label>
+                                        <input
+                                            type="text"
+                                            className="w-full px-4 py-3 bg-dark-900 border border-dark-700 text-white rounded-lg placeholder-slate-600 focus:ring-1 focus:ring-primary-500 focus:border-primary-500 transition-all"
+                                            value={formData.location}
+                                            onChange={e => setFormData({ ...formData, location: e.target.value })}
+                                        />
                                     </div>
                                 </div>
-                            )}
 
-                            <div className="grid grid-cols-2 gap-5">
-                                <div>
-                                    <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Selling Price ($)</label>
-                                    <input
-                                        type="number"
-                                        min="0"
-                                        step="0.01"
-                                        placeholder="0.00"
-                                        className="w-full px-4 py-3 bg-dark-900 border border-dark-700 text-white rounded-lg placeholder-slate-600 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
-                                        value={formData.cost || ''}
-                                        onChange={e => setFormData({ ...formData, cost: e.target.value })}
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Net Cost ($)</label>
-                                    <input
-                                        type="number"
-                                        min="0"
-                                        step="0.01"
-                                        placeholder="0.00"
-                                        className="w-full px-4 py-3 bg-dark-900 border border-dark-700 text-white rounded-lg placeholder-slate-600 focus:ring-1 focus:ring-primary-500 focus:border-primary-500 transition-all"
-                                        value={formData.costPrice || ''}
-                                        onChange={e => setFormData({ ...formData, costPrice: e.target.value })}
-                                    />
-                                </div>
-                            </div>
+                                {activeTab === 'flight' && (
+                                    <div>
+                                        <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Flight Number <span className="text-red-500">*</span></label>
+                                        <div className="flex gap-2">
+                                            <input
+                                                type="text"
+                                                required
+                                                placeholder="e.g. AA123"
+                                                className="w-full px-4 py-3 bg-dark-900 border border-dark-700 text-white rounded-lg placeholder-slate-600 focus:ring-1 focus:ring-primary-500 focus:border-primary-500 transition-all"
+                                                value={formData.flight_number}
+                                                onChange={e => setFormData({ ...formData, flight_number: e.target.value })}
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={handleFlightLookup}
+                                                className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-medium transition whitespace-nowrap"
+                                            >
+                                                Fetch Info
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
 
-                            <div className="grid grid-cols-2 gap-5 mt-4 pt-4 border-t border-white/5">
-                                <div>
-                                    <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Service Fee ($)</label>
-                                    <input
-                                        type="number"
-                                        min="0"
-                                        step="0.01"
-                                        placeholder="0.00"
-                                        className="w-full px-4 py-3 bg-dark-900 border border-dark-700 text-white rounded-lg placeholder-slate-600 focus:ring-1 focus:ring-primary-500 focus:border-primary-500 transition-all"
-                                        value={formData.serviceFee || ''}
-                                        onChange={e => setFormData({ ...formData, serviceFee: e.target.value })}
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Commission</label>
-                                    <div className="flex gap-2">
-                                        <select
-                                            className="px-3 py-3 bg-dark-900 border border-dark-700 text-white rounded-lg focus:ring-1 focus:ring-primary-500 transition-all"
-                                            value={formData.commissionType}
-                                            onChange={e => setFormData({ ...formData, commissionType: e.target.value })}
-                                        >
-                                            <option value="percent">%</option>
-                                            <option value="fixed">$</option>
-                                        </select>
+                                <div className="grid grid-cols-2 gap-5">
+                                    <div>
+                                        <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Selling Price ($)</label>
                                         <input
                                             type="number"
                                             min="0"
                                             step="0.01"
-                                            placeholder="0"
-                                            className="w-full px-4 py-3 bg-dark-900 border border-dark-700 text-white rounded-lg placeholder-slate-600 focus:ring-1 focus:ring-primary-500 focus:border-primary-500 transition-all"
-                                            value={formData.commissionValue || ''}
-                                            onChange={e => setFormData({ ...formData, commissionValue: e.target.value })}
+                                            placeholder="0.00"
+                                            className="w-full px-4 py-3 bg-dark-900 border border-dark-700 text-white rounded-lg placeholder-slate-600 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
+                                            value={formData.cost || ''}
+                                            onChange={e => setFormData({ ...formData, cost: e.target.value })}
                                         />
                                     </div>
-                                    <div className="mt-2 text-xs text-emerald-400 font-medium text-right">
-                                        Est. Profit: ${
-                                            ((parseFloat(formData.cost || 0) - parseFloat(formData.costPrice || 0) || 0) +
-                                                (parseFloat(formData.serviceFee || 0)) +
-                                                (formData.commissionType === 'fixed'
-                                                    ? (parseFloat(formData.commissionValue || 0))
-                                                    : ((parseFloat(formData.cost || 0)) * (parseFloat(formData.commissionValue || 0)) / 100))).toFixed(2)
-                                        }
+                                    <div>
+                                        <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Net Cost ($)</label>
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            step="0.01"
+                                            placeholder="0.00"
+                                            className="w-full px-4 py-3 bg-dark-900 border border-dark-700 text-white rounded-lg placeholder-slate-600 focus:ring-1 focus:ring-primary-500 focus:border-primary-500 transition-all"
+                                            value={formData.costPrice || ''}
+                                            onChange={e => setFormData({ ...formData, costPrice: e.target.value })}
+                                        />
                                     </div>
                                 </div>
-                            </div>
-                            <div className="mt-3 flex items-center gap-2">
-                                <input
-                                    type="checkbox"
-                                    id="included_in_pass"
-                                    className="w-4 h-4 rounded border-dark-600 text-primary-500 focus:ring-primary-500 bg-dark-900"
-                                    checked={formData.included_in_pass || false}
-                                    onChange={e => setFormData({ ...formData, included_in_pass: e.target.checked })}
-                                />
-                                <label htmlFor="included_in_pass" className="text-sm text-slate-300 cursor-pointer select-none">
-                                    Included in Unlimited Pass?
-                                </label>
-                            </div>
 
-                            {/* Individual Traveler Passes */}
-                            {console.log('DEBUG: Client:', client)}
-                            {console.log('DEBUG: Travelers:', client?.travelers)}
-                            {client && client.travelers && client.travelers.length > 0 && (
-                                <div className="mt-6 border-t border-white/10 pt-4">
-                                    <h3 className="text-sm font-bold text-white mb-3 flex items-center gap-2">
-                                        <Ticket size={14} className="text-primary-500" />
-                                        Individual Traveler Passes
-                                    </h3>
-                                    <p className="text-xs text-slate-500 mb-4">
-                                        Upload specific tickets/passes for each traveler for this activity.
-                                    </p>
-                                    <div className="space-y-3">
-                                        {client.travelers.map((traveler, idx) => (
-                                            <div key={idx} className="bg-dark-900/50 p-3 rounded-lg border border-white/5">
-                                                <div className="flex justify-between items-center mb-2">
-                                                    <span className="text-sm font-medium text-slate-300">{traveler.name}</span>
-                                                    {formData.traveler_passes?.find(p => p.name === traveler.name)?.pass_url && (
-                                                        <span className="text-xs text-emerald-400 flex items-center gap-1 font-medium bg-emerald-500/10 px-2 py-0.5 rounded">
-                                                            Pass Uploaded
-                                                        </span>
-                                                    )}
-                                                </div>
-                                                <input
-                                                    type="file"
-                                                    onChange={(e) => setTravelerPassFiles({ ...travelerPassFiles, [idx]: e.target.files[0] })}
-                                                    className="block w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-primary-500/10 file:text-primary-500 hover:file:bg-primary-500/20 cursor-pointer"
-                                                />
-                                            </div>
-                                        ))}
+                                <div className="grid grid-cols-2 gap-5 mt-4 pt-4 border-t border-white/5">
+                                    <div>
+                                        <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Service Fee ($)</label>
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            step="0.01"
+                                            placeholder="0.00"
+                                            className="w-full px-4 py-3 bg-dark-900 border border-dark-700 text-white rounded-lg placeholder-slate-600 focus:ring-1 focus:ring-primary-500 focus:border-primary-500 transition-all"
+                                            value={formData.serviceFee || ''}
+                                            onChange={e => setFormData({ ...formData, serviceFee: e.target.value })}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Commission</label>
+                                        <div className="flex gap-2">
+                                            <select
+                                                className="px-3 py-3 bg-dark-900 border border-dark-700 text-white rounded-lg focus:ring-1 focus:ring-primary-500 transition-all"
+                                                value={formData.commissionType}
+                                                onChange={e => setFormData({ ...formData, commissionType: e.target.value })}
+                                            >
+                                                <option value="percent">%</option>
+                                                <option value="fixed">$</option>
+                                            </select>
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                step="0.01"
+                                                placeholder="0"
+                                                className="w-full px-4 py-3 bg-dark-900 border border-dark-700 text-white rounded-lg placeholder-slate-600 focus:ring-1 focus:ring-primary-500 focus:border-primary-500 transition-all"
+                                                value={formData.commissionValue || ''}
+                                                onChange={e => setFormData({ ...formData, commissionValue: e.target.value })}
+                                            />
+                                        </div>
+                                        <div className="mt-2 text-xs text-emerald-400 font-medium text-right">
+                                            Est. Profit: ${
+                                                ((parseFloat(formData.cost || 0) - parseFloat(formData.costPrice || 0) || 0) +
+                                                    (parseFloat(formData.serviceFee || 0)) +
+                                                    (formData.commissionType === 'fixed'
+                                                        ? (parseFloat(formData.commissionValue || 0))
+                                                        : ((parseFloat(formData.cost || 0)) * (parseFloat(formData.commissionValue || 0)) / 100))).toFixed(2)
+                                            }
+                                        </div>
                                     </div>
                                 </div>
-                            )}
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                <div>
-                                    <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">
-                                        {activeTab === 'hotel' ? 'Check-in' : activeTab === 'flight' ? 'Departure Time' : 'Start Time'} <span className="text-red-500">*</span>
-                                    </label>
+                                <div className="mt-3 flex items-center gap-2">
                                     <input
-                                        type="datetime-local"
-                                        required
-                                        className="w-full px-4 py-3 bg-dark-900 border border-dark-700 text-white rounded-lg [color-scheme:dark] focus:ring-1 focus:ring-primary-500 focus:border-primary-500 transition-all"
-                                        value={formData.start_time}
-                                        onChange={e => setFormData({ ...formData, start_time: e.target.value })}
+                                        type="checkbox"
+                                        id="included_in_pass"
+                                        className="w-4 h-4 rounded border-dark-600 text-primary-500 focus:ring-primary-500 bg-dark-900"
+                                        checked={formData.included_in_pass || false}
+                                        onChange={e => setFormData({ ...formData, included_in_pass: e.target.checked })}
                                     />
+                                    <label htmlFor="included_in_pass" className="text-sm text-slate-300 cursor-pointer select-none">
+                                        Included in Unlimited Pass?
+                                    </label>
                                 </div>
 
-                                {(activeTab === 'hotel' || activeTab === 'flight') && (
+                                {/* Individual Traveler Passes */}
+                                {console.log('DEBUG: Client:', client)}
+                                {console.log('DEBUG: Travelers:', client?.travelers)}
+                                {client && client.travelers && client.travelers.length > 0 && (
+                                    <div className="mt-6 border-t border-white/10 pt-4">
+                                        <h3 className="text-sm font-bold text-white mb-3 flex items-center gap-2">
+                                            <Ticket size={14} className="text-primary-500" />
+                                            Individual Traveler Passes
+                                        </h3>
+                                        <p className="text-xs text-slate-500 mb-4">
+                                            Upload specific tickets/passes for each traveler for this activity.
+                                        </p>
+                                        <div className="space-y-3">
+                                            {client.travelers.map((traveler, idx) => (
+                                                <div key={idx} className="bg-dark-900/50 p-3 rounded-lg border border-white/5">
+                                                    <div className="flex justify-between items-center mb-2">
+                                                        <span className="text-sm font-medium text-slate-300">{traveler.name}</span>
+                                                        {formData.traveler_passes?.find(p => p.name === traveler.name)?.pass_url && (
+                                                            <span className="text-xs text-emerald-400 flex items-center gap-1 font-medium bg-emerald-500/10 px-2 py-0.5 rounded">
+                                                                Pass Uploaded
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <input
+                                                        type="file"
+                                                        onChange={(e) => setTravelerPassFiles({ ...travelerPassFiles, [idx]: e.target.files[0] })}
+                                                        className="block w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-primary-500/10 file:text-primary-500 hover:file:bg-primary-500/20 cursor-pointer"
+                                                    />
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                     <div>
                                         <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">
-                                            {activeTab === 'hotel' ? 'Check-out' : 'Arrival Time'} <span className="text-red-500">*</span>
+                                            {activeTab === 'hotel' ? 'Check-in' : activeTab === 'flight' ? 'Departure Time' : 'Start Time'} <span className="text-red-500">*</span>
                                         </label>
                                         <input
                                             type="datetime-local"
                                             required
                                             className="w-full px-4 py-3 bg-dark-900 border border-dark-700 text-white rounded-lg [color-scheme:dark] focus:ring-1 focus:ring-primary-500 focus:border-primary-500 transition-all"
-                                            value={formData.end_time}
-                                            onChange={e => setFormData({ ...formData, end_time: e.target.value })}
+                                            value={formData.start_time}
+                                            onChange={e => setFormData({ ...formData, start_time: e.target.value })}
                                         />
                                     </div>
-                                )}
 
-                                {activeTab === 'activity' && (
+                                    {(activeTab === 'hotel' || activeTab === 'flight') && (
+                                        <div>
+                                            <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">
+                                                {activeTab === 'hotel' ? 'Check-out' : 'Arrival Time'} <span className="text-red-500">*</span>
+                                            </label>
+                                            <input
+                                                type="datetime-local"
+                                                required
+                                                className="w-full px-4 py-3 bg-dark-900 border border-dark-700 text-white rounded-lg [color-scheme:dark] focus:ring-1 focus:ring-primary-500 focus:border-primary-500 transition-all"
+                                                value={formData.end_time}
+                                                onChange={e => setFormData({ ...formData, end_time: e.target.value })}
+                                            />
+                                        </div>
+                                    )}
+
+                                    {activeTab === 'activity' && (
+                                        <div>
+                                            <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Duration</label>
+                                            <select
+                                                className="w-full px-4 py-3 bg-dark-900 border border-dark-700 text-white rounded-lg focus:ring-1 focus:ring-primary-500 focus:border-primary-500 transition-all"
+                                                value={formData.duration}
+                                                onChange={e => setFormData({ ...formData, duration: e.target.value })}
+                                            >
+                                                {[30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330, 360, 420, 480, 540, 600, 660, 720, 780, 840].map(mins => {
+                                                    const hours = Math.floor(mins / 60);
+                                                    const m = mins % 60;
+                                                    let label = '';
+                                                    if (hours > 0) label += `${hours}h`;
+                                                    if (m > 0) label += ` ${m}m`;
+                                                    return <option key={mins} value={mins}>{label.trim()}</option>;
+                                                })}
+                                            </select>
+                                            <div className="mt-2">
+                                                <label className="flex items-center gap-2 text-xs text-slate-400 cursor-pointer select-none uppercase tracking-wider">
+                                                    <input
+                                                        type="checkbox"
+                                                        className="w-4 h-4 rounded border-dark-600 text-primary-500 focus:ring-primary-500 bg-dark-900"
+                                                        checked={!!formData.is_flexible}
+                                                        onChange={e => {
+                                                            console.log('Toggling flexible:', e.target.checked);
+                                                            setFormData(prev => ({ ...prev, is_flexible: e.target.checked }));
+                                                        }}
+                                                    />
+                                                    Flexible Start Time
+                                                </label>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Description / Notes</label>
+                                    <textarea
+                                        className="w-full px-4 py-3 bg-dark-900 border border-dark-700 text-white rounded-lg h-24 placeholder-slate-600 focus:ring-1 focus:ring-primary-500 focus:border-primary-500 transition-all"
+                                        value={formData.description}
+                                        onChange={e => setFormData({ ...formData, description: e.target.value })}
+                                    />
+                                </div>
+
+                                {/* File Uploads: Banner & Pass */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                    {/* Banner Image */}
                                     <div>
-                                        <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Duration</label>
-                                        <select
-                                            className="w-full px-4 py-3 bg-dark-900 border border-dark-700 text-white rounded-lg focus:ring-1 focus:ring-primary-500 focus:border-primary-500 transition-all"
-                                            value={formData.duration}
-                                            onChange={e => setFormData({ ...formData, duration: e.target.value })}
-                                        >
-                                            {[30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330, 360, 420, 480, 540, 600, 660, 720, 780, 840].map(mins => {
-                                                const hours = Math.floor(mins / 60);
-                                                const m = mins % 60;
-                                                let label = '';
-                                                if (hours > 0) label += `${hours}h`;
-                                                if (m > 0) label += ` ${m}m`;
-                                                return <option key={mins} value={mins}>{label.trim()}</option>;
-                                            })}
-                                        </select>
-                                        <div className="mt-2">
-                                            <label className="flex items-center gap-2 text-xs text-slate-400 cursor-pointer select-none uppercase tracking-wider">
-                                                <input
-                                                    type="checkbox"
-                                                    className="w-4 h-4 rounded border-dark-600 text-primary-500 focus:ring-primary-500 bg-dark-900"
-                                                    checked={!!formData.is_flexible}
-                                                    onChange={e => {
-                                                        console.log('Toggling flexible:', e.target.checked);
-                                                        setFormData(prev => ({ ...prev, is_flexible: e.target.checked }));
-                                                    }}
-                                                />
-                                                Flexible Start Time
+                                        <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-2">Banner Image</label>
+                                        <div className="border-2 border-dashed border-dark-700 hover:border-dark-600 rounded-xl p-6 text-center transition-colors bg-dark-900/30 h-full flex flex-col justify-center">
+                                            <input
+                                                type="file"
+                                                id="file-upload"
+                                                className="hidden"
+                                                onChange={e => setFile(e.target.files[0])}
+                                                accept="image/*"
+                                            />
+                                            <label htmlFor="file-upload" className="cursor-pointer flex flex-col items-center gap-3">
+                                                <div className="p-3 bg-dark-800 rounded-full">
+                                                    <Image size={24} className="text-slate-400" />
+                                                </div>
+                                                <div className="text-center">
+                                                    <span className="text-sm font-medium text-white block">
+                                                        {file ? file.name : (formData.image_url ? 'Change Banner' : 'Upload Banner')}
+                                                    </span>
+                                                    <span className="text-xs text-slate-500 mt-1 block">Display image for the card</span>
+                                                </div>
+                                                {formData.image_url && !file && (
+                                                    <span className="text-xs text-emerald-500 font-medium bg-emerald-500/10 px-2 py-1 rounded">Current banner attached</span>
+                                                )}
                                             </label>
                                         </div>
                                     </div>
-                                )}
-                            </div>
 
-                            <div>
-                                <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Description / Notes</label>
-                                <textarea
-                                    className="w-full px-4 py-3 bg-dark-900 border border-dark-700 text-white rounded-lg h-24 placeholder-slate-600 focus:ring-1 focus:ring-primary-500 focus:border-primary-500 transition-all"
-                                    value={formData.description}
-                                    onChange={e => setFormData({ ...formData, description: e.target.value })}
-                                />
-                            </div>
-
-                            {/* File Uploads: Banner & Pass */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                {/* Banner Image */}
-                                <div>
-                                    <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-2">Banner Image</label>
-                                    <div className="border-2 border-dashed border-dark-700 hover:border-dark-600 rounded-xl p-6 text-center transition-colors bg-dark-900/30 h-full flex flex-col justify-center">
-                                        <input
-                                            type="file"
-                                            id="file-upload"
-                                            className="hidden"
-                                            onChange={e => setFile(e.target.files[0])}
-                                            accept="image/*"
-                                        />
-                                        <label htmlFor="file-upload" className="cursor-pointer flex flex-col items-center gap-3">
-                                            <div className="p-3 bg-dark-800 rounded-full">
-                                                <Image size={24} className="text-slate-400" />
-                                            </div>
-                                            <div className="text-center">
-                                                <span className="text-sm font-medium text-white block">
-                                                    {file ? file.name : (formData.image_url ? 'Change Banner' : 'Upload Banner')}
-                                                </span>
-                                                <span className="text-xs text-slate-500 mt-1 block">Display image for the card</span>
-                                            </div>
-                                            {formData.image_url && !file && (
-                                                <span className="text-xs text-emerald-500 font-medium bg-emerald-500/10 px-2 py-1 rounded">Current banner attached</span>
-                                            )}
-                                        </label>
+                                    {/* Pass/Document */}
+                                    <div>
+                                        <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-2">Pass / Ticket / Document</label>
+                                        <div className="border-2 border-dashed border-dark-700 hover:border-dark-600 rounded-xl p-6 text-center transition-colors bg-dark-900/30 h-full flex flex-col justify-center">
+                                            <input
+                                                type="file"
+                                                id="pass-upload"
+                                                className="hidden"
+                                                onChange={e => setPassFile(e.target.files[0])}
+                                                accept="image/*,application/pdf"
+                                            />
+                                            <label htmlFor="pass-upload" className="cursor-pointer flex flex-col items-center gap-3">
+                                                <div className="p-3 bg-dark-800 rounded-full">
+                                                    <FileText size={24} className="text-slate-400" />
+                                                </div>
+                                                <div className="text-center">
+                                                    <span className="text-sm font-medium text-white block">
+                                                        {passFile ? passFile.name : (formData.pass_url ? 'Change Document' : 'Upload Document')}
+                                                    </span>
+                                                    <span className="text-xs text-slate-500 mt-1 block">Ticket or Pass (Hidden until clicked)</span>
+                                                </div>
+                                                {formData.pass_url && !passFile && (
+                                                    <span className="text-xs text-emerald-500 font-medium bg-emerald-500/10 px-2 py-1 rounded">Current doc attached</span>
+                                                )}
+                                            </label>
+                                        </div>
                                     </div>
                                 </div>
 
-                                {/* Pass/Document */}
-                                <div>
-                                    <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-2">Pass / Ticket / Document</label>
-                                    <div className="border-2 border-dashed border-dark-700 hover:border-dark-600 rounded-xl p-6 text-center transition-colors bg-dark-900/30 h-full flex flex-col justify-center">
-                                        <input
-                                            type="file"
-                                            id="pass-upload"
-                                            className="hidden"
-                                            onChange={e => setPassFile(e.target.files[0])}
-                                            accept="image/*,application/pdf"
-                                        />
-                                        <label htmlFor="pass-upload" className="cursor-pointer flex flex-col items-center gap-3">
-                                            <div className="p-3 bg-dark-800 rounded-full">
-                                                <FileText size={24} className="text-slate-400" />
-                                            </div>
-                                            <div className="text-center">
-                                                <span className="text-sm font-medium text-white block">
-                                                    {passFile ? passFile.name : (formData.pass_url ? 'Change Document' : 'Upload Document')}
-                                                </span>
-                                                <span className="text-xs text-slate-500 mt-1 block">Ticket or Pass (Hidden until clicked)</span>
-                                            </div>
-                                            {formData.pass_url && !passFile && (
-                                                <span className="text-xs text-emerald-500 font-medium bg-emerald-500/10 px-2 py-1 rounded">Current doc attached</span>
-                                            )}
-                                        </label>
-                                    </div>
+                                <div className="flex gap-3 mt-8 pt-4 border-t border-white/5">
+                                    <button
+                                        type="button"
+                                        onClick={closeModal}
+                                        className="flex-1 px-4 py-3 border border-dark-600 text-slate-300 rounded-lg hover:bg-dark-700 transition font-medium"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        className="flex-1 px-4 py-3 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition font-medium shadow-lg shadow-primary-500/20"
+                                    >
+                                        {editingItem ? 'Save Changes' : 'Add Item'}
+                                    </button>
                                 </div>
-                            </div>
-
-                            <div className="flex gap-3 mt-8 pt-4 border-t border-white/5">
-                                <button
-                                    type="button"
-                                    onClick={closeModal}
-                                    className="flex-1 px-4 py-3 border border-dark-600 text-slate-300 rounded-lg hover:bg-dark-700 transition font-medium"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    type="submit"
-                                    className="flex-1 px-4 py-3 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition font-medium shadow-lg shadow-primary-500/20"
-                                >
-                                    {editingItem ? 'Save Changes' : 'Add Item'}
-                                </button>
-                            </div>
-                        </form>
-                    </motion.div>
-                </div>
-            )
+                            </form>
+                        </motion.div>
+                    </div>
+                )
             }
 
             {/* Edit Client Profile Modal */}
