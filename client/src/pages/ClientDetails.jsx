@@ -778,7 +778,7 @@ const ClientDetails = () => {
                                     <div className="bg-dark-900/50 rounded-lg p-3 border border-white/5">
                                         <div className="text-xs text-slate-500 mb-1">Total Sales</div>
                                         <div className="text-lg font-bold text-white">
-                                            ${itinerary.reduce((sum, item) => sum + (item.cost || 0), 0).toFixed(2)}
+                                            ${itinerary.reduce((sum, item) => sum + (item.cost || 0) + (item.serviceFee || 0), 0).toFixed(2)}
                                         </div>
                                     </div>
                                     <div className="bg-dark-900/50 rounded-lg p-3 border border-white/5">
@@ -791,9 +791,10 @@ const ClientDetails = () => {
                                         <div className="text-xs text-slate-500 mb-1">Total Commission</div>
                                         <div className="text-lg font-bold text-blue-400">
                                             ${itinerary.reduce((sum, item) => {
+                                                const base = item.type === 'service_fee' ? (item.serviceFee || 0) : (item.cost || 0);
                                                 const comm = item.commissionType === 'fixed'
                                                     ? (item.commissionValue || 0)
-                                                    : ((item.cost || 0) * (item.commissionValue || 0) / 100);
+                                                    : (base * (item.commissionValue || 0) / 100);
                                                 return sum + comm;
                                             }, 0).toFixed(2)}
                                         </div>
@@ -802,9 +803,10 @@ const ClientDetails = () => {
                                         <div className="text-xs text-emerald-400 mb-1">Total Profit</div>
                                         <div className="text-lg font-bold text-emerald-400">
                                             ${itinerary.reduce((sum, item) => {
+                                                const base = item.type === 'service_fee' ? (item.serviceFee || 0) : (item.cost || 0);
                                                 const comm = item.commissionType === 'fixed'
                                                     ? (item.commissionValue || 0)
-                                                    : ((item.cost || 0) * (item.commissionValue || 0) / 100);
+                                                    : (base * (item.commissionValue || 0) / 100);
                                                 const profit = ((item.cost || 0) - (item.costPrice || 0)) + (item.serviceFee || 0) - comm;
                                                 return sum + profit;
                                             }, 0).toFixed(2)}
@@ -853,8 +855,10 @@ const ClientDetails = () => {
                                                                 {(item.serviceFee > 0 || item.commissionValue > 0) && (
                                                                     <span className="flex items-center gap-1 text-yellow-400 border-l border-white/10 pl-2">
                                                                         Profit: ${
-                                                                            ((item.cost || 0) - (item.costPrice || 0) + (item.serviceFee || 0) +
-                                                                                (item.commissionType === 'fixed' ? (item.commissionValue || 0) : ((item.cost || 0) * (item.commissionValue || 0) / 100))).toFixed(2)
+                                                                            ((item.cost || 0) - (item.costPrice || 0) + (item.serviceFee || 0) -
+                                                                                (item.commissionType === 'fixed'
+                                                                                    ? (item.commissionValue || 0)
+                                                                                    : ((item.type === 'service_fee' ? item.serviceFee || 0 : item.cost || 0) * (item.commissionValue || 0) / 100))).toFixed(2)
                                                                         }
                                                                     </span>
                                                                 )}
@@ -1016,8 +1020,10 @@ const ClientDetails = () => {
                                                                     {(item.serviceFee > 0 || item.commissionValue > 0) && (
                                                                         <span className="flex items-center gap-1 text-yellow-400 border-l border-white/10 pl-2">
                                                                             Profit: ${
-                                                                                ((item.cost || 0) - (item.costPrice || 0) + (item.serviceFee || 0) +
-                                                                                    (item.commissionType === 'fixed' ? (item.commissionValue || 0) : ((item.cost || 0) * (item.commissionValue || 0) / 100))).toFixed(2)
+                                                                                ((item.cost || 0) - (item.costPrice || 0) + (item.serviceFee || 0) -
+                                                                                    (item.commissionType === 'fixed'
+                                                                                        ? (item.commissionValue || 0)
+                                                                                        : ((item.type === 'service_fee' ? item.serviceFee || 0 : item.cost || 0) * (item.commissionValue || 0) / 100))).toFixed(2)
                                                                             }
                                                                         </span>
                                                                     )}
@@ -1288,7 +1294,7 @@ const ClientDetails = () => {
                                                     (parseFloat(formData.serviceFee || 0)) -
                                                     (formData.commissionType === 'fixed'
                                                         ? (parseFloat(formData.commissionValue || 0))
-                                                        : ((parseFloat(formData.cost || 0)) * (parseFloat(formData.commissionValue || 0)) / 100))).toFixed(2)
+                                                        : ((activeTab === 'service_fee' ? parseFloat(formData.serviceFee || 0) : parseFloat(formData.cost || 0)) * (parseFloat(formData.commissionValue || 0)) / 100))).toFixed(2)
                                             }
                                         </div>
                                     </div>
