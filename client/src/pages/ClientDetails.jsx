@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Plane, Hotel, Calendar, Plus, Trash2, Upload, Pencil, Download, MapPin, Clock, FileText, ExternalLink, Image, Heart, Ticket, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Plane, Hotel, Calendar, Plus, Trash2, Upload, Pencil, Download, MapPin, Clock, FileText, ExternalLink, Image, Heart, Ticket, CheckCircle, Receipt } from 'lucide-react';
 import { Calendar as BigCalendar, momentLocalizer } from 'react-big-calendar';
 import withDragAndDrop from 'react-big-calendar/lib/addons/dragAndDrop';
 import moment from 'moment';
@@ -667,6 +667,13 @@ const ClientDetails = () => {
                             >
                                 <Calendar size={18} />
                             </button>
+                            <button
+                                onClick={() => openModal('service_fee')}
+                                className="p-2 hover:bg-white/5 rounded-md text-slate-400 hover:text-emerald-500 transition"
+                                title="Add Service Fee"
+                            >
+                                <Receipt size={18} />
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -799,6 +806,60 @@ const ClientDetails = () => {
                                             }, 0).toFixed(2)}
                                         </div>
                                     </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Service Fees Section */}
+                        {itinerary.some(i => i.type === 'service_fee') && (
+                            <div className="space-y-4 mb-8">
+                                <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                                    <span className="w-1 h-6 bg-emerald-500 rounded-full"></span>
+                                    Service Fees & Extras
+                                </h2>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {itinerary.filter(i => i.type === 'service_fee')
+                                        .map(item => (
+                                            <div key={item.id} className="bg-emerald-500/5 hover:bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-5 transition group relative">
+                                                <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition">
+                                                    <button onClick={() => openModal('service_fee', item)} className="p-1.5 bg-dark-900/50 text-slate-300 rounded hover:text-white backdrop-blur-sm">
+                                                        <Pencil size={14} />
+                                                    </button>
+                                                    <button onClick={() => handleDelete(item.id)} className="p-1.5 bg-dark-900/50 text-red-400 rounded hover:text-red-300 backdrop-blur-sm">
+                                                        <Trash2 size={14} />
+                                                    </button>
+                                                </div>
+                                                <div className="flex items-start gap-4">
+                                                    <div className="p-3 rounded-lg bg-emerald-500/20 text-emerald-400 shadow-lg">
+                                                        <Receipt size={20} />
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <h3 className="text-lg font-bold text-white truncate pr-8">{item.title}</h3>
+                                                        <div className="flex flex-col gap-1 mt-2 text-sm text-slate-400">
+                                                            <span className="flex items-center gap-2">
+                                                                <Clock size={14} className="text-slate-500" />
+                                                                {new Date(item.start_time).toLocaleDateString()}
+                                                            </span>
+                                                            <div className="flex flex-wrap gap-3 mt-2">
+                                                                {item.cost > 0 && (
+                                                                    <span className="flex items-center gap-1 text-emerald-400">
+                                                                        Sell: ${item.cost}
+                                                                    </span>
+                                                                )}
+                                                                {(item.serviceFee > 0 || item.commissionValue > 0) && (
+                                                                    <span className="flex items-center gap-1 text-yellow-400 border-l border-white/10 pl-2">
+                                                                        Profit: ${
+                                                                            ((item.cost || 0) - (item.costPrice || 0) + (item.serviceFee || 0) +
+                                                                                (item.commissionType === 'fixed' ? (item.commissionValue || 0) : ((item.cost || 0) * (item.commissionValue || 0) / 100))).toFixed(2)
+                                                                        }
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
                                 </div>
                             </div>
                         )}
@@ -1061,21 +1122,23 @@ const ClientDetails = () => {
                                         <input
                                             type="text"
                                             required
-                                            placeholder={activeTab === 'flight' ? 'Flight to Paris' : activeTab === 'hotel' ? 'Ritz Carlton' : 'Louvre Museum'}
+                                            placeholder={activeTab === 'flight' ? 'Flight to Paris' : activeTab === 'hotel' ? 'Ritz Carlton' : activeTab === 'service_fee' ? 'Planning Fee' : 'Louvre Museum'}
                                             className="w-full px-4 py-3 bg-dark-900 border border-dark-700 text-white rounded-lg placeholder-slate-600 focus:ring-1 focus:ring-primary-500 focus:border-primary-500 transition-all"
                                             value={formData.title}
                                             onChange={e => setFormData({ ...formData, title: e.target.value })}
                                         />
                                     </div>
-                                    <div>
-                                        <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Location</label>
-                                        <input
-                                            type="text"
-                                            className="w-full px-4 py-3 bg-dark-900 border border-dark-700 text-white rounded-lg placeholder-slate-600 focus:ring-1 focus:ring-primary-500 focus:border-primary-500 transition-all"
-                                            value={formData.location}
-                                            onChange={e => setFormData({ ...formData, location: e.target.value })}
-                                        />
-                                    </div>
+                                    {activeTab !== 'service_fee' && (
+                                        <div>
+                                            <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Location</label>
+                                            <input
+                                                type="text"
+                                                className="w-full px-4 py-3 bg-dark-900 border border-dark-700 text-white rounded-lg placeholder-slate-600 focus:ring-1 focus:ring-primary-500 focus:border-primary-500 transition-all"
+                                                value={formData.location}
+                                                onChange={e => setFormData({ ...formData, location: e.target.value })}
+                                            />
+                                        </div>
+                                    )}
                                 </div>
 
                                 {activeTab === 'flight' && (
@@ -1101,6 +1164,51 @@ const ClientDetails = () => {
                                     </div>
                                 )}
 
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mt-4">
+                                    <div>
+                                        <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">
+                                            {activeTab === 'hotel' ? 'Check-in' : activeTab === 'flight' ? 'Departure Time' : activeTab === 'service_fee' ? 'Date' : 'Start Time'} <span className="text-red-500">*</span>
+                                        </label>
+                                        <input
+                                            type="datetime-local"
+                                            required
+                                            className="w-full px-4 py-3 bg-dark-900 border border-dark-700 text-white rounded-lg [color-scheme:dark] focus:ring-1 focus:ring-primary-500 focus:border-primary-500 transition-all"
+                                            value={formData.start_time}
+                                            onChange={e => setFormData({ ...formData, start_time: e.target.value })}
+                                        />
+                                    </div>
+
+                                    {activeTab !== 'service_fee' && (activeTab === 'hotel' || activeTab === 'flight') && (
+                                        <div>
+                                            <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">
+                                                {activeTab === 'hotel' ? 'Check-out' : 'Arrival Time'} <span className="text-red-500">*</span>
+                                            </label>
+                                            <input
+                                                type="datetime-local"
+                                                required
+                                                className="w-full px-4 py-3 bg-dark-900 border border-dark-700 text-white rounded-lg [color-scheme:dark] focus:ring-1 focus:ring-primary-500 focus:border-primary-500 transition-all"
+                                                value={formData.end_time}
+                                                onChange={e => setFormData({ ...formData, end_time: e.target.value })}
+                                            />
+                                        </div>
+                                    )}
+
+                                    {activeTab === 'activity' && (
+                                        <div>
+                                            <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">
+                                                Duration (minutes) <span className="text-red-500">*</span>
+                                            </label>
+                                            <input
+                                                type="number"
+                                                min="5"
+                                                required
+                                                className="w-full px-4 py-3 bg-dark-900 border border-dark-700 text-white rounded-lg placeholder-slate-600 focus:ring-1 focus:ring-primary-500 focus:border-primary-500 transition-all"
+                                                value={formData.duration}
+                                                onChange={e => setFormData({ ...formData, duration: e.target.value })}
+                                            />
+                                        </div>
+                                    )}
+                                </div>
                                 <div className="grid grid-cols-2 gap-5">
                                     <div>
                                         <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Selling Price ($)</label>
@@ -1187,9 +1295,7 @@ const ClientDetails = () => {
                                 </div>
 
                                 {/* Individual Traveler Passes */}
-                                {console.log('DEBUG: Client:', client)}
-                                {console.log('DEBUG: Travelers:', client?.travelers)}
-                                {client && client.travelers && client.travelers.length > 0 && (
+                                {client?.travelers?.length > 0 && (
                                     <div className="mt-6 border-t border-white/10 pt-4">
                                         <h3 className="text-sm font-bold text-white mb-3 flex items-center gap-2">
                                             <Ticket size={14} className="text-primary-500" />
@@ -1220,69 +1326,9 @@ const ClientDetails = () => {
                                     </div>
                                 )}
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                    <div>
-                                        <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">
-                                            {activeTab === 'hotel' ? 'Check-in' : activeTab === 'flight' ? 'Departure Time' : 'Start Time'} <span className="text-red-500">*</span>
-                                        </label>
-                                        <input
-                                            type="datetime-local"
-                                            required
-                                            className="w-full px-4 py-3 bg-dark-900 border border-dark-700 text-white rounded-lg [color-scheme:dark] focus:ring-1 focus:ring-primary-500 focus:border-primary-500 transition-all"
-                                            value={formData.start_time}
-                                            onChange={e => setFormData({ ...formData, start_time: e.target.value })}
-                                        />
-                                    </div>
 
-                                    {(activeTab === 'hotel' || activeTab === 'flight') && (
-                                        <div>
-                                            <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">
-                                                {activeTab === 'hotel' ? 'Check-out' : 'Arrival Time'} <span className="text-red-500">*</span>
-                                            </label>
-                                            <input
-                                                type="datetime-local"
-                                                required
-                                                className="w-full px-4 py-3 bg-dark-900 border border-dark-700 text-white rounded-lg [color-scheme:dark] focus:ring-1 focus:ring-primary-500 focus:border-primary-500 transition-all"
-                                                value={formData.end_time}
-                                                onChange={e => setFormData({ ...formData, end_time: e.target.value })}
-                                            />
-                                        </div>
-                                    )}
 
-                                    {activeTab === 'activity' && (
-                                        <div>
-                                            <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Duration</label>
-                                            <select
-                                                className="w-full px-4 py-3 bg-dark-900 border border-dark-700 text-white rounded-lg focus:ring-1 focus:ring-primary-500 focus:border-primary-500 transition-all"
-                                                value={formData.duration}
-                                                onChange={e => setFormData({ ...formData, duration: e.target.value })}
-                                            >
-                                                {[30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330, 360, 420, 480, 540, 600, 660, 720, 780, 840].map(mins => {
-                                                    const hours = Math.floor(mins / 60);
-                                                    const m = mins % 60;
-                                                    let label = '';
-                                                    if (hours > 0) label += `${hours}h`;
-                                                    if (m > 0) label += ` ${m}m`;
-                                                    return <option key={mins} value={mins}>{label.trim()}</option>;
-                                                })}
-                                            </select>
-                                            <div className="mt-2">
-                                                <label className="flex items-center gap-2 text-xs text-slate-400 cursor-pointer select-none uppercase tracking-wider">
-                                                    <input
-                                                        type="checkbox"
-                                                        className="w-4 h-4 rounded border-dark-600 text-primary-500 focus:ring-primary-500 bg-dark-900"
-                                                        checked={!!formData.is_flexible}
-                                                        onChange={e => {
-                                                            console.log('Toggling flexible:', e.target.checked);
-                                                            setFormData(prev => ({ ...prev, is_flexible: e.target.checked }));
-                                                        }}
-                                                    />
-                                                    Flexible Start Time
-                                                </label>
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
+
 
                                 <div>
                                     <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Description / Notes</label>
