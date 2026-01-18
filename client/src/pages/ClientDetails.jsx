@@ -893,7 +893,7 @@ const ClientDetails = () => {
                                                                         Comm: ${item.commissionType === 'fixed' ? item.commissionValue : ((item.type === 'service_fee' ? item.serviceFee || 0 : item.cost || 0) * item.commissionValue / 100).toFixed(2)}
                                                                     </span>
                                                                 )}
-                                                                {(item.serviceFee > 0 || item.commissionValue > 0) && (
+                                                                {(item.serviceFee > 0 || item.commissionValue > 0) && user?.role === 'admin' && (
                                                                     <span className="flex items-center gap-1 text-yellow-400 border-l border-white/10 pl-2">
                                                                         Profit: ${
                                                                             ((item.cost || 0) - (item.costPrice || 0) + (item.serviceFee || 0) -
