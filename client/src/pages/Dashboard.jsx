@@ -20,6 +20,7 @@ const Dashboard = () => {
     const [itineraries, setItineraries] = useState([]); // Store all itineraries to checks for "completeness"
     const [viewMode, setViewMode] = useState('list'); // 'list' | 'calendar'
     const [showArchived, setShowArchived] = useState(false);
+    const [showPendingHighlights, setShowPendingHighlights] = useState(true);
     const [showAddModal, setShowAddModal] = useState(false);
     const [newClient, setNewClient] = useState({ name: '', email: '', phone: '', booking_ref: '', trip_start: '', trip_end: '' });
     const [stats, setStats] = useState({ totalClients: 0, activeTrips: 0, upcomingDepartures: 0, revenue: 0 });
@@ -229,6 +230,14 @@ const Dashboard = () => {
                             </div>
                             <div className="flex items-center gap-3">
                                 <button
+                                    onClick={() => setShowPendingHighlights(!showPendingHighlights)}
+                                    className={`text-xs font-medium px-3 py-1.5 rounded-full transition border ${showPendingHighlights
+                                        ? 'bg-orange-500/20 text-orange-400 border-orange-500/50'
+                                        : 'bg-dark-800 text-slate-400 border-white/5 hover:text-white'}`}
+                                >
+                                    {showPendingHighlights ? 'Highlights On' : 'Highlights Off'}
+                                </button>
+                                <button
                                     onClick={() => setShowArchived(!showArchived)}
                                     className={`text-xs font-medium px-3 py-1.5 rounded-full transition border ${showArchived
                                         ? 'bg-primary-500/20 text-primary-400 border-primary-500/50'
@@ -257,7 +266,7 @@ const Dashboard = () => {
                                         <motion.div
                                             key={client.id}
                                             variants={itemVariants}
-                                            className={`bg-dark-800/40 rounded-xl p-5 hover:bg-dark-800 transition group flex items-center justify-between border border-transparent hover:border-white/5 ${!isComplete ? 'opacity-50 hover:opacity-100' : ''}`}
+                                            className={`bg-dark-800/40 rounded-xl p-5 hover:bg-dark-800 transition group flex items-center justify-between border border-transparent hover:border-white/5 ${(!isComplete && showPendingHighlights) ? 'opacity-50 hover:opacity-100' : ''}`}
                                         >
                                             <div className="flex items-center gap-4">
                                                 <div className="w-10 h-10 rounded-full bg-dark-700 flex items-center justify-center text-primary-500 font-bold">
@@ -266,7 +275,7 @@ const Dashboard = () => {
                                                 <div>
                                                     <h3 className="text-lg font-semibold text-white group-hover:text-primary-400 transition">{client.name}</h3>
                                                     <p className="text-sm text-slate-500">{client.email}</p>
-                                                    {!isComplete && (
+                                                    {(!isComplete && showPendingHighlights) && (
                                                         <span className="text-[10px] uppercase tracking-wider text-orange-400 font-bold mt-1 inline-block">Pending Schedule</span>
                                                     )}
                                                 </div>
