@@ -867,6 +867,11 @@ const ClientDetails = () => {
                                                                         Sell: ${item.cost}
                                                                     </span>
                                                                 )}
+                                                                {item.commissionValue > 0 && (
+                                                                    <span className="flex items-center gap-1 text-blue-400 border-l border-white/10 pl-2">
+                                                                        Comm: ${item.commissionType === 'fixed' ? item.commissionValue : ((item.type === 'service_fee' ? item.serviceFee || 0 : item.cost || 0) * item.commissionValue / 100).toFixed(2)}
+                                                                    </span>
+                                                                )}
                                                                 {(item.serviceFee > 0 || item.commissionValue > 0) && (
                                                                     <span className="flex items-center gap-1 text-yellow-400 border-l border-white/10 pl-2">
                                                                         Profit: ${
@@ -1030,6 +1035,11 @@ const ClientDetails = () => {
                                                                     {item.costPrice > 0 && (
                                                                         <span className="flex items-center gap-1 text-blue-400 border-l border-white/10 pl-2">
                                                                             Cost: ${item.costPrice}
+                                                                        </span>
+                                                                    )}
+                                                                    {item.commissionValue > 0 && (
+                                                                        <span className="flex items-center gap-1 text-blue-400 border-l border-white/10 pl-2">
+                                                                            Comm: ${item.commissionType === 'fixed' ? item.commissionValue : ((item.type === 'service_fee' ? item.serviceFee || 0 : item.cost || 0) * item.commissionValue / 100).toFixed(2)}
                                                                         </span>
                                                                     )}
                                                                     {(item.serviceFee > 0 || item.commissionValue > 0) && (

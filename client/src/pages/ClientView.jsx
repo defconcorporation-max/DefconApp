@@ -669,7 +669,7 @@ const ClientView = () => {
     const ItineraryList = ({ items }) => {
         const flights = items.filter(i => i.type === 'flight');
         const hotels = items.filter(i => i.type === 'hotel');
-        const activities = items.filter(i => i.type !== 'flight' && i.type !== 'hotel');
+        const activities = items.filter(i => i.type !== 'flight' && i.type !== 'hotel' && i.type !== 'service_fee' && i.type !== 'viva_las_vegas_pass');
 
         // Group activities by day
         const groupedActivities = activities.reduce((acc, item) => {
@@ -684,6 +684,56 @@ const ClientView = () => {
 
         return (
             <div className="space-y-8" id="itinerary-content-export">
+                {/* Viva Vegas Passes Standalone Section */}
+                {items.filter(i => i.type === 'viva_las_vegas_pass').length > 0 && (
+                    <div className="mb-8">
+                        {items.filter(i => i.type === 'viva_las_vegas_pass').map(pass => (
+                            <div key={pass.id} className="bg-gradient-to-br from-purple-900/40 to-dark-800/60 border border-purple-500/30 rounded-2xl p-6 mb-4 relative overflow-hidden group shadow-lg shadow-purple-900/20">
+                                <div className="absolute top-0 right-0 p-3 opacity-10">
+                                    <svg width="120" height="120" viewBox="0 0 24 24" fill="currentColor" className="text-purple-400"><path d="M2 4l3 12h14l3-12-6 7-4-3-4 3-6-7zm0 18h20v1h-20v-1z"></path></svg>
+                                </div>
+                                <div className="flex items-start gap-4 relative z-10">
+                                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-white shadow-lg shrink-0">
+                                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 4l3 12h14l3-12-6 7-4-3-4 3-6-7zm0 18h20v1h-20v-1z"></path></svg>
+                                    </div>
+                                    <div className="flex-1">
+                                        <div className="flex justify-between items-start">
+                                            <div>
+                                                <h3 className="text-2xl font-bold text-white mb-1">{pass.title}</h3>
+                                                <div className="flex items-center gap-2">
+                                                    {pass.isPremium && (
+                                                        <span className="px-2 py-0.5 rounded bg-amber-500/20 text-amber-400 border border-amber-500/20 text-xs font-bold uppercase tracking-wider">
+                                                            Premium
+                                                        </span>
+                                                    )}
+                                                    {pass.peopleCount > 1 && (
+                                                        <span className="text-slate-400 text-sm flex items-center gap-1">
+                                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                                                            {pass.peopleCount} People
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            {/* Download/View Button if URL exists */}
+                                            {(pass.pass_url || pass.image_url) && (
+                                                <button
+                                                    onClick={() => setSelectedPass(pass)}
+                                                    className="p-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition"
+                                                >
+                                                    <Download size={20} />
+                                                </button>
+                                            )}
+                                        </div>
+                                        {pass.description && (
+                                            <p className="text-slate-300 mt-2 text-sm leading-relaxed max-w-2xl">{pass.description}</p>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+
                 {/* Flights & Hotels Section */}
                 {(flights.length > 0 || hotels.length > 0) && (
                     <div className="mb-8 space-y-4">
