@@ -831,19 +831,19 @@ const ClientDetails = () => {
                             </div>
                         )}
 
-                        {/* Service Fees Section */}
-                        {itinerary.some(i => i.type === 'service_fee') && (
+                        {/* Service Fees & Extras Section */}
+                        {itinerary.some(i => i.type === 'service_fee' || i.type === 'viva_las_vegas_pass') && (
                             <div className="space-y-4 mb-8">
                                 <h2 className="text-lg font-bold text-white flex items-center gap-2">
                                     <span className="w-1 h-6 bg-emerald-500 rounded-full"></span>
                                     Service Fees & Extras
                                 </h2>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    {itinerary.filter(i => i.type === 'service_fee')
+                                    {itinerary.filter(i => i.type === 'service_fee' || i.type === 'viva_las_vegas_pass')
                                         .map(item => (
-                                            <div key={item.id} className="bg-emerald-500/5 hover:bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-5 transition group relative">
+                                            <div key={item.id} className={`${item.type === 'viva_las_vegas_pass' ? 'bg-purple-500/5 hover:bg-purple-500/10 border-purple-500/20' : 'bg-emerald-500/5 hover:bg-emerald-500/10 border-emerald-500/20'} border rounded-xl p-5 transition group relative`}>
                                                 <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition">
-                                                    <button onClick={() => openModal('service_fee', item)} className="p-1.5 bg-dark-900/50 text-slate-300 rounded hover:text-white backdrop-blur-sm">
+                                                    <button onClick={() => openModal(item.type === 'viva_las_vegas_pass' ? 'viva_las_vegas_pass' : 'service_fee', item)} className="p-1.5 bg-dark-900/50 text-slate-300 rounded hover:text-white backdrop-blur-sm">
                                                         <Pencil size={14} />
                                                     </button>
                                                     <button onClick={() => handleDelete(item.id)} className="p-1.5 bg-dark-900/50 text-red-400 rounded hover:text-red-300 backdrop-blur-sm">
@@ -851,11 +851,25 @@ const ClientDetails = () => {
                                                     </button>
                                                 </div>
                                                 <div className="flex items-start gap-4">
-                                                    <div className="p-3 rounded-lg bg-emerald-500/20 text-emerald-400 shadow-lg">
-                                                        <Receipt size={20} />
+                                                    <div className={`p-3 rounded-lg ${item.type === 'viva_las_vegas_pass' ? 'bg-purple-500/20 text-purple-400' : 'bg-emerald-500/20 text-emerald-400'} shadow-lg`}>
+                                                        {item.type === 'viva_las_vegas_pass' ? <Crown size={20} /> : <Receipt size={20} />}
                                                     </div>
                                                     <div className="flex-1 min-w-0">
                                                         <h3 className="text-lg font-bold text-white truncate pr-8">{item.title}</h3>
+                                                        {item.type === 'viva_las_vegas_pass' && (
+                                                            <div className="flex items-center gap-2 mt-1">
+                                                                {item.isPremium && (
+                                                                    <span className="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 border border-amber-500/20 text-[10px] font-bold uppercase tracking-wider">
+                                                                        Premium
+                                                                    </span>
+                                                                )}
+                                                                {item.peopleCount > 1 && (
+                                                                    <span className="text-xs text-slate-500 font-medium">
+                                                                        {item.peopleCount} People
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                        )}
                                                         <div className="flex flex-col gap-1 mt-2 text-sm text-slate-400">
                                                             <span className="flex items-center gap-2">
                                                                 <Clock size={14} className="text-slate-500" />
@@ -981,7 +995,7 @@ const ClientDetails = () => {
                                 </h2>
                             </div>
 
-                            {itinerary.filter(i => i.type !== 'flight' && i.type !== 'hotel').length === 0 ? (
+                            {itinerary.filter(i => i.type !== 'flight' && i.type !== 'hotel' && i.type !== 'service_fee' && i.type !== 'viva_las_vegas_pass').length === 0 ? (
                                 <div className="text-center py-12 bg-dark-800/30 rounded-xl border border-dashed border-white/10">
                                     <p className="text-slate-500">No activities added yet.</p>
                                     <button onClick={() => openModal('activity')} className="mt-4 text-primary-500 hover:text-primary-400 text-sm font-medium">
@@ -990,7 +1004,7 @@ const ClientDetails = () => {
                                 </div>
                             ) : (
                                 <div className="space-y-4">
-                                    {itinerary.filter(i => i.type !== 'flight' && i.type !== 'hotel')
+                                    {itinerary.filter(i => i.type !== 'flight' && i.type !== 'hotel' && i.type !== 'service_fee' && i.type !== 'viva_las_vegas_pass')
                                         .sort((a, b) => new Date(a.start_time) - new Date(b.start_time))
                                         .map((item) => (
                                             <motion.div
