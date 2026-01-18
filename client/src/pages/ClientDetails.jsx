@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Plane, Hotel, Calendar, Plus, Trash2, Upload, Pencil, Download, MapPin, Clock, FileText, ExternalLink, Image, Heart, Ticket, CheckCircle, Receipt, Crown, LogOut } from 'lucide-react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import { ArrowLeft, Plane, Hotel, Calendar, Plus, Trash2, Upload, Pencil, Download, MapPin, Clock, FileText, ExternalLink, Image, Heart, Ticket, CheckCircle, Receipt, Crown, LogOut, Shield, Eye } from 'lucide-react';
 import { Calendar as BigCalendar, momentLocalizer } from 'react-big-calendar';
 import withDragAndDrop from 'react-big-calendar/lib/addons/dragAndDrop';
 import moment from 'moment';
@@ -19,7 +19,8 @@ import { useAuth } from '../context/AuthContext';
 
 const ClientDetails = () => {
     const { id } = useParams();
-    const { user, logout } = useAuth();
+    const navigate = useNavigate();
+    const { user, login, logout } = useAuth();
     const [client, setClient] = useState(null);
     const [itinerary, setItinerary] = useState([]);
     const [activities, setActivities] = useState([]);
@@ -620,6 +621,41 @@ const ClientDetails = () => {
                                 )}
                             </div>
                         </div>
+                    </div>
+                    <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10">
+                            <div className={`w-2 h-2 rounded-full ${user?.role === 'admin' ? 'bg-red-500' : 'bg-green-500'}`}></div>
+                            <span className="text-xs font-medium text-slate-300 uppercase tracking-wider">{user?.role || 'Guest'}</span>
+                        </div>
+
+                        {/* Switch Role Button */}
+                        {user?.role === 'admin' ? (
+                            <button
+                                onClick={() => login('lvqc2468')}
+                                className="flex items-center gap-2 px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-full transition text-xs font-medium text-slate-300"
+                                title="Switch to Agent View"
+                            >
+                                <Eye size={14} />
+                                View as Agent
+                            </button>
+                        ) : (
+                            <button
+                                onClick={() => navigate('/login')}
+                                className="flex items-center gap-2 px-3 py-1.5 bg-primary-500/10 hover:bg-primary-500/20 border border-primary-500/20 text-primary-400 rounded-full transition text-xs font-medium"
+                                title="Switch to Admin"
+                            >
+                                <Shield size={14} />
+                                Switch to Admin
+                            </button>
+                        )}
+
+                        <button
+                            onClick={logout}
+                            className="p-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-full transition"
+                            title="Logout"
+                        >
+                            <LogOut size={20} />
+                        </button>
                     </div>
                     <div className="flex items-center gap-3">
                         <button
