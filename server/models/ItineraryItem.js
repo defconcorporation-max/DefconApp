@@ -8,7 +8,7 @@ const itineraryItemSchema = new mongoose.Schema({
     },
     type: {
         type: String,
-        enum: ['flight', 'hotel', 'activity', 'transport', 'other'],
+        enum: ['flight', 'hotel', 'activity', 'transport', 'other', 'service_fee'],
         required: true
     },
     title: {

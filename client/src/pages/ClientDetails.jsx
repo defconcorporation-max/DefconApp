@@ -250,6 +250,7 @@ const ClientDetails = () => {
 
         const body = {
             ...formData,
+            title: (activeTab === 'service_fee' && !formData.title) ? 'Service Fee' : formData.title,
             client_id: id,
             image_url: uploadedImageUrl,
             pass_url: uploadedPassUrl,
@@ -257,7 +258,10 @@ const ClientDetails = () => {
             traveler_passes: finalTravelerPasses,
             is_flexible: formData.is_flexible,
             type: activeTab,
-            start_time: formData.start_time ? new Date(formData.start_time).toISOString() : null,
+            // For service fees, default to trip start or now if not set
+            start_time: activeTab === 'service_fee' && !formData.start_time
+                ? (client.trip_start ? new Date(client.trip_start).toISOString() : new Date().toISOString())
+                : (formData.start_time ? new Date(formData.start_time).toISOString() : null),
             end_time: finalEndTime ? new Date(finalEndTime).toISOString() : null
         };
 
@@ -801,7 +805,7 @@ const ClientDetails = () => {
                                                 const comm = item.commissionType === 'fixed'
                                                     ? (item.commissionValue || 0)
                                                     : ((item.cost || 0) * (item.commissionValue || 0) / 100);
-                                                const profit = ((item.cost || 0) - (item.costPrice || 0)) + (item.serviceFee || 0) + comm;
+                                                const profit = ((item.cost || 0) - (item.costPrice || 0)) + (item.serviceFee || 0) - comm;
                                                 return sum + profit;
                                             }, 0).toFixed(2)}
                                         </div>
@@ -1117,17 +1121,19 @@ const ClientDetails = () => {
                                 )}
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                    <div>
-                                        <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Title</label>
-                                        <input
-                                            type="text"
-                                            required
-                                            placeholder={activeTab === 'flight' ? 'Flight to Paris' : activeTab === 'hotel' ? 'Ritz Carlton' : activeTab === 'service_fee' ? 'Planning Fee' : 'Louvre Museum'}
-                                            className="w-full px-4 py-3 bg-dark-900 border border-dark-700 text-white rounded-lg placeholder-slate-600 focus:ring-1 focus:ring-primary-500 focus:border-primary-500 transition-all"
-                                            value={formData.title}
-                                            onChange={e => setFormData({ ...formData, title: e.target.value })}
-                                        />
-                                    </div>
+                                    {activeTab !== 'service_fee' && (
+                                        <div>
+                                            <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Title</label>
+                                            <input
+                                                type="text"
+                                                required={activeTab !== 'service_fee'}
+                                                placeholder={activeTab === 'flight' ? 'Flight to Paris' : activeTab === 'hotel' ? 'Ritz Carlton' : 'Louvre Museum'}
+                                                className="w-full px-4 py-3 bg-dark-900 border border-dark-700 text-white rounded-lg placeholder-slate-600 focus:ring-1 focus:ring-primary-500 focus:border-primary-500 transition-all"
+                                                value={formData.title}
+                                                onChange={e => setFormData({ ...formData, title: e.target.value })}
+                                            />
+                                        </div>
+                                    )}
                                     {activeTab !== 'service_fee' && (
                                         <div>
                                             <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Location</label>
@@ -1165,18 +1171,20 @@ const ClientDetails = () => {
                                 )}
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mt-4">
-                                    <div>
-                                        <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">
-                                            {activeTab === 'hotel' ? 'Check-in' : activeTab === 'flight' ? 'Departure Time' : activeTab === 'service_fee' ? 'Date' : 'Start Time'} <span className="text-red-500">*</span>
-                                        </label>
-                                        <input
-                                            type="datetime-local"
-                                            required
-                                            className="w-full px-4 py-3 bg-dark-900 border border-dark-700 text-white rounded-lg [color-scheme:dark] focus:ring-1 focus:ring-primary-500 focus:border-primary-500 transition-all"
-                                            value={formData.start_time}
-                                            onChange={e => setFormData({ ...formData, start_time: e.target.value })}
-                                        />
-                                    </div>
+                                    {activeTab !== 'service_fee' && (
+                                        <div>
+                                            <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">
+                                                {activeTab === 'hotel' ? 'Check-in' : activeTab === 'flight' ? 'Departure Time' : 'Start Time'} <span className="text-red-500">*</span>
+                                            </label>
+                                            <input
+                                                type="datetime-local"
+                                                required
+                                                className="w-full px-4 py-3 bg-dark-900 border border-dark-700 text-white rounded-lg [color-scheme:dark] focus:ring-1 focus:ring-primary-500 focus:border-primary-500 transition-all"
+                                                value={formData.start_time}
+                                                onChange={e => setFormData({ ...formData, start_time: e.target.value })}
+                                            />
+                                        </div>
+                                    )}
 
                                     {activeTab !== 'service_fee' && (activeTab === 'hotel' || activeTab === 'flight') && (
                                         <div>
@@ -1210,30 +1218,34 @@ const ClientDetails = () => {
                                     )}
                                 </div>
                                 <div className="grid grid-cols-2 gap-5">
-                                    <div>
-                                        <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Selling Price ($)</label>
-                                        <input
-                                            type="number"
-                                            min="0"
-                                            step="0.01"
-                                            placeholder="0.00"
-                                            className="w-full px-4 py-3 bg-dark-900 border border-dark-700 text-white rounded-lg placeholder-slate-600 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
-                                            value={formData.cost || ''}
-                                            onChange={e => setFormData({ ...formData, cost: e.target.value })}
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Net Cost ($)</label>
-                                        <input
-                                            type="number"
-                                            min="0"
-                                            step="0.01"
-                                            placeholder="0.00"
-                                            className="w-full px-4 py-3 bg-dark-900 border border-dark-700 text-white rounded-lg placeholder-slate-600 focus:ring-1 focus:ring-primary-500 focus:border-primary-500 transition-all"
-                                            value={formData.costPrice || ''}
-                                            onChange={e => setFormData({ ...formData, costPrice: e.target.value })}
-                                        />
-                                    </div>
+                                    {activeTab !== 'service_fee' && (
+                                        <>
+                                            <div>
+                                                <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Selling Price ($)</label>
+                                                <input
+                                                    type="number"
+                                                    min="0"
+                                                    step="0.01"
+                                                    placeholder="0.00"
+                                                    className="w-full px-4 py-3 bg-dark-900 border border-dark-700 text-white rounded-lg placeholder-slate-600 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
+                                                    value={formData.cost || ''}
+                                                    onChange={e => setFormData({ ...formData, cost: e.target.value })}
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Net Cost ($)</label>
+                                                <input
+                                                    type="number"
+                                                    min="0"
+                                                    step="0.01"
+                                                    placeholder="0.00"
+                                                    className="w-full px-4 py-3 bg-dark-900 border border-dark-700 text-white rounded-lg placeholder-slate-600 focus:ring-1 focus:ring-primary-500 focus:border-primary-500 transition-all"
+                                                    value={formData.costPrice || ''}
+                                                    onChange={e => setFormData({ ...formData, costPrice: e.target.value })}
+                                                />
+                                            </div>
+                                        </>
+                                    )}
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-5 mt-4 pt-4 border-t border-white/5">
@@ -1273,7 +1285,7 @@ const ClientDetails = () => {
                                         <div className="mt-2 text-xs text-emerald-400 font-medium text-right">
                                             Est. Profit: ${
                                                 ((parseFloat(formData.cost || 0) - parseFloat(formData.costPrice || 0) || 0) +
-                                                    (parseFloat(formData.serviceFee || 0)) +
+                                                    (parseFloat(formData.serviceFee || 0)) -
                                                     (formData.commissionType === 'fixed'
                                                         ? (parseFloat(formData.commissionValue || 0))
                                                         : ((parseFloat(formData.cost || 0)) * (parseFloat(formData.commissionValue || 0)) / 100))).toFixed(2)
