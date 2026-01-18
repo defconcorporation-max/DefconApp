@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Plane, Hotel, Calendar, Plus, Trash2, Upload, Pencil, Download, MapPin, Clock, FileText, ExternalLink, Image, Heart, Ticket } from 'lucide-react';
+import { ArrowLeft, Plane, Hotel, Calendar, Plus, Trash2, Upload, Pencil, Download, MapPin, Clock, FileText, ExternalLink, Image, Heart, Ticket, CheckCircle } from 'lucide-react';
 import { Calendar as BigCalendar, momentLocalizer } from 'react-big-calendar';
 import withDragAndDrop from 'react-big-calendar/lib/addons/dragAndDrop';
 import moment from 'moment';
@@ -616,6 +616,29 @@ const ClientDetails = () => {
                         >
                             <Download size={16} />
                             Export PDF
+                        </button>
+                        <button
+                            onClick={async () => {
+                                try {
+                                    const newStatus = !client.isSchedulePending;
+                                    const res = await fetch(`${API_URL}/api/clients/${client.id}`, {
+                                        method: 'PUT',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ isSchedulePending: newStatus }),
+                                    });
+                                    if (res.ok) {
+                                        setClient({ ...client, isSchedulePending: newStatus });
+                                    }
+                                } catch (err) {
+                                    console.error('Error toggling schedule status:', err);
+                                }
+                            }}
+                            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition text-sm font-medium border ${client.isSchedulePending
+                                ? 'bg-orange-500/10 text-orange-400 border-orange-500/20 hover:bg-orange-500/20'
+                                : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20'}`}
+                        >
+                            {client.isSchedulePending ? <Clock size={16} /> : <CheckCircle size={16} />}
+                            {client.isSchedulePending ? 'Mark Schedule Complete' : 'Schedule Complete'}
                         </button>
                         <div className="h-6 w-px bg-white/10 mx-2"></div>
                         <div className="flex bg-dark-800 rounded-lg p-1 border border-white/5">

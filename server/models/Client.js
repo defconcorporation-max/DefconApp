@@ -19,6 +19,10 @@ const clientSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     },
+    isSchedulePending: {
+        type: Boolean,
+        default: true
+    },
     travelers: [{
         name: String,
         pass_url: String
