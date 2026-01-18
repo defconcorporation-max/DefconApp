@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Plane, Hotel, Calendar, Plus, Trash2, Upload, Pencil, Download, MapPin, Clock, FileText, ExternalLink, Image, Heart, Ticket, CheckCircle, Receipt, Crown } from 'lucide-react';
+import { ArrowLeft, Plane, Hotel, Calendar, Plus, Trash2, Upload, Pencil, Download, MapPin, Clock, FileText, ExternalLink, Image, Heart, Ticket, CheckCircle, Receipt, Crown, LogOut } from 'lucide-react';
 import { Calendar as BigCalendar, momentLocalizer } from 'react-big-calendar';
 import withDragAndDrop from 'react-big-calendar/lib/addons/dragAndDrop';
 import moment from 'moment';
@@ -15,8 +15,11 @@ const DnDCalendar = withDragAndDrop(BigCalendar);
 
 import API_URL from '../config';
 
+import { useAuth } from '../context/AuthContext';
+
 const ClientDetails = () => {
     const { id } = useParams();
+    const { user, logout } = useAuth();
     const [client, setClient] = useState(null);
     const [itinerary, setItinerary] = useState([]);
     const [activities, setActivities] = useState([]);
@@ -796,12 +799,14 @@ const ClientDetails = () => {
                                             ${itinerary.reduce((sum, item) => sum + (item.cost || 0) + (item.serviceFee || 0), 0).toFixed(2)}
                                         </div>
                                     </div>
-                                    <div className="bg-dark-900/50 rounded-lg p-3 border border-white/5">
-                                        <div className="text-xs text-slate-500 mb-1">Total Cost</div>
-                                        <div className="text-lg font-bold text-slate-300">
-                                            ${itinerary.reduce((sum, item) => sum + (item.costPrice || 0), 0).toFixed(2)}
+                                    {user?.role === 'admin' && (
+                                        <div className="bg-dark-900/50 rounded-lg p-3 border border-white/5">
+                                            <div className="text-xs text-slate-500 mb-1">Total Cost</div>
+                                            <div className="text-lg font-bold text-slate-300">
+                                                ${itinerary.reduce((sum, item) => sum + (item.costPrice || 0), 0).toFixed(2)}
+                                            </div>
                                         </div>
-                                    </div>
+                                    )}
                                     <div className="bg-dark-900/50 rounded-lg p-3 border border-white/5">
                                         <div className="text-xs text-slate-500 mb-1">Total Commission</div>
                                         <div className="text-lg font-bold text-blue-400">
@@ -814,19 +819,21 @@ const ClientDetails = () => {
                                             }, 0).toFixed(2)}
                                         </div>
                                     </div>
-                                    <div className="bg-emerald-500/10 rounded-lg p-3 border border-emerald-500/20">
-                                        <div className="text-xs text-emerald-400 mb-1">Total Profit</div>
-                                        <div className="text-lg font-bold text-emerald-400">
-                                            ${itinerary.reduce((sum, item) => {
-                                                const base = item.type === 'service_fee' ? (item.serviceFee || 0) : (item.cost || 0);
-                                                const comm = item.commissionType === 'fixed'
-                                                    ? (item.commissionValue || 0)
-                                                    : (base * (item.commissionValue || 0) / 100);
-                                                const profit = ((item.cost || 0) - (item.costPrice || 0)) + (item.serviceFee || 0) - comm;
-                                                return sum + profit;
-                                            }, 0).toFixed(2)}
+                                    {user?.role === 'admin' && (
+                                        <div className="bg-emerald-500/10 rounded-lg p-3 border border-emerald-500/20">
+                                            <div className="text-xs text-emerald-400 mb-1">Total Profit</div>
+                                            <div className="text-lg font-bold text-emerald-400">
+                                                ${itinerary.reduce((sum, item) => {
+                                                    const base = item.type === 'service_fee' ? (item.serviceFee || 0) : (item.cost || 0);
+                                                    const comm = item.commissionType === 'fixed'
+                                                        ? (item.commissionValue || 0)
+                                                        : (base * (item.commissionValue || 0) / 100);
+                                                    const profit = ((item.cost || 0) - (item.costPrice || 0)) + (item.serviceFee || 0) - comm;
+                                                    return sum + profit;
+                                                }, 0).toFixed(2)}
+                                            </div>
                                         </div>
-                                    </div>
+                                    )}
                                 </div>
                             </div>
                         )}
@@ -961,7 +968,7 @@ const ClientDetails = () => {
                                                                     <span className="text-slate-500">Sell: $</span>{item.cost}
                                                                 </span>
                                                             )}
-                                                            {item.costPrice > 0 && (
+                                                            {item.costPrice > 0 && user?.role === 'admin' && (
                                                                 <span className="flex items-center gap-2 text-blue-400 font-medium border-l border-white/10 pl-2">
                                                                     <span className="text-slate-500">Cost: $</span>{item.costPrice}
                                                                 </span>
@@ -1046,7 +1053,7 @@ const ClientDetails = () => {
                                                                             Sell: ${item.cost}
                                                                         </span>
                                                                     )}
-                                                                    {item.costPrice > 0 && (
+                                                                    {item.costPrice > 0 && user?.role === 'admin' && (
                                                                         <span className="flex items-center gap-1 text-blue-400 border-l border-white/10 pl-2">
                                                                             Cost: ${item.costPrice}
                                                                         </span>
@@ -1056,7 +1063,7 @@ const ClientDetails = () => {
                                                                             Comm: ${item.commissionType === 'fixed' ? item.commissionValue : ((item.type === 'service_fee' ? item.serviceFee || 0 : item.cost || 0) * item.commissionValue / 100).toFixed(2)}
                                                                         </span>
                                                                     )}
-                                                                    {(item.serviceFee > 0 || item.commissionValue > 0) && (
+                                                                    {(item.serviceFee > 0 || item.commissionValue > 0) && user?.role === 'admin' && (
                                                                         <span className="flex items-center gap-1 text-yellow-400 border-l border-white/10 pl-2">
                                                                             Profit: ${
                                                                                 ((item.cost || 0) - (item.costPrice || 0) + (item.serviceFee || 0) -
@@ -1310,18 +1317,20 @@ const ClientDetails = () => {
                                                     onChange={e => setFormData({ ...formData, cost: e.target.value })}
                                                 />
                                             </div>
-                                            <div>
-                                                <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Net Cost ($)</label>
-                                                <input
-                                                    type="number"
-                                                    min="0"
-                                                    step="0.01"
-                                                    placeholder="0.00"
-                                                    className="w-full px-4 py-3 bg-dark-900 border border-dark-700 text-white rounded-lg placeholder-slate-600 focus:ring-1 focus:ring-primary-500 focus:border-primary-500 transition-all"
-                                                    value={formData.costPrice || ''}
-                                                    onChange={e => setFormData({ ...formData, costPrice: e.target.value })}
-                                                />
-                                            </div>
+                                            {user?.role === 'admin' && (
+                                                <div>
+                                                    <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Net Cost ($)</label>
+                                                    <input
+                                                        type="number"
+                                                        min="0"
+                                                        step="0.01"
+                                                        placeholder="0.00"
+                                                        className="w-full px-4 py-3 bg-dark-900 border border-dark-700 text-white rounded-lg placeholder-slate-600 focus:ring-1 focus:ring-primary-500 focus:border-primary-500 transition-all"
+                                                        value={formData.costPrice || ''}
+                                                        onChange={e => setFormData({ ...formData, costPrice: e.target.value })}
+                                                    />
+                                                </div>
+                                            )}
                                         </>
                                     )}
                                 </div>
@@ -1364,15 +1373,17 @@ const ClientDetails = () => {
                                                 onChange={e => setFormData({ ...formData, commissionValue: e.target.value })}
                                             />
                                         </div>
-                                        <div className="mt-2 text-xs text-emerald-400 font-medium text-right">
-                                            Est. Profit: ${
-                                                ((parseFloat(formData.cost || 0) - parseFloat(formData.costPrice || 0) || 0) +
-                                                    (parseFloat(formData.serviceFee || 0)) -
-                                                    (formData.commissionType === 'fixed'
-                                                        ? (parseFloat(formData.commissionValue || 0))
-                                                        : ((activeTab === 'service_fee' ? parseFloat(formData.serviceFee || 0) : parseFloat(formData.cost || 0)) * (parseFloat(formData.commissionValue || 0)) / 100))).toFixed(2)
-                                            }
-                                        </div>
+                                        {user?.role === 'admin' && (
+                                            <div className="mt-2 text-xs text-emerald-400 font-medium text-right">
+                                                Est. Profit: ${
+                                                    ((parseFloat(formData.cost || 0) - parseFloat(formData.costPrice || 0) || 0) +
+                                                        (parseFloat(formData.serviceFee || 0)) -
+                                                        (formData.commissionType === 'fixed'
+                                                            ? (parseFloat(formData.commissionValue || 0))
+                                                            : ((activeTab === 'service_fee' ? parseFloat(formData.serviceFee || 0) : parseFloat(formData.cost || 0)) * (parseFloat(formData.commissionValue || 0)) / 100))).toFixed(2)
+                                                }
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                                 <div className="mt-3 flex items-center gap-2">
