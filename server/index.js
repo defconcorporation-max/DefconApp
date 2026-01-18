@@ -238,7 +238,10 @@ app.post('/api/itinerary', async (req, res) => {
             traveler_passes: traveler_passes || [],
             is_flexible: is_flexible || false,
             cost: cost ? parseFloat(cost) : 0,
-            costPrice: req.body.costPrice ? parseFloat(req.body.costPrice) : 0
+            costPrice: req.body.costPrice ? parseFloat(req.body.costPrice) : 0,
+            serviceFee: req.body.serviceFee ? parseFloat(req.body.serviceFee) : 0,
+            commissionType: req.body.commissionType || 'percent',
+            commissionValue: req.body.commissionValue ? parseFloat(req.body.commissionValue) : 0
         });
         res.json({ id: newItem.id });
     } catch (error) {

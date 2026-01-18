@@ -50,6 +50,9 @@ const ClientDetails = () => {
         image_url: '',
         cost: '',
         costPrice: '',
+        serviceFee: '',
+        commissionType: 'percent',
+        commissionValue: '',
         duration: '60',
         flight_number: '',
         pass_url: '',
@@ -727,7 +730,10 @@ const ClientDetails = () => {
                                                     start_time: '',
                                                     end_time: '',
                                                     cost: item.cost || '',
-                                                    costPrice: '',
+                                                    costPrice: item.costPrice || '',
+                                                    serviceFee: item.serviceFee || '',
+                                                    commissionType: item.commissionType || 'percent',
+                                                    commissionValue: item.commissionValue || '',
                                                     flight_number: '',
                                                     pass_url: ''
                                                 });
@@ -755,6 +761,53 @@ const ClientDetails = () => {
                                 animate={{ opacity: 1, y: 0 }}
                                 className="space-y-4"
                             >
+                                {/* Financial Summary Card */}
+                                <div className="bg-dark-800/50 backdrop-blur-sm border border-white/5 rounded-xl p-5">
+                                    <h3 className="text-sm font-bold text-white mb-4 flex items-center gap-2">
+                                        <div className="p-1 bg-emerald-500/10 rounded text-emerald-400">
+                                            $
+                                        </div>
+                                        Financial Summary
+                                    </h3>
+                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                        <div className="bg-dark-900/50 rounded-lg p-3 border border-white/5">
+                                            <div className="text-xs text-slate-500 mb-1">Total Sales</div>
+                                            <div className="text-lg font-bold text-white">
+                                                ${itinerary.reduce((sum, item) => sum + (item.cost || 0), 0).toFixed(2)}
+                                            </div>
+                                        </div>
+                                        <div className="bg-dark-900/50 rounded-lg p-3 border border-white/5">
+                                            <div className="text-xs text-slate-500 mb-1">Total Cost</div>
+                                            <div className="text-lg font-bold text-slate-300">
+                                                ${itinerary.reduce((sum, item) => sum + (item.costPrice || 0), 0).toFixed(2)}
+                                            </div>
+                                        </div>
+                                        <div className="bg-dark-900/50 rounded-lg p-3 border border-white/5">
+                                            <div className="text-xs text-slate-500 mb-1">Total Commission</div>
+                                            <div className="text-lg font-bold text-blue-400">
+                                                ${itinerary.reduce((sum, item) => {
+                                                    const comm = item.commissionType === 'fixed'
+                                                        ? (item.commissionValue || 0)
+                                                        : ((item.cost || 0) * (item.commissionValue || 0) / 100);
+                                                    return sum + comm;
+                                                }, 0).toFixed(2)}
+                                            </div>
+                                        </div>
+                                        <div className="bg-emerald-500/10 rounded-lg p-3 border border-emerald-500/20">
+                                            <div className="text-xs text-emerald-400 mb-1">Total Profit</div>
+                                            <div className="text-lg font-bold text-emerald-400">
+                                                ${itinerary.reduce((sum, item) => {
+                                                    const comm = item.commissionType === 'fixed'
+                                                        ? (item.commissionValue || 0)
+                                                        : ((item.cost || 0) * (item.commissionValue || 0) / 100);
+                                                    const profit = ((item.cost || 0) - (item.costPrice || 0)) + (item.serviceFee || 0) + comm;
+                                                    return sum + profit;
+                                                }, 0).toFixed(2)}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
                                 <h2 className="text-lg font-bold text-white flex items-center gap-2">
                                     <span className="w-1 h-6 bg-primary-500 rounded-full"></span>
                                     Trip Highlights
@@ -891,6 +944,14 @@ const ClientDetails = () => {
                                                                     {item.costPrice > 0 && (
                                                                         <span className="flex items-center gap-1 text-blue-400 border-l border-white/10 pl-2">
                                                                             Cost: ${item.costPrice}
+                                                                        </span>
+                                                                    )}
+                                                                    {(item.serviceFee > 0 || item.commissionValue > 0) && (
+                                                                        <span className="flex items-center gap-1 text-yellow-400 border-l border-white/10 pl-2">
+                                                                            Profit: ${
+                                                                                ((item.cost || 0) - (item.costPrice || 0) + (item.serviceFee || 0) +
+                                                                                    (item.commissionType === 'fixed' ? (item.commissionValue || 0) : ((item.cost || 0) * (item.commissionValue || 0) / 100))).toFixed(2)
+                                                                            }
                                                                         </span>
                                                                     )}
                                                                 </div>
@@ -1061,6 +1122,52 @@ const ClientDetails = () => {
                                         value={formData.costPrice || ''}
                                         onChange={e => setFormData({ ...formData, costPrice: e.target.value })}
                                     />
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-5 mt-4 pt-4 border-t border-white/5">
+                                <div>
+                                    <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Service Fee ($)</label>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        step="0.01"
+                                        placeholder="0.00"
+                                        className="w-full px-4 py-3 bg-dark-900 border border-dark-700 text-white rounded-lg placeholder-slate-600 focus:ring-1 focus:ring-primary-500 focus:border-primary-500 transition-all"
+                                        value={formData.serviceFee || ''}
+                                        onChange={e => setFormData({ ...formData, serviceFee: e.target.value })}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Commission</label>
+                                    <div className="flex gap-2">
+                                        <select
+                                            className="px-3 py-3 bg-dark-900 border border-dark-700 text-white rounded-lg focus:ring-1 focus:ring-primary-500 transition-all"
+                                            value={formData.commissionType}
+                                            onChange={e => setFormData({ ...formData, commissionType: e.target.value })}
+                                        >
+                                            <option value="percent">%</option>
+                                            <option value="fixed">$</option>
+                                        </select>
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            step="0.01"
+                                            placeholder="0"
+                                            className="w-full px-4 py-3 bg-dark-900 border border-dark-700 text-white rounded-lg placeholder-slate-600 focus:ring-1 focus:ring-primary-500 focus:border-primary-500 transition-all"
+                                            value={formData.commissionValue || ''}
+                                            onChange={e => setFormData({ ...formData, commissionValue: e.target.value })}
+                                        />
+                                    </div>
+                                    <div className="mt-2 text-xs text-emerald-400 font-medium text-right">
+                                        Est. Profit: ${
+                                            ((parseFloat(formData.cost || 0) - parseFloat(formData.costPrice || 0) || 0) +
+                                                (parseFloat(formData.serviceFee || 0)) +
+                                                (formData.commissionType === 'fixed'
+                                                    ? (parseFloat(formData.commissionValue || 0))
+                                                    : ((parseFloat(formData.cost || 0)) * (parseFloat(formData.commissionValue || 0)) / 100))).toFixed(2)
+                                        }
+                                    </div>
                                 </div>
                             </div>
                             <div className="mt-3 flex items-center gap-2">

@@ -34,7 +34,20 @@ const itineraryItemSchema = new mongoose.Schema({
         pass_url: String
     }],
     cost: Number,
-    costPrice: Number
+    costPrice: Number,
+    serviceFee: {
+        type: Number,
+        default: 0
+    },
+    commissionType: {
+        type: String,
+        enum: ['percent', 'fixed'],
+        default: 'percent'
+    },
+    commissionValue: {
+        type: Number,
+        default: 0
+    }
 }, {
     timestamps: true
 });
