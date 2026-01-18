@@ -8,7 +8,7 @@ const itineraryItemSchema = new mongoose.Schema({
     },
     type: {
         type: String,
-        enum: ['flight', 'hotel', 'activity', 'transport', 'other', 'service_fee'],
+        enum: ['flight', 'hotel', 'activity', 'transport', 'other', 'service_fee', 'viva_las_vegas_pass'],
         required: true
     },
     title: {
@@ -47,6 +47,14 @@ const itineraryItemSchema = new mongoose.Schema({
     commissionValue: {
         type: Number,
         default: 0
+    },
+    peopleCount: {
+        type: Number,
+        default: 1
+    },
+    isPremium: {
+        type: Boolean,
+        default: false
     }
 }, {
     timestamps: true

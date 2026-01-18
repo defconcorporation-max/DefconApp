@@ -241,7 +241,9 @@ app.post('/api/itinerary', async (req, res) => {
             costPrice: req.body.costPrice ? parseFloat(req.body.costPrice) : 0,
             serviceFee: req.body.serviceFee ? parseFloat(req.body.serviceFee) : 0,
             commissionType: req.body.commissionType || 'percent',
-            commissionValue: req.body.commissionValue ? parseFloat(req.body.commissionValue) : 0
+            commissionValue: req.body.commissionValue ? parseFloat(req.body.commissionValue) : 0,
+            peopleCount: req.body.peopleCount ? parseInt(req.body.peopleCount) : 1,
+            isPremium: req.body.isPremium || false
         });
         res.json({ id: newItem.id });
     } catch (error) {

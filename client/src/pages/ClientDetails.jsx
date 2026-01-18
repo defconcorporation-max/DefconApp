@@ -250,7 +250,9 @@ const ClientDetails = () => {
 
         const body = {
             ...formData,
-            title: (activeTab === 'service_fee' && !formData.title) ? 'Service Fee' : formData.title,
+            title: ((activeTab === 'service_fee' || activeTab === 'viva_las_vegas_pass') && !formData.title)
+                ? (activeTab === 'service_fee' ? 'Service Fee' : 'Viva Las Vegas Pass')
+                : formData.title,
             client_id: id,
             image_url: uploadedImageUrl,
             pass_url: uploadedPassUrl,
@@ -258,11 +260,13 @@ const ClientDetails = () => {
             traveler_passes: finalTravelerPasses,
             is_flexible: formData.is_flexible,
             type: activeTab,
-            // For service fees, default to trip start or now if not set
-            start_time: activeTab === 'service_fee' && !formData.start_time
+            // For service fees and passes, default to trip start or now if not set
+            start_time: (activeTab === 'service_fee' || activeTab === 'viva_las_vegas_pass') && !formData.start_time
                 ? (client.trip_start ? new Date(client.trip_start).toISOString() : new Date().toISOString())
                 : (formData.start_time ? new Date(formData.start_time).toISOString() : null),
-            end_time: finalEndTime ? new Date(finalEndTime).toISOString() : null
+            end_time: finalEndTime ? new Date(finalEndTime).toISOString() : null,
+            peopleCount: formData.peopleCount,
+            isPremium: formData.isPremium
         };
 
         try {
@@ -320,7 +324,9 @@ const ClientDetails = () => {
                 pass_url: item.pass_url || '',
                 included_in_pass: item.included_in_pass || false,
                 is_flexible: item.is_flexible || false,
-                traveler_passes: item.traveler_passes || []
+                traveler_passes: item.traveler_passes || [],
+                peopleCount: item.peopleCount || 1,
+                isPremium: item.isPremium || false
             });
             setFile(null);
             setPassFile(null);
@@ -341,7 +347,9 @@ const ClientDetails = () => {
                 pass_url: '',
                 included_in_pass: false,
                 is_flexible: false,
-                traveler_passes: []
+                traveler_passes: [],
+                peopleCount: 1,
+                isPremium: false
             });
             setFile(null);
             setPassFile(null);
@@ -677,6 +685,13 @@ const ClientDetails = () => {
                                 title="Add Service Fee"
                             >
                                 <Receipt size={18} />
+                            </button>
+                            <button
+                                onClick={() => openModal('viva_las_vegas_pass')}
+                                className="p-2 hover:bg-white/5 rounded-md text-slate-400 hover:text-purple-500 transition"
+                                title="Add Viva Vegas Pass"
+                            >
+                                <Crown size={18} />
                             </button>
                         </div>
                     </div>
@@ -1096,7 +1111,7 @@ const ClientDetails = () => {
                             animate={{ opacity: 1, scale: 1 }}
                             className="bg-dark-800 rounded-2xl max-w-2xl w-full p-8 border border-white/10 shadow-2xl my-8"
                         >
-                            <h2 className="text-2xl font-bold mb-6 text-white">{editingItem ? 'Edit Itinerary Item' : `Add ${activeTab === 'flight' ? 'Flight' : activeTab === 'hotel' ? 'Hotel' : 'Activity'}`}</h2>
+                            <h2 className="text-2xl font-bold mb-6 text-white">{editingItem ? 'Edit Itinerary Item' : `Add ${activeTab === 'flight' ? 'Flight' : activeTab === 'hotel' ? 'Hotel' : activeTab === 'service_fee' ? 'Service Fee' : activeTab === 'viva_las_vegas_pass' ? 'Viva Vegas Pass' : 'Activity'}`}</h2>
 
                             <form onSubmit={handleSubmit} className="space-y-5">
 
@@ -1127,12 +1142,12 @@ const ClientDetails = () => {
                                 )}
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                    {activeTab !== 'service_fee' && (
+                                    {activeTab !== 'service_fee' && activeTab !== 'viva_las_vegas_pass' && (
                                         <div>
                                             <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Title</label>
                                             <input
                                                 type="text"
-                                                required={activeTab !== 'service_fee'}
+                                                required={activeTab !== 'service_fee' && activeTab !== 'viva_las_vegas_pass'}
                                                 placeholder={activeTab === 'flight' ? 'Flight to Paris' : activeTab === 'hotel' ? 'Ritz Carlton' : 'Louvre Museum'}
                                                 className="w-full px-4 py-3 bg-dark-900 border border-dark-700 text-white rounded-lg placeholder-slate-600 focus:ring-1 focus:ring-primary-500 focus:border-primary-500 transition-all"
                                                 value={formData.title}
@@ -1140,7 +1155,7 @@ const ClientDetails = () => {
                                             />
                                         </div>
                                     )}
-                                    {activeTab !== 'service_fee' && (
+                                    {activeTab !== 'service_fee' && activeTab !== 'viva_las_vegas_pass' && (
                                         <div>
                                             <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Location</label>
                                             <input
@@ -1177,7 +1192,7 @@ const ClientDetails = () => {
                                 )}
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mt-4">
-                                    {activeTab !== 'service_fee' && (
+                                    {activeTab !== 'service_fee' && activeTab !== 'viva_las_vegas_pass' && (
                                         <div>
                                             <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">
                                                 {activeTab === 'hotel' ? 'Check-in' : activeTab === 'flight' ? 'Departure Time' : 'Start Time'} <span className="text-red-500">*</span>
@@ -1192,7 +1207,7 @@ const ClientDetails = () => {
                                         </div>
                                     )}
 
-                                    {activeTab !== 'service_fee' && (activeTab === 'hotel' || activeTab === 'flight') && (
+                                    {activeTab !== 'service_fee' && activeTab !== 'viva_las_vegas_pass' && (activeTab === 'hotel' || activeTab === 'flight') && (
                                         <div>
                                             <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">
                                                 {activeTab === 'hotel' ? 'Check-out' : 'Arrival Time'} <span className="text-red-500">*</span>
@@ -1223,8 +1238,39 @@ const ClientDetails = () => {
                                         </div>
                                     )}
                                 </div>
+                                {activeTab === 'viva_las_vegas_pass' && (
+                                    <div className="bg-dark-900/50 p-4 rounded-lg border border-white/5 mb-4">
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Number of People</label>
+                                                <input
+                                                    type="number"
+                                                    min="1"
+                                                    className="w-full px-4 py-3 bg-dark-900 border border-dark-700 text-white rounded-lg text-center"
+                                                    value={formData.peopleCount}
+                                                    onChange={e => setFormData({ ...formData, peopleCount: parseInt(e.target.value) || 1 })}
+                                                />
+                                            </div>
+                                            <div className="flex items-center justify-center h-full pt-6">
+                                                <label className="flex items-center gap-3 cursor-pointer">
+                                                    <div className={`w-6 h-6 rounded border flex items-center justify-center transition ${formData.isPremium ? 'bg-amber-500 border-amber-500 text-black' : 'border-slate-500 bg-transparent'}`}>
+                                                        {formData.isPremium && <CheckCircle size={16} />}
+                                                    </div>
+                                                    <input
+                                                        type="checkbox"
+                                                        className="hidden"
+                                                        checked={formData.isPremium}
+                                                        onChange={e => setFormData({ ...formData, isPremium: e.target.checked })}
+                                                    />
+                                                    <span className={`text-sm font-bold ${formData.isPremium ? 'text-amber-400' : 'text-slate-400'}`}>Premium Pass?</span>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
                                 <div className="grid grid-cols-2 gap-5">
-                                    {activeTab !== 'service_fee' && (
+                                    {(activeTab !== 'service_fee' && activeTab !== 'viva_las_vegas_pass') && (
                                         <>
                                             <div>
                                                 <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Selling Price ($)</label>
@@ -1255,18 +1301,22 @@ const ClientDetails = () => {
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-5 mt-4 pt-4 border-t border-white/5">
-                                    <div>
-                                        <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Service Fee ($)</label>
-                                        <input
-                                            type="number"
-                                            min="0"
-                                            step="0.01"
-                                            placeholder="0.00"
-                                            className="w-full px-4 py-3 bg-dark-900 border border-dark-700 text-white rounded-lg placeholder-slate-600 focus:ring-1 focus:ring-primary-500 focus:border-primary-500 transition-all"
-                                            value={formData.serviceFee || ''}
-                                            onChange={e => setFormData({ ...formData, serviceFee: e.target.value })}
-                                        />
-                                    </div>
+                                    {(activeTab === 'service_fee' || activeTab === 'viva_las_vegas_pass') && (
+                                        <div className="col-span-2 md:col-span-1">
+                                            <label className={`block text-xs font-medium uppercase tracking-wider mb-1 ${activeTab === 'viva_las_vegas_pass' ? 'text-purple-400' : 'text-slate-400'}`}>
+                                                {activeTab === 'viva_las_vegas_pass' ? 'Total Price ($)' : 'Service Fee ($)'}
+                                            </label>
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                step="0.01"
+                                                placeholder="0.00"
+                                                className={`w-full px-4 py-3 bg-dark-900 border border-dark-700 text-white rounded-lg placeholder-slate-600 focus:ring-1 transition-all ${activeTab === 'viva_las_vegas_pass' ? 'focus:ring-purple-500 focus:border-purple-500' : 'focus:ring-emerald-500 focus:border-emerald-500'}`}
+                                                value={activeTab === 'viva_las_vegas_pass' ? (formData.cost || '') : (formData.serviceFee || '')}
+                                                onChange={e => activeTab === 'viva_las_vegas_pass' ? setFormData({ ...formData, cost: e.target.value }) : setFormData({ ...formData, serviceFee: e.target.value })}
+                                            />
+                                        </div>
+                                    )}
                                     <div>
                                         <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Commission</label>
                                         <div className="flex gap-2">
