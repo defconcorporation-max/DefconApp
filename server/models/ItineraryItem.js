@@ -33,7 +33,8 @@ const itineraryItemSchema = new mongoose.Schema({
         name: String,
         pass_url: String
     }],
-    cost: Number
+    cost: Number,
+    costPrice: Number
 }, {
     timestamps: true
 });

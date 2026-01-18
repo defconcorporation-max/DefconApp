@@ -237,7 +237,8 @@ app.post('/api/itinerary', async (req, res) => {
             included_in_pass: included_in_pass || false,
             traveler_passes: traveler_passes || [],
             is_flexible: is_flexible || false,
-            cost: cost ? parseFloat(cost) : 0
+            cost: cost ? parseFloat(cost) : 0,
+            costPrice: req.body.costPrice ? parseFloat(req.body.costPrice) : 0
         });
         res.json({ id: newItem.id });
     } catch (error) {

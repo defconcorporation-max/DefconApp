@@ -49,6 +49,7 @@ const ClientDetails = () => {
         description: '',
         image_url: '',
         cost: '',
+        costPrice: '',
         duration: '60',
         flight_number: '',
         pass_url: '',
@@ -726,6 +727,7 @@ const ClientDetails = () => {
                                                     start_time: '',
                                                     end_time: '',
                                                     cost: item.cost || '',
+                                                    costPrice: '',
                                                     flight_number: '',
                                                     pass_url: ''
                                                 });
@@ -798,7 +800,12 @@ const ClientDetails = () => {
                                                             )}
                                                             {item.cost > 0 && (
                                                                 <span className="flex items-center gap-2 text-emerald-400 font-medium">
-                                                                    <span className="text-slate-500">$</span>{item.cost}
+                                                                    <span className="text-slate-500">Sell: $</span>{item.cost}
+                                                                </span>
+                                                            )}
+                                                            {item.costPrice > 0 && (
+                                                                <span className="flex items-center gap-2 text-blue-400 font-medium border-l border-white/10 pl-2">
+                                                                    <span className="text-slate-500">Cost: $</span>{item.costPrice}
                                                                 </span>
                                                             )}
                                                         </div>
@@ -878,7 +885,12 @@ const ClientDetails = () => {
                                                                     )}
                                                                     {item.cost > 0 && (
                                                                         <span className="flex items-center gap-1 text-emerald-400">
-                                                                            ${item.cost}
+                                                                            Sell: ${item.cost}
+                                                                        </span>
+                                                                    )}
+                                                                    {item.costPrice > 0 && (
+                                                                        <span className="flex items-center gap-1 text-blue-400 border-l border-white/10 pl-2">
+                                                                            Cost: ${item.costPrice}
                                                                         </span>
                                                                     )}
                                                                 </div>
@@ -1025,64 +1037,78 @@ const ClientDetails = () => {
                                 </div>
                             )}
 
-                            <div>
-                                <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Cost ($)</label>
-                                <input
-                                    type="number"
-                                    min="0"
-                                    step="0.01"
-                                    placeholder="0.00"
-                                    className="w-full px-4 py-3 bg-dark-900 border border-dark-700 text-white rounded-lg placeholder-slate-600 focus:ring-1 focus:ring-primary-500 focus:border-primary-500 transition-all"
-                                    value={formData.cost || ''}
-                                    onChange={e => setFormData({ ...formData, cost: e.target.value })}
-                                />
-                                <div className="mt-3 flex items-center gap-2">
+                            <div className="grid grid-cols-2 gap-5">
+                                <div>
+                                    <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Selling Price ($)</label>
                                     <input
-                                        type="checkbox"
-                                        id="included_in_pass"
-                                        className="w-4 h-4 rounded border-dark-600 text-primary-500 focus:ring-primary-500 bg-dark-900"
-                                        checked={formData.included_in_pass || false}
-                                        onChange={e => setFormData({ ...formData, included_in_pass: e.target.checked })}
+                                        type="number"
+                                        min="0"
+                                        step="0.01"
+                                        placeholder="0.00"
+                                        className="w-full px-4 py-3 bg-dark-900 border border-dark-700 text-white rounded-lg placeholder-slate-600 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
+                                        value={formData.cost || ''}
+                                        onChange={e => setFormData({ ...formData, cost: e.target.value })}
                                     />
-                                    <label htmlFor="included_in_pass" className="text-sm text-slate-300 cursor-pointer select-none">
-                                        Included in Unlimited Pass?
-                                    </label>
                                 </div>
-
-                                {/* Individual Traveler Passes */}
-                                {console.log('DEBUG: Client:', client)}
-                                {console.log('DEBUG: Travelers:', client?.travelers)}
-                                {client && client.travelers && client.travelers.length > 0 && (
-                                    <div className="mt-6 border-t border-white/10 pt-4">
-                                        <h3 className="text-sm font-bold text-white mb-3 flex items-center gap-2">
-                                            <Ticket size={14} className="text-primary-500" />
-                                            Individual Traveler Passes
-                                        </h3>
-                                        <p className="text-xs text-slate-500 mb-4">
-                                            Upload specific tickets/passes for each traveler for this activity.
-                                        </p>
-                                        <div className="space-y-3">
-                                            {client.travelers.map((traveler, idx) => (
-                                                <div key={idx} className="bg-dark-900/50 p-3 rounded-lg border border-white/5">
-                                                    <div className="flex justify-between items-center mb-2">
-                                                        <span className="text-sm font-medium text-slate-300">{traveler.name}</span>
-                                                        {formData.traveler_passes?.find(p => p.name === traveler.name)?.pass_url && (
-                                                            <span className="text-xs text-emerald-400 flex items-center gap-1 font-medium bg-emerald-500/10 px-2 py-0.5 rounded">
-                                                                Pass Uploaded
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                    <input
-                                                        type="file"
-                                                        onChange={(e) => setTravelerPassFiles({ ...travelerPassFiles, [idx]: e.target.files[0] })}
-                                                        className="block w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-primary-500/10 file:text-primary-500 hover:file:bg-primary-500/20 cursor-pointer"
-                                                    />
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
+                                <div>
+                                    <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Net Cost ($)</label>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        step="0.01"
+                                        placeholder="0.00"
+                                        className="w-full px-4 py-3 bg-dark-900 border border-dark-700 text-white rounded-lg placeholder-slate-600 focus:ring-1 focus:ring-primary-500 focus:border-primary-500 transition-all"
+                                        value={formData.costPrice || ''}
+                                        onChange={e => setFormData({ ...formData, costPrice: e.target.value })}
+                                    />
+                                </div>
                             </div>
+                            <div className="mt-3 flex items-center gap-2">
+                                <input
+                                    type="checkbox"
+                                    id="included_in_pass"
+                                    className="w-4 h-4 rounded border-dark-600 text-primary-500 focus:ring-primary-500 bg-dark-900"
+                                    checked={formData.included_in_pass || false}
+                                    onChange={e => setFormData({ ...formData, included_in_pass: e.target.checked })}
+                                />
+                                <label htmlFor="included_in_pass" className="text-sm text-slate-300 cursor-pointer select-none">
+                                    Included in Unlimited Pass?
+                                </label>
+                            </div>
+
+                            {/* Individual Traveler Passes */}
+                            {console.log('DEBUG: Client:', client)}
+                            {console.log('DEBUG: Travelers:', client?.travelers)}
+                            {client && client.travelers && client.travelers.length > 0 && (
+                                <div className="mt-6 border-t border-white/10 pt-4">
+                                    <h3 className="text-sm font-bold text-white mb-3 flex items-center gap-2">
+                                        <Ticket size={14} className="text-primary-500" />
+                                        Individual Traveler Passes
+                                    </h3>
+                                    <p className="text-xs text-slate-500 mb-4">
+                                        Upload specific tickets/passes for each traveler for this activity.
+                                    </p>
+                                    <div className="space-y-3">
+                                        {client.travelers.map((traveler, idx) => (
+                                            <div key={idx} className="bg-dark-900/50 p-3 rounded-lg border border-white/5">
+                                                <div className="flex justify-between items-center mb-2">
+                                                    <span className="text-sm font-medium text-slate-300">{traveler.name}</span>
+                                                    {formData.traveler_passes?.find(p => p.name === traveler.name)?.pass_url && (
+                                                        <span className="text-xs text-emerald-400 flex items-center gap-1 font-medium bg-emerald-500/10 px-2 py-0.5 rounded">
+                                                            Pass Uploaded
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <input
+                                                    type="file"
+                                                    onChange={(e) => setTravelerPassFiles({ ...travelerPassFiles, [idx]: e.target.files[0] })}
+                                                    className="block w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-primary-500/10 file:text-primary-500 hover:file:bg-primary-500/20 cursor-pointer"
+                                                />
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                 <div>
@@ -1234,233 +1260,236 @@ const ClientDetails = () => {
                         </form>
                     </motion.div>
                 </div>
-            )}
+            )
+            }
 
             {/* Edit Client Profile Modal */}
-            {showEditClientModal && (
-                <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 overflow-y-auto backdrop-blur-sm">
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        className="bg-dark-800 rounded-2xl max-w-md w-full p-8 border border-white/10 shadow-2xl"
-                    >
-                        <h2 className="text-2xl font-bold mb-6 text-white">Edit Client Profile</h2>
-                        <form onSubmit={handleUpdateClient} className="space-y-4">
-                            <div>
-                                <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Full Name</label>
-                                <input
-                                    type="text"
-                                    required
-                                    className="w-full px-4 py-3 bg-dark-900 border border-dark-700 text-white rounded-lg focus:ring-1 focus:ring-primary-500 focus:border-primary-500 transition-all"
-                                    value={client.name}
-                                    onChange={e => setClient({ ...client, name: e.target.value })}
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Email</label>
-                                <input
-                                    type="email"
-                                    required
-                                    className="w-full px-4 py-3 bg-dark-900 border border-dark-700 text-white rounded-lg focus:ring-1 focus:ring-primary-500 focus:border-primary-500 transition-all"
-                                    value={client.email}
-                                    onChange={e => setClient({ ...client, email: e.target.value })}
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Phone</label>
-                                <input
-                                    type="tel"
-                                    className="w-full px-4 py-3 bg-dark-900 border border-dark-700 text-white rounded-lg focus:ring-1 focus:ring-primary-500 focus:border-primary-500 transition-all"
-                                    value={client.phone}
-                                    onChange={e => setClient({ ...client, phone: e.target.value })}
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Booking Reference</label>
-                                <input
-                                    type="text"
-                                    required
-                                    className="w-full px-4 py-3 bg-dark-900 border border-dark-700 text-white rounded-lg focus:ring-1 focus:ring-primary-500 focus:border-primary-500 transition-all"
-                                    value={client.booking_ref}
-                                    onChange={e => setClient({ ...client, booking_ref: e.target.value })}
-                                />
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
+            {
+                showEditClientModal && (
+                    <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 overflow-y-auto backdrop-blur-sm">
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            className="bg-dark-800 rounded-2xl max-w-md w-full p-8 border border-white/10 shadow-2xl"
+                        >
+                            <h2 className="text-2xl font-bold mb-6 text-white">Edit Client Profile</h2>
+                            <form onSubmit={handleUpdateClient} className="space-y-4">
                                 <div>
-                                    <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Trip Start</label>
-                                    <input
-                                        type="date"
-                                        required
-                                        className="w-full px-4 py-3 bg-dark-900 border border-dark-700 text-white rounded-lg focus:ring-1 focus:ring-primary-500 focus:border-primary-500 [color-scheme:dark] transition-all"
-                                        value={client.trip_start ? moment.utc(client.trip_start).format('YYYY-MM-DD') : ''}
-                                        onChange={e => setClient({ ...client, trip_start: e.target.value })}
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Trip End</label>
-                                    <input
-                                        type="date"
-                                        required
-                                        className="w-full px-4 py-3 bg-dark-900 border border-dark-700 text-white rounded-lg focus:ring-1 focus:ring-primary-500 focus:border-primary-500 [color-scheme:dark] transition-all"
-                                        value={client.trip_end ? moment.utc(client.trip_end).format('YYYY-MM-DD') : ''}
-                                        onChange={e => setClient({ ...client, trip_end: e.target.value })}
-                                    />
-                                </div>
-                            </div>
-
-                            {/* Unlimited Pass Section */}
-                            <div className="border-t border-white/10 pt-4 mt-4">
-                                <h3 className="text-sm font-bold text-white mb-4 flex items-center gap-2">
-                                    <Ticket size={16} className="text-primary-500" />
-                                    Unlimited Passes & Travelers
-                                </h3>
-
-                                {/* Main Client Pass */}
-                                <div className="mb-4 bg-dark-900/50 p-3 rounded-xl border border-white/5">
-                                    <div className="flex justify-between items-center mb-2">
-                                        <span className="text-sm font-medium text-white">{client.name} (Main)</span>
-                                        <label className="cursor-pointer text-xs text-primary-500 hover:text-primary-400 flex items-center gap-1">
-                                            <Upload size={12} />
-                                            {client.pass_url ? 'Change Pass' : 'Upload Pass'}
-                                            <input
-                                                type="file"
-                                                className="hidden"
-                                                accept="image/*"
-                                                onChange={async (e) => {
-                                                    if (e.target.files[0]) {
-                                                        const url = await uploadFile(e.target.files[0]);
-                                                        if (url) setClient({ ...client, pass_url: url });
-                                                    }
-                                                }}
-                                            />
-                                        </label>
-                                    </div>
-                                    {client.pass_url && (
-                                        <div className="text-xs text-emerald-500 flex items-center gap-1">
-                                            <FileText size={10} /> Pass Uploaded
-                                        </div>
-                                    )}
-                                </div>
-
-                                {/* Additional Travelers */}
-                                <div className="space-y-3">
-                                    {client.travelers && client.travelers.map((traveler, idx) => (
-                                        <div key={idx} className="bg-dark-900/50 p-3 rounded-xl border border-white/5 flex items-center justify-between">
-                                            <div>
-                                                <div className="text-sm font-medium text-white">{traveler.name}</div>
-                                                {traveler.pass_url ? (
-                                                    <div className="text-xs text-emerald-500 flex items-center gap-1 mt-1">
-                                                        <FileText size={10} /> Pass Uploaded
-                                                    </div>
-                                                ) : (
-                                                    <div className="text-xs text-slate-500 mt-1">No pass uploaded</div>
-                                                )}
-                                            </div>
-                                            <div className="flex items-center gap-3">
-                                                <label className="cursor-pointer p-2 hover:bg-white/5 rounded-full text-slate-400 hover:text-primary-500 transition">
-                                                    <Upload size={14} />
-                                                    <input
-                                                        type="file"
-                                                        className="hidden"
-                                                        accept="image/*"
-                                                        onChange={async (e) => {
-                                                            if (e.target.files[0]) {
-                                                                const url = await uploadFile(e.target.files[0]);
-                                                                if (url) {
-                                                                    const newTravelers = [...client.travelers];
-                                                                    newTravelers[idx].pass_url = url;
-                                                                    setClient({ ...client, travelers: newTravelers });
-                                                                }
-                                                            }
-                                                        }}
-                                                    />
-                                                </label>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => {
-                                                        const newTravelers = client.travelers.filter((_, i) => i !== idx);
-                                                        setClient({ ...client, travelers: newTravelers });
-                                                    }}
-                                                    className="p-2 hover:bg-white/5 rounded-full text-slate-400 hover:text-red-500 transition"
-                                                >
-                                                    <Trash2 size={14} />
-                                                </button>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-
-                                {/* Add Traveler Input */}
-                                <div className="mt-3 flex gap-2">
+                                    <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Full Name</label>
                                     <input
                                         type="text"
-                                        placeholder="Add traveler name..."
-                                        className="flex-1 px-3 py-2 bg-dark-900 border border-dark-700 text-white text-sm rounded-lg focus:ring-1 focus:ring-primary-500"
-                                        onKeyDown={(e) => {
-                                            if (e.key === 'Enter') {
-                                                e.preventDefault();
-                                                if (e.target.value.trim()) {
-                                                    const newTravelers = [...(client.travelers || []), { name: e.target.value.trim(), pass_url: '' }];
-                                                    setClient({ ...client, travelers: newTravelers });
-                                                    e.target.value = '';
-                                                }
-                                            }
-                                        }}
-                                        id="new-traveler-input"
+                                        required
+                                        className="w-full px-4 py-3 bg-dark-900 border border-dark-700 text-white rounded-lg focus:ring-1 focus:ring-primary-500 focus:border-primary-500 transition-all"
+                                        value={client.name}
+                                        onChange={e => setClient({ ...client, name: e.target.value })}
                                     />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Email</label>
+                                    <input
+                                        type="email"
+                                        required
+                                        className="w-full px-4 py-3 bg-dark-900 border border-dark-700 text-white rounded-lg focus:ring-1 focus:ring-primary-500 focus:border-primary-500 transition-all"
+                                        value={client.email}
+                                        onChange={e => setClient({ ...client, email: e.target.value })}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Phone</label>
+                                    <input
+                                        type="tel"
+                                        className="w-full px-4 py-3 bg-dark-900 border border-dark-700 text-white rounded-lg focus:ring-1 focus:ring-primary-500 focus:border-primary-500 transition-all"
+                                        value={client.phone}
+                                        onChange={e => setClient({ ...client, phone: e.target.value })}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Booking Reference</label>
+                                    <input
+                                        type="text"
+                                        required
+                                        className="w-full px-4 py-3 bg-dark-900 border border-dark-700 text-white rounded-lg focus:ring-1 focus:ring-primary-500 focus:border-primary-500 transition-all"
+                                        value={client.booking_ref}
+                                        onChange={e => setClient({ ...client, booking_ref: e.target.value })}
+                                    />
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Trip Start</label>
+                                        <input
+                                            type="date"
+                                            required
+                                            className="w-full px-4 py-3 bg-dark-900 border border-dark-700 text-white rounded-lg focus:ring-1 focus:ring-primary-500 focus:border-primary-500 [color-scheme:dark] transition-all"
+                                            value={client.trip_start ? moment.utc(client.trip_start).format('YYYY-MM-DD') : ''}
+                                            onChange={e => setClient({ ...client, trip_start: e.target.value })}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Trip End</label>
+                                        <input
+                                            type="date"
+                                            required
+                                            className="w-full px-4 py-3 bg-dark-900 border border-dark-700 text-white rounded-lg focus:ring-1 focus:ring-primary-500 focus:border-primary-500 [color-scheme:dark] transition-all"
+                                            value={client.trip_end ? moment.utc(client.trip_end).format('YYYY-MM-DD') : ''}
+                                            onChange={e => setClient({ ...client, trip_end: e.target.value })}
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Unlimited Pass Section */}
+                                <div className="border-t border-white/10 pt-4 mt-4">
+                                    <h3 className="text-sm font-bold text-white mb-4 flex items-center gap-2">
+                                        <Ticket size={16} className="text-primary-500" />
+                                        Unlimited Passes & Travelers
+                                    </h3>
+
+                                    {/* Main Client Pass */}
+                                    <div className="mb-4 bg-dark-900/50 p-3 rounded-xl border border-white/5">
+                                        <div className="flex justify-between items-center mb-2">
+                                            <span className="text-sm font-medium text-white">{client.name} (Main)</span>
+                                            <label className="cursor-pointer text-xs text-primary-500 hover:text-primary-400 flex items-center gap-1">
+                                                <Upload size={12} />
+                                                {client.pass_url ? 'Change Pass' : 'Upload Pass'}
+                                                <input
+                                                    type="file"
+                                                    className="hidden"
+                                                    accept="image/*"
+                                                    onChange={async (e) => {
+                                                        if (e.target.files[0]) {
+                                                            const url = await uploadFile(e.target.files[0]);
+                                                            if (url) setClient({ ...client, pass_url: url });
+                                                        }
+                                                    }}
+                                                />
+                                            </label>
+                                        </div>
+                                        {client.pass_url && (
+                                            <div className="text-xs text-emerald-500 flex items-center gap-1">
+                                                <FileText size={10} /> Pass Uploaded
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Additional Travelers */}
+                                    <div className="space-y-3">
+                                        {client.travelers && client.travelers.map((traveler, idx) => (
+                                            <div key={idx} className="bg-dark-900/50 p-3 rounded-xl border border-white/5 flex items-center justify-between">
+                                                <div>
+                                                    <div className="text-sm font-medium text-white">{traveler.name}</div>
+                                                    {traveler.pass_url ? (
+                                                        <div className="text-xs text-emerald-500 flex items-center gap-1 mt-1">
+                                                            <FileText size={10} /> Pass Uploaded
+                                                        </div>
+                                                    ) : (
+                                                        <div className="text-xs text-slate-500 mt-1">No pass uploaded</div>
+                                                    )}
+                                                </div>
+                                                <div className="flex items-center gap-3">
+                                                    <label className="cursor-pointer p-2 hover:bg-white/5 rounded-full text-slate-400 hover:text-primary-500 transition">
+                                                        <Upload size={14} />
+                                                        <input
+                                                            type="file"
+                                                            className="hidden"
+                                                            accept="image/*"
+                                                            onChange={async (e) => {
+                                                                if (e.target.files[0]) {
+                                                                    const url = await uploadFile(e.target.files[0]);
+                                                                    if (url) {
+                                                                        const newTravelers = [...client.travelers];
+                                                                        newTravelers[idx].pass_url = url;
+                                                                        setClient({ ...client, travelers: newTravelers });
+                                                                    }
+                                                                }
+                                                            }}
+                                                        />
+                                                    </label>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            const newTravelers = client.travelers.filter((_, i) => i !== idx);
+                                                            setClient({ ...client, travelers: newTravelers });
+                                                        }}
+                                                        className="p-2 hover:bg-white/5 rounded-full text-slate-400 hover:text-red-500 transition"
+                                                    >
+                                                        <Trash2 size={14} />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    {/* Add Traveler Input */}
+                                    <div className="mt-3 flex gap-2">
+                                        <input
+                                            type="text"
+                                            placeholder="Add traveler name..."
+                                            className="flex-1 px-3 py-2 bg-dark-900 border border-dark-700 text-white text-sm rounded-lg focus:ring-1 focus:ring-primary-500"
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter') {
+                                                    e.preventDefault();
+                                                    if (e.target.value.trim()) {
+                                                        const newTravelers = [...(client.travelers || []), { name: e.target.value.trim(), pass_url: '' }];
+                                                        setClient({ ...client, travelers: newTravelers });
+                                                        e.target.value = '';
+                                                    }
+                                                }
+                                            }}
+                                            id="new-traveler-input"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                const input = document.getElementById('new-traveler-input');
+                                                if (input.value.trim()) {
+                                                    const newTravelers = [...(client.travelers || []), { name: input.value.trim(), pass_url: '' }];
+                                                    setClient({ ...client, travelers: newTravelers });
+                                                    input.value = '';
+                                                }
+                                            }}
+                                            className="px-3 py-2 bg-dark-700 hover:bg-dark-600 text-white rounded-lg transition"
+                                        >
+                                            <Plus size={16} />
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Notes</label>
+                                    <textarea
+                                        className="w-full px-4 py-3 bg-dark-900 border border-dark-700 text-white rounded-lg focus:ring-1 focus:ring-primary-500 focus:border-primary-500 h-20 transition-all"
+                                        value={client.notes || ''}
+                                        onChange={e => setClient({ ...client, notes: e.target.value })}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Preferences</label>
+                                    <textarea
+                                        className="w-full px-4 py-3 bg-dark-900 border border-dark-700 text-white rounded-lg focus:ring-1 focus:ring-primary-500 focus:border-primary-500 h-20 transition-all"
+                                        value={client.preferences || ''}
+                                        onChange={e => setClient({ ...client, preferences: e.target.value })}
+                                    />
+                                </div>
+                                <div className="flex gap-3 mt-8">
                                     <button
                                         type="button"
-                                        onClick={() => {
-                                            const input = document.getElementById('new-traveler-input');
-                                            if (input.value.trim()) {
-                                                const newTravelers = [...(client.travelers || []), { name: input.value.trim(), pass_url: '' }];
-                                                setClient({ ...client, travelers: newTravelers });
-                                                input.value = '';
-                                            }
-                                        }}
-                                        className="px-3 py-2 bg-dark-700 hover:bg-dark-600 text-white rounded-lg transition"
+                                        onClick={() => setShowEditClientModal(false)}
+                                        className="flex-1 px-4 py-3 border border-dark-600 text-slate-300 rounded-lg hover:bg-dark-700 transition font-medium"
                                     >
-                                        <Plus size={16} />
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        className="flex-1 px-4 py-3 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition font-medium shadow-lg shadow-primary-500/20"
+                                    >
+                                        Save Changes
                                     </button>
                                 </div>
-                            </div>
-
-                            <div>
-                                <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Notes</label>
-                                <textarea
-                                    className="w-full px-4 py-3 bg-dark-900 border border-dark-700 text-white rounded-lg focus:ring-1 focus:ring-primary-500 focus:border-primary-500 h-20 transition-all"
-                                    value={client.notes || ''}
-                                    onChange={e => setClient({ ...client, notes: e.target.value })}
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Preferences</label>
-                                <textarea
-                                    className="w-full px-4 py-3 bg-dark-900 border border-dark-700 text-white rounded-lg focus:ring-1 focus:ring-primary-500 focus:border-primary-500 h-20 transition-all"
-                                    value={client.preferences || ''}
-                                    onChange={e => setClient({ ...client, preferences: e.target.value })}
-                                />
-                            </div>
-                            <div className="flex gap-3 mt-8">
-                                <button
-                                    type="button"
-                                    onClick={() => setShowEditClientModal(false)}
-                                    className="flex-1 px-4 py-3 border border-dark-600 text-slate-300 rounded-lg hover:bg-dark-700 transition font-medium"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    type="submit"
-                                    className="flex-1 px-4 py-3 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition font-medium shadow-lg shadow-primary-500/20"
-                                >
-                                    Save Changes
-                                </button>
-                            </div>
-                        </form>
-                    </motion.div>
-                </div>
-            )}
-        </div>
+                            </form>
+                        </motion.div>
+                    </div>
+                )
+            }
+        </div >
     );
 };
 
