@@ -251,7 +251,7 @@ const ClientDetails = () => {
         const body = {
             ...formData,
             title: ((activeTab === 'service_fee' || activeTab === 'viva_las_vegas_pass') && !formData.title)
-                ? (activeTab === 'service_fee' ? 'Service Fee' : 'Viva Las Vegas Pass')
+                ? (activeTab === 'service_fee' ? 'Service Fee' : 'Viva Vegas Pass')
                 : formData.title,
             client_id: id,
             image_url: uploadedImageUrl,
@@ -1270,10 +1270,12 @@ const ClientDetails = () => {
                                 )}
 
                                 <div className="grid grid-cols-2 gap-5">
-                                    {(activeTab !== 'service_fee' && activeTab !== 'viva_las_vegas_pass') && (
+                                    {activeTab !== 'service_fee' && (
                                         <>
                                             <div>
-                                                <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Selling Price ($)</label>
+                                                <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">
+                                                    {activeTab === 'viva_las_vegas_pass' ? 'Total Price ($)' : 'Selling Price ($)'}
+                                                </label>
                                                 <input
                                                     type="number"
                                                     min="0"
@@ -1301,19 +1303,19 @@ const ClientDetails = () => {
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-5 mt-4 pt-4 border-t border-white/5">
-                                    {(activeTab === 'service_fee' || activeTab === 'viva_las_vegas_pass') && (
+                                    {activeTab === 'service_fee' && (
                                         <div className="col-span-2 md:col-span-1">
-                                            <label className={`block text-xs font-medium uppercase tracking-wider mb-1 ${activeTab === 'viva_las_vegas_pass' ? 'text-purple-400' : 'text-slate-400'}`}>
-                                                {activeTab === 'viva_las_vegas_pass' ? 'Total Price ($)' : 'Service Fee ($)'}
+                                            <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">
+                                                Service Fee ($)
                                             </label>
                                             <input
                                                 type="number"
                                                 min="0"
                                                 step="0.01"
                                                 placeholder="0.00"
-                                                className={`w-full px-4 py-3 bg-dark-900 border border-dark-700 text-white rounded-lg placeholder-slate-600 focus:ring-1 transition-all ${activeTab === 'viva_las_vegas_pass' ? 'focus:ring-purple-500 focus:border-purple-500' : 'focus:ring-emerald-500 focus:border-emerald-500'}`}
-                                                value={activeTab === 'viva_las_vegas_pass' ? (formData.cost || '') : (formData.serviceFee || '')}
-                                                onChange={e => activeTab === 'viva_las_vegas_pass' ? setFormData({ ...formData, cost: e.target.value }) : setFormData({ ...formData, serviceFee: e.target.value })}
+                                                className="w-full px-4 py-3 bg-dark-900 border border-dark-700 text-white rounded-lg placeholder-slate-600 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
+                                                value={formData.serviceFee || ''}
+                                                onChange={e => setFormData({ ...formData, serviceFee: e.target.value })}
                                             />
                                         </div>
                                     )}
