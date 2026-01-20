@@ -148,7 +148,8 @@ const Finance = () => {
 
     // Unclaimed Commission = Total Earned - (Paid + Pending Payouts)
     // This is the amount available to be "Sent to Expenses"
-    const unclaimedCommission = totalEarnedCommission - (paidCommission + pendingPayouts);
+    // Use Math.max(0, ...) to ensure we don't show negative if they overpaid or data is out of sync
+    const unclaimedCommission = Math.max(0, totalEarnedCommission - (paidCommission + pendingPayouts));
 
     const handleClaimCommission = () => {
         setFormData({

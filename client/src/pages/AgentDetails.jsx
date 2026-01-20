@@ -83,7 +83,7 @@ const AgentDetails = () => {
                         const commissionPayouts = expenses.filter(e => e.category === 'Commission Payout');
                         const paid = commissionPayouts.filter(e => e.status === 'paid').reduce((acc, e) => acc + e.amount, 0);
                         const pendingPayouts = commissionPayouts.filter(e => e.status === 'pending').reduce((acc, e) => acc + e.amount, 0);
-                        const unclaimed = totalEarned - (paid + pendingPayouts);
+                        const unclaimed = Math.max(0, totalEarned - (paid + pendingPayouts));
 
                         const handleCreateInvoice = async () => {
                             if (!confirm(`Create an invoice for $${unclaimed.toLocaleString()}?`)) return;
