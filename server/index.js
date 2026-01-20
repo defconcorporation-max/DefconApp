@@ -589,6 +589,98 @@ app.delete('/api/itinerary/:id', async (req, res) => {
     }
 });
 
+// --- Expense Routes ---
+
+import Expense from './models/Expense.js';
+
+// Get Expenses
+app.get('/api/expenses', auth, async (req, res) => {
+    try {
+        // Agents see only their own. Admins see all? 
+        // User said "only agent side", so let's stick to agent scope for now.
+        // If Admin wants to verify expenses, we can add that logic later.
+        let query = { agent_id: req.user.id };
+        if (req.user.role === 'admin') {
+            // Optional: Admin can see all or filter? Let's show all for Admin for now or filter by query
+            if (req.query.agent_id) query = { agent_id: req.query.agent_id };
+            else query = {}; // Admin sees all
+        }
+
+        const expenses = await Expense.find(query).sort({ date: -1 });
+        res.json(expenses);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Create Expense
+app.post('/api/expenses', auth, async (req, res) => {
+    try {
+        const { title, amount, category, status, date, due_date, notes } = req.body;
+        const newExpense = await Expense.create({
+            id: Date.now(),
+            agent_id: req.user.id,
+            title,
+            amount,
+            category,
+            status: status || 'pending',
+            date: date || new Date(),
+            due_date,
+            notes
+        });
+        res.json(newExpense);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Update Expense
+app.put('/api/expenses/:id', auth, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const query = { _id: id };
+
+        // Security: Ensure agent owns it (unless admin)
+        if (req.user.role !== 'admin') {
+            query.agent_id = req.user.id;
+        }
+
+        const updatedExpense = await Expense.findOneAndUpdate(
+            query,
+            req.body,
+            { new: true }
+        );
+
+        if (!updatedExpense) {
+            return res.status(404).json({ error: 'Expense not found or unauthorized' });
+        }
+        res.json(updatedExpense);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Delete Expense
+app.delete('/api/expenses/:id', auth, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const query = { _id: id };
+
+        if (req.user.role !== 'admin') {
+            query.agent_id = req.user.id;
+        }
+
+        const deleted = await Expense.findOneAndDelete(query);
+        if (!deleted) {
+            return res.status(404).json({ error: 'Expense not found or unauthorized' });
+        }
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+
 // Export for Vercel
 export default app;
 

@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Users, Search, ExternalLink, TrendingUp, Calendar, DollarSign, Briefcase, Trash2, Archive, RefreshCcw, Settings, Home, LogOut } from 'lucide-react';
+import { Plus, Users, Search, ExternalLink, TrendingUp, Calendar, DollarSign, Briefcase, Trash2, Archive, RefreshCcw, Settings, Home, LogOut, FileText } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { motion } from 'framer-motion';
 

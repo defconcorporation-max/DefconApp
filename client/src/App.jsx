@@ -8,6 +8,7 @@ import Catalog from './pages/Catalog';
 import Login from './pages/Login';
 import AdminAgents from './pages/AdminAgents';
 import AgentDetails from './pages/AgentDetails';
+import Finance from './pages/Finance';
 
 const Home = () => (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-primary-900 to-primary-700 text-white">
@@ -54,6 +55,18 @@ function App() {
                 <Route path="/dashboard/client/:id" element={
                     <RequireAuth>
                         <ClientDetails />
+                    </RequireAuth>
+                } />
+
+                <Route path="/dashboard/client/:id" element={
+                    <RequireAuth>
+                        <ClientDetails />
+                    </RequireAuth>
+                } />
+
+                <Route path="/finance" element={
+                    <RequireAuth>
+                        <Finance />
                     </RequireAuth>
                 } />
 
