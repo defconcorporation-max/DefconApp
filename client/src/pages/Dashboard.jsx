@@ -177,6 +177,11 @@ const Dashboard = () => {
                         <span className="text-primary-500">Viva Vegas</span> <span className="text-slate-400 font-light">Dashboard</span>
                     </h1>
                     <div className="flex items-center gap-4">
+                        {user?.role === 'admin' && (
+                            <Link to="/admin/agents" className="px-4 py-2 text-slate-400 hover:text-white transition font-medium text-sm flex items-center gap-2">
+                                <Users size={16} /> Manage Agents
+                            </Link>
+                        )}
                         <Link to="/catalog" className="px-4 py-2 text-slate-400 hover:text-white transition font-medium text-sm">
                             Manage Catalog
                         </Link>
