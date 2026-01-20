@@ -27,18 +27,26 @@ const Finance = () => {
     useEffect(() => {
         if (token) {
             fetchExpenses();
+        }
+        if (token && user) {
             fetchAgentStats();
         }
-    }, [token]);
+    }, [token, user]);
 
     const fetchAgentStats = async () => {
         try {
-            const res = await fetch(`${API_URL}/api/agents/${user.id}/details`, {
+            const userId = user.id || user._id; // Handle potential ID variations
+            if (!userId) return;
+
+            const res = await fetch(`${API_URL}/api/agents/${userId}/details`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (res.ok) {
                 const data = await res.json();
+                console.log("Agent Stats Loaded:", data.stats); // Debug
                 setStats(data.stats);
+            } else {
+                console.error("Failed to fetch agent stats: Status", res.status);
             }
         } catch (error) {
             console.error("Failed to fetch agent stats", error);
