@@ -9,11 +9,26 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 
 const Finance = () => {
     const { token, user } = useAuth();
+    const navigate = useNavigate();
     const [stats, setStats] = useState(null);
+    const [expenses, setExpenses] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [showModal, setShowModal] = useState(false);
+    const [formData, setFormData] = useState({
+        title: '',
+        amount: '',
+        category: 'Other',
+        status: 'pending',
+        date: new Date().toISOString().split('T')[0],
+        due_date: '',
+        notes: ''
+    });
 
     useEffect(() => {
-        fetchExpenses();
-        fetchAgentStats();
+        if (token) {
+            fetchExpenses();
+            fetchAgentStats();
+        }
     }, [token]);
 
     const fetchAgentStats = async () => {
@@ -30,7 +45,79 @@ const Finance = () => {
         }
     };
 
-    // ... fetchExpenses and others ...
+    const fetchExpenses = async () => {
+        try {
+            const res = await fetch(`${API_URL}/api/expenses`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setExpenses(data);
+            }
+        } catch (error) {
+            console.error("Failed to fetch expenses", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        try {
+            const res = await fetch(`${API_URL}/api/expenses`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(formData)
+            });
+            if (res.ok) {
+                setShowModal(false);
+                setFormData({
+                    title: '',
+                    amount: '',
+                    category: 'Other',
+                    status: 'pending',
+                    date: new Date().toISOString().split('T')[0],
+                    due_date: '',
+                    notes: ''
+                });
+                fetchExpenses();
+            }
+        } catch (error) {
+            console.error("Error adding expense", error);
+        }
+    };
+
+    const updateStatus = async (id, newStatus) => {
+        try {
+            const res = await fetch(`${API_URL}/api/expenses/${id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ status: newStatus })
+            });
+            if (res.ok) fetchExpenses();
+        } catch (error) {
+            console.error("Error updating status", error);
+        }
+    };
+
+    const handleDelete = async (id) => {
+        if (!confirm("Are you sure?")) return;
+        try {
+            const res = await fetch(`${API_URL}/api/expenses/${id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) fetchExpenses();
+        } catch (error) {
+            console.error("Error deleting expense", error);
+        }
+    };
 
     // Stats Calculations
     const totalPendingExpenses = expenses.filter(e => e.status === 'pending').reduce((acc, e) => acc + e.amount, 0);
