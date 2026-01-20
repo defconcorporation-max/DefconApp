@@ -616,10 +616,15 @@ app.get('/api/expenses', auth, async (req, res) => {
 // Create Expense
 app.post('/api/expenses', auth, async (req, res) => {
     try {
-        const { title, amount, category, status, date, due_date, notes } = req.body;
+        const { title, amount, category, status, date, due_date, notes, agent_id } = req.body;
+
+        // Determine target agent ID:
+        // If Admin and agent_id is provided, use it. Otherwise, use requester's ID.
+        const targetAgentId = (req.user.role === 'admin' && agent_id) ? agent_id : req.user.id;
+
         const newExpense = await Expense.create({
             id: Date.now(),
-            agent_id: req.user.id,
+            agent_id: targetAgentId,
             title,
             amount,
             category,

@@ -85,18 +85,61 @@ const AgentDetails = () => {
                         const pendingPayouts = commissionPayouts.filter(e => e.status === 'pending').reduce((acc, e) => acc + e.amount, 0);
                         const unclaimed = totalEarned - (paid + pendingPayouts);
 
+                        const handleCreateInvoice = async () => {
+                            if (!confirm(`Create an invoice for $${unclaimed.toLocaleString()}?`)) return;
+                            try {
+                                const res = await fetch(`${API_URL}/api/expenses`, {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'Authorization': `Bearer ${token}`
+                                    },
+                                    body: JSON.stringify({
+                                        agent_id: agent._id || agent.id || id, // Pass agent ID
+                                        title: `Commission Payout - ${new Date().toLocaleDateString()}`,
+                                        amount: unclaimed,
+                                        category: 'Commission Payout',
+                                        status: 'pending',
+                                        date: new Date(),
+                                        due_date: new Date(),
+                                        notes: 'Created by Admin via Agent Profile'
+                                    })
+                                });
+
+                                if (res.ok) {
+                                    // Refresh expenses
+                                    const expensesRes = await fetch(`${API_URL}/api/expenses?agent_id=${id}`, { headers: { 'Authorization': `Bearer ${token}` } });
+                                    if (expensesRes.ok) {
+                                        setExpenses(await expensesRes.json());
+                                    }
+                                }
+                            } catch (error) {
+                                console.error("Failed to create invoice", error);
+                            }
+                        };
+
                         return (
                             <>
-                                <div className="bg-dark-800 p-6 rounded-xl border border-white/5">
-                                    <div className="flex items-center gap-3 mb-2 text-slate-400">
-                                        <DollarSign size={18} className="text-primary-500" />
-                                        <span className="text-xs font-bold uppercase tracking-wider">Total Commission</span>
+                                <div className="bg-dark-800 p-6 rounded-xl border border-white/5 flex flex-col justify-between">
+                                    <div>
+                                        <div className="flex items-center gap-3 mb-2 text-slate-400">
+                                            <DollarSign size={18} className="text-primary-500" />
+                                            <span className="text-xs font-bold uppercase tracking-wider">Total Commission</span>
+                                        </div>
+                                        <p className="text-2xl font-bold text-white">${totalEarned.toLocaleString()}</p>
+                                        <div className="mt-2 text-xs grid grid-cols-2 gap-2 text-slate-500">
+                                            <div>Paid: <span className="text-emerald-400">${paid.toLocaleString()}</span></div>
+                                            <div>Unclaimed: <span className="text-indigo-400">${unclaimed.toLocaleString()}</span></div>
+                                        </div>
                                     </div>
-                                    <p className="text-2xl font-bold text-white">${totalEarned.toLocaleString()}</p>
-                                    <div className="mt-2 text-xs grid grid-cols-2 gap-2 text-slate-500">
-                                        <div>Paid: <span className="text-emerald-400">${paid.toLocaleString()}</span></div>
-                                        <div>Unclaimed: <span className="text-indigo-400">${unclaimed.toLocaleString()}</span></div>
-                                    </div>
+                                    {unclaimed > 0 && (
+                                        <button
+                                            onClick={handleCreateInvoice}
+                                            className="mt-4 w-full py-2 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 border border-indigo-500/20 rounded-lg text-xs font-bold transition flex items-center justify-center gap-2"
+                                        >
+                                            <ExternalLink size={14} /> Send to Invoice
+                                        </button>
+                                    )}
                                 </div>
                             </>
                         );
