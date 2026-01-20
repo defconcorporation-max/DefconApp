@@ -84,6 +84,7 @@ const AgentDetails = () => {
                         const paid = commissionPayouts.filter(e => e.status === 'paid').reduce((acc, e) => acc + e.amount, 0);
                         const pendingPayouts = commissionPayouts.filter(e => e.status === 'pending').reduce((acc, e) => acc + e.amount, 0);
                         const unclaimed = Math.max(0, totalEarned - (paid + pendingPayouts));
+                        const unpaid = Math.max(0, totalEarned - paid);
 
                         const handleCreateInvoice = async () => {
                             if (!confirm(`Create an invoice for $${unclaimed.toLocaleString()}?`)) return;
@@ -129,7 +130,7 @@ const AgentDetails = () => {
                                         <p className="text-2xl font-bold text-white">${totalEarned.toLocaleString()}</p>
                                         <div className="mt-2 text-xs grid grid-cols-2 gap-2 text-slate-500">
                                             <div>Paid: <span className="text-emerald-400">${paid.toLocaleString()}</span></div>
-                                            <div>Unclaimed: <span className="text-indigo-400">${unclaimed.toLocaleString()}</span></div>
+                                            <div>Unpaid: <span className="text-orange-400">${unpaid.toLocaleString()}</span></div>
                                         </div>
                                     </div>
                                     {unclaimed > 0 && (

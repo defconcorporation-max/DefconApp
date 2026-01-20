@@ -148,8 +148,11 @@ const Finance = () => {
 
     // Unclaimed Commission = Total Earned - (Paid + Pending Payouts)
     // This is the amount available to be "Sent to Expenses"
-    // Use Math.max(0, ...) to ensure we don't show negative if they overpaid or data is out of sync
     const unclaimedCommission = Math.max(0, totalEarnedCommission - (paidCommission + pendingPayouts));
+
+    // Unpaid Commission = Total Earned - Paid (Includes Pending Payouts)
+    // This is what the user wants to see as "Pending" (i.e., not yet in pocket)
+    const unpaidCommission = Math.max(0, totalEarnedCommission - paidCommission);
 
     const handleClaimCommission = () => {
         setFormData({
@@ -200,11 +203,12 @@ const Finance = () => {
                             </div>
                             <h3 className="text-slate-400 text-sm font-bold uppercase tracking-wider mb-2">Pending Commission</h3>
                             <p className="text-3xl font-bold text-indigo-400 flex items-center gap-2">
-                                ${unclaimedCommission.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                ${unpaidCommission.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                             </p>
-                            <p className="text-xs text-slate-500 mt-2">
-                                Available to claim
-                            </p>
+                            <div className="text-xs text-slate-500 mt-2 space-y-1">
+                                <p>Unclaimed: <span className="text-slate-300">${unclaimedCommission.toLocaleString()}</span></p>
+                                {pendingPayouts > 0 && <p>Invoiced: <span className="text-orange-400">${pendingPayouts.toLocaleString()}</span></p>}
+                            </div>
                         </div>
                         {unclaimedCommission > 0 && (
                             <button
