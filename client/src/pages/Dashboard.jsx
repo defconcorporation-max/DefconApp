@@ -65,14 +65,24 @@ const Dashboard = () => {
                         c.trip_start && c.trip_end && new Date(c.trip_start) <= now && new Date(c.trip_end) >= now
                     ).length;
 
-                    setStats({
-                        totalClients: clientsData.length, // Use the fetched list length
-                        activeTrips: currentActiveTrips,
-                        upcomingDepartures: data.stats.upcomingTrips,
-                        revenue: data.stats.totalRevenue,
-                        monthlyRevenue: data.stats.monthlyRevenue,
-                        totalCommission: data.stats.totalCommission
-                    });
+                    if (user?.role === 'admin') {
+                        setStats(prev => ({
+                            ...prev,
+                            totalClients: clientsData.length,
+                            activeTrips: currentActiveTrips,
+                            upcomingDepartures: data.stats.upcomingTrips
+                            // Explicitly exclude revenue, monthlyRevenue, totalCommission to preserve fetchAdminStats
+                        }));
+                    } else {
+                        setStats({
+                            totalClients: clientsData.length,
+                            activeTrips: currentActiveTrips,
+                            upcomingDepartures: data.stats.upcomingTrips,
+                            revenue: data.stats.totalRevenue,
+                            monthlyRevenue: data.stats.monthlyRevenue,
+                            totalCommission: data.stats.totalCommission
+                        });
+                    }
                 }
             } else {
                 // Fallback if details fail (e.g. Admin without "Agent" entry self-check?)
