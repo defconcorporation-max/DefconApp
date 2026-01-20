@@ -29,8 +29,11 @@ const Dashboard = () => {
     const { user, token, logout } = useAuth(); // Get token
 
     useEffect(() => {
-        if (token) fetchData();
-    }, [token]);
+        if (token) {
+            fetchData();
+            fetchAdminStats();
+        }
+    }, [token, user]);
 
     const fetchData = async () => {
         try {
@@ -98,17 +101,24 @@ const Dashboard = () => {
             const itinerariesData = await itinerariesRes.json();
             setItineraries(itinerariesData);
 
-            // 3. If Admin, Fetch Global Profit Stats
-            if (user?.role === 'admin') {
-                const adminStatsRes = await fetch(`${API_URL}/api/admin/stats`, { headers });
+        } catch (error) {
+            console.error('Error fetching data:', error);
+        }
+    };
+
+    const fetchAdminStats = async () => {
+        if (user?.role === 'admin') {
+            try {
+                const adminStatsRes = await fetch(`${API_URL}/api/admin/stats`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
                 if (adminStatsRes.ok) {
                     const adminData = await adminStatsRes.json();
                     setAdminStats(adminData);
                 }
+            } catch (error) {
+                console.error('Error fetching admin stats:', error);
             }
-
-        } catch (error) {
-            console.error('Error fetching data:', error);
         }
     };
 
