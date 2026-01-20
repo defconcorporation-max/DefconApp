@@ -15,26 +15,7 @@ const AdminAgents = () => {
         fetchAgents();
     }, [token]);
 
-    const [stats, setStats] = useState({ totalProfit: 0 });
 
-    useEffect(() => {
-        fetchAgents();
-        fetchStats();
-    }, [token]);
-
-    const fetchStats = async () => {
-        try {
-            const res = await fetch(`${API_URL}/api/admin/stats`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            if (res.ok) {
-                const data = await res.json();
-                setStats(data);
-            }
-        } catch (err) {
-            console.error(err);
-        }
-    };
 
     const fetchAgents = async () => {
         try {
@@ -88,20 +69,6 @@ const AdminAgents = () => {
                 </h1>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    {/* Global Stats */}
-                    <div className="md:col-span-2 bg-dark-800 rounded-2xl p-6 border border-white/5 flex items-center justify-between">
-                        <div>
-                            <h2 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-1">Total Agency Profit</h2>
-                            <p className="text-3xl font-bold text-white flex items-center gap-2">
-                                <DollarSign className="text-emerald-500" size={24} />
-                                {stats.totalProfit ? stats.totalProfit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'}
-                            </p>
-                        </div>
-                        <div className="bg-emerald-500/10 p-3 rounded-full">
-                            <DollarSign className="text-emerald-500" size={32} />
-                        </div>
-                    </div>
-
                     {/* List Agents */}
                     <div className="bg-dark-800 rounded-2xl p-6 border border-white/5">
                         <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">

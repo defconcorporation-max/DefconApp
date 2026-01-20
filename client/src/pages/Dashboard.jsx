@@ -24,6 +24,7 @@ const Dashboard = () => {
     const [showAddModal, setShowAddModal] = useState(false);
     const [newClient, setNewClient] = useState({ name: '', email: '', phone: '', booking_ref: '', trip_start: '', trip_end: '' });
     const [stats, setStats] = useState({ totalClients: 0, activeTrips: 0, upcomingDepartures: 0, revenue: 0 });
+    const [adminStats, setAdminStats] = useState({ totalProfit: 0 });
     const [chartData, setChartData] = useState([]);
     const { user, token, logout } = useAuth(); // Get token
 
@@ -52,7 +53,7 @@ const Dashboard = () => {
 
             if (detailsRes.ok) {
                 const data = await detailsRes.json();
-                
+
                 // Use server-side stats if available
                 if (data.stats) {
                     // Calculate active trips locally since server stats might be slightly different or for safety
@@ -71,31 +72,40 @@ const Dashboard = () => {
                     });
                 }
             } else {
-                 // Fallback if details fail (e.g. Admin without "Agent" entry self-check?)
-                 // If Admin, use generic stats logic based on the fetched clients
-                 console.warn("Agent details fetch failed or denied, falling back to basic stats");
-                 const now = new Date();
-                 const active = clientsData.filter(c => c.trip_start && c.trip_end && new Date(c.trip_start) <= now && new Date(c.trip_end) >= now).length;
-                 const upcoming = clientsData.filter(c => c.trip_start && new Date(c.trip_start) > now).length;
-                 
-                 // Calculate revenue from itineraries
-                 const itinerariesData = await itinerariesRes.clone().json().catch(() => []);
-                 // Filter itineraries? If Admin, we see all itineraries for all clients?
-                 // The /api/itineraries endpoint returns ALL itineraries currently (based on server code check) or filtered?
-                 // Let's assume naive sum for fallback.
-                 const revenue = itinerariesData.reduce((acc, item) => acc + (item.cost || 0), 0);
+                // Fallback if details fail (e.g. Admin without "Agent" entry self-check?)
+                // If Admin, use generic stats logic based on the fetched clients
+                console.warn("Agent details fetch failed or denied, falling back to basic stats");
+                const now = new Date();
+                const active = clientsData.filter(c => c.trip_start && c.trip_end && new Date(c.trip_start) <= now && new Date(c.trip_end) >= now).length;
+                const upcoming = clientsData.filter(c => c.trip_start && new Date(c.trip_start) > now).length;
 
-                 setStats({
+                // Calculate revenue from itineraries
+                const itinerariesData = await itinerariesRes.clone().json().catch(() => []);
+                // Filter itineraries? If Admin, we see all itineraries for all clients?
+                // The /api/itineraries endpoint returns ALL itineraries currently (based on server code check) or filtered?
+                // Let's assume naive sum for fallback.
+                const revenue = itinerariesData.reduce((acc, item) => acc + (item.cost || 0), 0);
+
+                setStats({
                     totalClients: clientsData.length,
                     activeTrips: active,
                     upcomingDepartures: upcoming,
                     revenue: revenue
                     // No monthlyRevenue graphs in fallback
-                 });
+                });
             }
 
             const itinerariesData = await itinerariesRes.json();
             setItineraries(itinerariesData);
+
+            // 3. If Admin, Fetch Global Profit Stats
+            if (user?.role === 'admin') {
+                const adminStatsRes = await fetch(`${API_URL}/api/admin/stats`, { headers });
+                if (adminStatsRes.ok) {
+                    const adminData = await adminStatsRes.json();
+                    setAdminStats(adminData);
+                }
+            }
 
         } catch (error) {
             console.error('Error fetching data:', error);
@@ -279,6 +289,21 @@ const Dashboard = () => {
                 <div className="px-8 pb-8">
 
                     {/* Stats Section */}
+                    {user?.role === 'admin' && (
+                        <div className="mb-8 bg-dark-800 rounded-2xl p-6 border border-white/5 flex items-center justify-between shadow-lg shadow-black/20">
+                            <div>
+                                <h2 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-1">Total Agency Profit</h2>
+                                <p className="text-4xl font-bold text-white flex items-center gap-2">
+                                    <DollarSign className="text-emerald-500" size={32} />
+                                    {adminStats.totalProfit ? adminStats.totalProfit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'}
+                                </p>
+                            </div>
+                            <div className="bg-emerald-500/10 p-4 rounded-full border border-emerald-500/20">
+                                <DollarSign className="text-emerald-500" size={40} />
+                            </div>
+                        </div>
+                    )}
+
                     <motion.div
                         initial={{ opacity: 0, y: -20 }}
                         animate={{ opacity: 1, y: 0 }}
