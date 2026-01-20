@@ -180,14 +180,16 @@ app.post('/api/upload', upload.single('file'), (req, res) => {
     res.json({ url: req.file.path });
 });
 
-// Get specific agent details with stats (Admin only)
+// Get specific agent details with stats (Admin or Self)
 app.get('/api/agents/:id/details', auth, async (req, res) => {
     try {
-        if (req.user.role !== 'admin') {
+        const { id } = req.params;
+
+        // Allow if admin OR if the requesting user's ID matches the requested ID
+        if (req.user.role !== 'admin' && req.user.userId !== id && req.user._id?.toString() !== id) {
             return res.status(403).json({ error: 'Access denied' });
         }
 
-        const { id } = req.params;
         const agent = await User.findById(id).select('-password');
 
         if (!agent) {

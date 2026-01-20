@@ -34,56 +34,64 @@ const Dashboard = () => {
     const fetchData = async () => {
         try {
             const headers = { 'Authorization': `Bearer ${token}` };
-            const [clientsRes, itinerariesRes] = await Promise.all([
-                fetch(`${API_URL}/api/clients`, { headers }),
-                fetch(`${API_URL}/api/itineraries`) // Public or needed? Itineraries might need auth too depending on server implementation. server/index.js didn't protect /api/itineraries explicitly, but users only see their own clients anyway. Let's start with public, or protect it. The server code for /api/itineraries was NOT protected in my multi_edit. Wait, let me check. I didn't verify /api/itineraries.
+
+            // If admin, they might want overview of all... but currently Dashboard is personal overview.
+            // If agent, fetch their own specific detailed stats
+            // Actually, let's use the detailed stats endpoint for everyone (it returns clients too)
+            // But wait, the admin dashboard logic (previous) fetched ALL clients? 
+            // The original code fetched `/api/clients`. 
+            // If I am admin, `/api/clients` returns ALL clients. 
+            // If I am agent, `/api/clients` returns MY clients.
+
+            // However, to get the GRAPHS and detailed commission stats, we need the `details` endpoint.
+            // Let's use it if we are an agent or if we want personal stats.
+
+            // Ideally:
+            const endpoint = `${API_URL}/api/agents/${user.id}/details`;
+
+            const [detailsRes, itinerariesRes] = await Promise.all([
+                fetch(endpoint, { headers }),
+                fetch(`${API_URL}/api/itineraries`)
             ]);
 
-            const clientsData = await clientsRes.json();
-            const itinerariesData = await itinerariesRes.json();
+            if (detailsRes.ok) {
+                const data = await detailsRes.json();
+                setClients(data.clients || []);
 
-            setClients(clientsData);
+                // Use server-side stats if available, else fallback (but server should have it)
+                if (data.stats) {
+                    // Calculate active trips locally since server doesn't provide it
+                    const now = new Date();
+                    const currentActiveTrips = (data.clients || []).filter(c =>
+                        c.trip_start && c.trip_end && new Date(c.trip_start) <= now && new Date(c.trip_end) >= now
+                    ).length;
+
+                    setStats({
+                        totalClients: data.stats.activeClients,
+                        activeTrips: currentActiveTrips,
+                        upcomingDepartures: data.stats.upcomingTrips,
+                        revenue: data.stats.totalRevenue,
+                        monthlyRevenue: data.stats.monthlyRevenue,
+                        totalCommission: data.stats.totalCommission
+                    });
+                }
+            } else {
+                // Fallback if endpoint fails (e.g. admin looking at dashboard?) 
+                // Admin has ID too.
+                console.error("Failed to fetch agent details");
+            }
+
+            const itinerariesData = await itinerariesRes.json();
             setItineraries(itinerariesData);
-            calculateStats(clientsData, itinerariesData);
+
         } catch (error) {
             console.error('Error fetching data:', error);
         }
     };
 
-    const calculateStats = (clientsData, itinerariesData) => {
-        const now = new Date();
-        const active = clientsData.filter(c => c.trip_start && c.trip_end && new Date(c.trip_start) <= now && new Date(c.trip_end) >= now).length;
-        const upcoming = clientsData.filter(c => c.trip_start && new Date(c.trip_start) > now).length;
-
-        // Real Revenue Calculation: Sum of all itinerary item costs
-        const revenue = itinerariesData.reduce((acc, item) => acc + (item.cost || 0), 0);
-
-        setStats({
-            totalClients: clientsData.length,
-            activeTrips: active,
-            upcomingDepartures: upcoming,
-            revenue: revenue
-        });
-
-        // Calculate Monthly Bookings
-        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-        const bookingsByMonth = new Array(12).fill(0);
-
-        clientsData.forEach(client => {
-            if (client.trip_start) {
-                const monthIndex = new Date(client.trip_start).getMonth();
-                bookingsByMonth[monthIndex]++;
-            }
-        });
-
-        // Create chart data for current year (or just show all months)
-        const formattedChartData = months.map((month, index) => ({
-            name: month,
-            bookings: bookingsByMonth[index]
-        }));
-
-        setChartData(formattedChartData);
-    };
+    // Removed calculateStats as we use server data now
+    // But we need to ensure chartData is populated for the old chart if we keep it?
+    // User wants "same view as agent page", so we replace the old chart with new charts.
 
     const handleAddClient = async (e) => {
         e.preventDefault();
@@ -436,30 +444,95 @@ const Dashboard = () => {
                             transition={{ delay: 0.3 }}
                             className="lg:col-span-1"
                         >
-                            <div className="bg-dark-800/40 rounded-xl p-6 border border-white/5 sticky top-24">
-                                <h2 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
-                                    <TrendingUp className="text-primary-500" size={20} />
-                                    Monthly Bookings
-                                </h2>
-                                <div className="h-64">
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <BarChart data={chartData}>
-                                            <CartesianGrid strokeDasharray="3 3" stroke="#333" vertical={false} />
-                                            <XAxis dataKey="name" stroke="#666" tick={{ fill: '#888', fontSize: 12 }} axisLine={false} tickLine={false} />
-                                            <Tooltip
-                                                contentStyle={{ backgroundColor: '#1a1a1a', border: 'none', borderRadius: '8px', color: '#fff', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.5)' }}
-                                                cursor={{ fill: 'rgba(255, 255, 255, 0.05)' }}
-                                            />
-                                            <Bar dataKey="bookings" fill="#F97316" radius={[4, 4, 0, 0]} />
-                                        </BarChart>
-                                    </ResponsiveContainer>
-                                </div>
-                                <div className="mt-6 pt-6 border-t border-white/5">
-                                    <div className="flex justify-between items-center text-sm">
-                                        <span className="text-slate-400">Total this year</span>
-                                        <span className="text-white font-bold text-lg">{stats.totalClients}</span>
+                            <div className="sticky top-24 space-y-6">
+                                {/* Revenue & Commission Graphs from Agent View */}
+                                {stats.monthlyRevenue && stats.monthlyRevenue.length > 0 ? (
+                                    <>
+                                        {/* Total Sales Graph */}
+                                        <div className="bg-dark-800/40 rounded-xl p-6 border border-white/5">
+                                            <h2 className="text-sm font-bold text-white mb-4 flex items-center gap-2">
+                                                <DollarSign size={16} className="text-emerald-500" />
+                                                Sales Trend
+                                            </h2>
+                                            <div className="h-40 w-full">
+                                                <ResponsiveContainer width="100%" height="100%">
+                                                    <BarChart data={stats.monthlyRevenue}>
+                                                        <CartesianGrid strokeDasharray="3 3" stroke="#ffffff05" vertical={false} />
+                                                        <XAxis
+                                                            dataKey="month"
+                                                            stroke="#64748b"
+                                                            tickFormatter={(value) => {
+                                                                const [year, month] = value.split('-');
+                                                                const date = new Date(year, month - 1);
+                                                                return date.toLocaleString('default', { month: 'short' });
+                                                            }}
+                                                            tick={{ fontSize: 10 }}
+                                                            axisLine={false}
+                                                            tickLine={false}
+                                                        />
+                                                        <YAxis
+                                                            stroke="#64748b"
+                                                            tick={{ fontSize: 10 }}
+                                                            axisLine={false}
+                                                            tickLine={false}
+                                                            tickFormatter={(value) => `$${value}`}
+                                                        />
+                                                        <Tooltip
+                                                            contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', color: '#fff', borderRadius: '8px', fontSize: '12px' }}
+                                                            cursor={{ fill: '#ffffff05' }}
+                                                            formatter={(value) => [`$${value.toLocaleString()}`, 'Sales']}
+                                                        />
+                                                        <Bar dataKey="revenue" fill="#10b981" radius={[2, 2, 0, 0]} barSize={20} />
+                                                    </BarChart>
+                                                </ResponsiveContainer>
+                                            </div>
+                                        </div>
+
+                                        {/* Total Commission Graph */}
+                                        <div className="bg-dark-800/40 rounded-xl p-6 border border-white/5">
+                                            <h2 className="text-sm font-bold text-white mb-4 flex items-center gap-2">
+                                                <DollarSign size={16} className="text-primary-500" />
+                                                Commission Trend
+                                            </h2>
+                                            <div className="h-40 w-full">
+                                                <ResponsiveContainer width="100%" height="100%">
+                                                    <BarChart data={stats.monthlyRevenue}>
+                                                        <CartesianGrid strokeDasharray="3 3" stroke="#ffffff05" vertical={false} />
+                                                        <XAxis
+                                                            dataKey="month"
+                                                            stroke="#64748b"
+                                                            tickFormatter={(value) => {
+                                                                const [year, month] = value.split('-');
+                                                                const date = new Date(year, month - 1);
+                                                                return date.toLocaleString('default', { month: 'short' });
+                                                            }}
+                                                            tick={{ fontSize: 10 }}
+                                                            axisLine={false}
+                                                            tickLine={false}
+                                                        />
+                                                        <YAxis
+                                                            stroke="#64748b"
+                                                            tick={{ fontSize: 10 }}
+                                                            axisLine={false}
+                                                            tickLine={false}
+                                                            tickFormatter={(value) => `$${value}`}
+                                                        />
+                                                        <Tooltip
+                                                            contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', color: '#fff', borderRadius: '8px', fontSize: '12px' }}
+                                                            cursor={{ fill: '#ffffff05' }}
+                                                            formatter={(value) => [`$${value.toLocaleString()}`, 'Commission']}
+                                                        />
+                                                        <Bar dataKey="commission" fill="#3b82f6" radius={[2, 2, 0, 0]} barSize={20} />
+                                                    </BarChart>
+                                                </ResponsiveContainer>
+                                            </div>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <div className="bg-dark-800/40 rounded-xl p-6 border border-white/5 text-center text-slate-500">
+                                        No revenue data available
                                     </div>
-                                </div>
+                                )}
                             </div>
                         </motion.div>
                     </div>
