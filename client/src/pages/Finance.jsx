@@ -466,6 +466,15 @@ const Finance = () => {
                     </motion.div>
                 </div>
             )}
+            {/* Debug Info (Temporary) */}
+            <div className="mt-8 p-4 bg-black/50 rounded-lg text-xs font-mono text-slate-500">
+                <p>Debug Info:</p>
+                <p>User ID: {user?.id || user?._id || 'Missing'}</p>
+                <p>Stats Loaded: {stats ? 'Yes' : 'No'}</p>
+                <p>Total Revenue: ${stats?.totalRevenue || 0}</p>
+                <p>Total Earned: ${stats?.totalCommission || 0}</p>
+                <p>Expenses Loaded: {expenses.length}</p>
+            </div>
         </div>
     );
 };
