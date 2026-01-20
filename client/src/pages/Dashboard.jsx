@@ -353,13 +353,13 @@ const Dashboard = () => {
 
                                                     <div className="flex gap-2">
                                                         <Link
-                                                            to={`/dashboard/client/${client.id}`}
+                                                            to={`/dashboard/client/${client.id || client._id}`}
                                                             className="px-4 py-2 bg-white/5 text-slate-200 rounded-lg hover:bg-white/10 transition text-sm font-medium"
                                                         >
                                                             Manage
                                                         </Link>
                                                         <Link
-                                                            to={`/client/${client.id}`}
+                                                            to={`/client/${client.id || client._id}`}
                                                             target="_blank"
                                                             className="p-2 text-slate-500 hover:text-primary-400 transition"
                                                             title="View Client App"
@@ -374,7 +374,7 @@ const Dashboard = () => {
                                                             {client.isArchived ? <RefreshCcw size={20} /> : <Archive size={20} />}
                                                         </button>
                                                         <button
-                                                            onClick={() => handleDeleteClient(client.id)}
+                                                            onClick={() => handleDeleteClient(client.id || client._id)}
                                                             className="p-2 text-slate-500 hover:text-red-500 transition"
                                                             title="Delete Client"
                                                         >
@@ -402,7 +402,7 @@ const Dashboard = () => {
                                     <BigCalendar
                                         localizer={localizer}
                                         events={clients.filter(c => c.trip_start && c.trip_end).map(c => ({
-                                            id: c.id,
+                                            id: c.id || c._id,
                                             title: c.name,
                                             start: new Date(c.trip_start),
                                             end: new Date(c.trip_end),
