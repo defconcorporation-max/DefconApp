@@ -166,30 +166,22 @@ app.get('/api/agents/:id/details', auth, async (req, res) => {
         let totalCommission = 0;
 
         itineraries.forEach(item => {
-            // Revenue = Cost (Selling Price)
-            if (item.cost) totalRevenue += item.cost;
+            // Revenue = Cost (Selling Price) + Service Fees
+            const sales = (item.cost || 0) + (item.serviceFee || 0);
+            totalRevenue += sales;
 
-            // Commission
+            // Commission Calculation (Matching ClientDetails.jsx)
+            const base = item.type === 'service_fee' ? (item.serviceFee || 0) : (item.cost || 0);
+
+            let comm = 0;
             if (item.commissionType === 'fixed') {
-                totalCommission += (item.commissionValue || 0);
+                comm = (item.commissionValue || 0);
             } else {
-                // percent
-                // Assuming Commission is based on (Selling Price - Net Cost) aka Profit, or just Selling Price?
-                // Usually commission is % of Profit or % of Total.
-                // Based on models, we have cost, costPrice, serviceFee.
-                // Let's assume % of Profit (cost - costPrice) as standard agency model, or % of Total if configured.
-                // For safety/simplicity and common use: % of Profit.
-                const profit = (item.cost || 0) - (item.costPrice || 0);
-                if (profit > 0) {
-                    totalCommission += profit * ((item.commissionValue || 0) / 100);
-                }
+                // Percent of Base (Selling Price)
+                comm = base * ((item.commissionValue || 0) / 100);
             }
 
-            // Add Service Fees directly to commission/profit?
-            if (item.serviceFee) {
-                totalCommission += item.serviceFee;
-                totalRevenue += item.serviceFee;
-            }
+            totalCommission += comm;
         });
 
         res.json({
