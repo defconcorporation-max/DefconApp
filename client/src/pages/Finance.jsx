@@ -1,18 +1,20 @@
 
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plus, DollarSign, Calendar, TrendingUp, Filter, AlertCircle, CheckCircle, Clock } from 'lucide-react';
+import { ArrowLeft, Plus, DollarSign, Calendar, TrendingUp, Filter, AlertCircle, CheckCircle, Clock, ChevronDown, ChevronUp } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import API_URL from '../config';
-import { motion } from 'framer-motion';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { motion, AnimatePresence } from 'framer-motion';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 const Finance = () => {
     const { token, user } = useAuth();
     const navigate = useNavigate();
     const [expenses, setExpenses] = useState([]);
+    const [stats, setStats] = useState(null); // Global Stats
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
+    const [isExpensesCollapsed, setIsExpensesCollapsed] = useState(true); // Collapsed by default
     const [formData, setFormData] = useState({
         title: '',
         amount: '',
@@ -32,8 +34,23 @@ const Finance = () => {
     useEffect(() => {
         if (token && user?.role === 'admin') {
             fetchExpenses();
+            fetchGlobalStats();
         }
     }, [token, user]);
+
+    const fetchGlobalStats = async () => {
+        try {
+            const res = await fetch(`${API_URL}/api/admin/stats`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setStats(data);
+            }
+        } catch (error) {
+            console.error("Failed to fetch global stats", error);
+        }
+    };
 
     const fetchExpenses = async () => {
         try {
@@ -123,6 +140,35 @@ const Finance = () => {
     const now = new Date();
     const overdueCount = expenses.filter(e => e.status === 'pending' && e.due_date && new Date(e.due_date) < now).length;
 
+    // Chart Data Processing
+    const currentYear = new Date().getFullYear();
+    const months = [
+        "J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"
+    ];
+
+    // Initialize monthly data structure
+    const chartData = months.map((label, index) => {
+        const monthKey = `${currentYear}-${String(index + 1).padStart(2, '0')}`;
+
+        // Revenue (Facturation) from Fetch Global Stats
+        const revenueItem = stats?.monthlyRevenue?.find(m => m.month === monthKey);
+        const revenue = revenueItem ? revenueItem.revenue : 0;
+
+        // Expenses (Dépenses - Incurred based on Invoice Date)
+        const expensesInMonth = expenses.filter(e => e.date && e.date.startsWith(monthKey)).reduce((acc, e) => acc + e.amount, 0);
+
+        // Payments (Paiements - Settled based on hypothetical paid date or just Invoice Date if paid)
+        // Ideally we need a 'paid_date', but for now let's use Invoice Date if status is 'paid'
+        const paymentsInMonth = expenses.filter(e => e.status === 'paid' && e.date && e.date.startsWith(monthKey)).reduce((acc, e) => acc + e.amount, 0);
+
+        return {
+            name: label,
+            Facturation: revenue,
+            Dépenses: expensesInMonth,
+            Paiements: paymentsInMonth
+        };
+    });
+
     if (loading) return null;
 
     return (
@@ -204,210 +250,284 @@ const Finance = () => {
                     </div>
                 </div>
 
-                {/* Expenses Table */}
-                <div className="bg-dark-800 rounded-2xl border border-white/5 overflow-hidden">
-                    <div className="p-6 border-b border-white/5 flex items-center justify-between">
-                        <h2 className="text-xl font-bold">Recent Expenses</h2>
-                        <div className="flex gap-2">
-                            <button className="px-3 py-1.5 text-xs bg-dark-700 hover:bg-dark-600 rounded-lg text-slate-300 transition">All</button>
-                            <button className="px-3 py-1.5 text-xs bg-dark-900 border border-white/5 hover:border-orange-500/50 rounded-lg text-slate-300 transition">Pending</button>
+            </div>
+
+            {/* Financial Overview Graph */}
+            <div className="bg-dark-800/60 backdrop-blur-md rounded-2xl p-6 border border-white/5 mb-8">
+                <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-xl font-bold flex items-center gap-2">
+                        <TrendingUp className="text-primary-500" /> Vue d'ensemble
+                    </h2>
+                    <div className="flex gap-4 text-sm">
+                        <div className="flex items-center gap-2">
+                            <span className="w-3 h-3 rounded-full bg-indigo-500"></span> Facturation
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <span className="w-3 h-3 rounded-full bg-emerald-500"></span> Paiements
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <span className="w-3 h-3 rounded-full bg-red-400"></span> Dépenses
                         </div>
                     </div>
-
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left">
-                            <thead className="bg-dark-900/50 text-xs uppercase text-slate-400">
-                                <tr>
-                                    <th className="px-6 py-4 font-semibold">Title / Description</th>
-                                    <th className="px-6 py-4 font-semibold">Category</th>
-                                    <th className="px-6 py-4 font-semibold">Amount</th>
-                                    <th className="px-6 py-4 font-semibold">Due Date</th>
-                                    <th className="px-6 py-4 font-semibold">Status</th>
-                                    <th className="px-6 py-4 font-semibold text-right">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-white/5">
-                                {expenses.map(expense => {
-                                    const isOverdue = expense.status === 'pending' && expense.due_date && new Date(expense.due_date) < new Date();
-                                    return (
-                                        <tr key={expense._id} className="hover:bg-white/5 transition group">
-                                            <td className="px-6 py-4">
-                                                <div className="font-semibold text-white">{expense.title}</div>
-                                                {expense.notes && <div className="text-xs text-slate-500">{expense.notes}</div>}
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <span className="px-2 py-1 bg-dark-700 rounded-md text-xs text-slate-300 border border-white/5">
-                                                    {expense.category}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4 font-bold text-white">
-                                                ${expense.amount.toLocaleString()}
-                                            </td>
-                                            <td className="px-6 py-4 text-sm text-slate-400">
-                                                {expense.due_date ? (
-                                                    <span className={isOverdue ? "text-red-400 font-bold flex items-center gap-1" : ""}>
-                                                        {isOverdue && <AlertCircle size={12} />}
-                                                        {new Date(expense.due_date).toLocaleDateString()}
-                                                    </span>
-                                                ) : '-'}
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                {expense.status === 'paid' ? (
-                                                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                                                        <CheckCircle size={12} /> Paid
-                                                    </span>
-                                                ) : (
-                                                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-orange-500/10 text-orange-400 border border-orange-500/20 cursor-pointer hover:bg-orange-500/20" onClick={() => updateStatus(expense._id, 'paid')}>
-                                                        <Clock size={12} /> Pending
-                                                    </span>
-                                                )}
-                                            </td>
-                                            <td className="px-6 py-4 text-right">
-                                                <button onClick={() => handleDelete(expense._id)} className="text-slate-500 hover:text-red-400 transition">
-                                                    Delete
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    );
-                                })}
-                                {expenses.length === 0 && (
-                                    <tr>
-                                        <td colSpan="6" className="px-6 py-12 text-center text-slate-500">
-                                            No expenses recorded. Add one to get started.
-                                        </td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
+                </div>
+                <div className="h-[300px] w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                        <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                            <defs>
+                                <linearGradient id="colorFacturation" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
+                                    <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                                </linearGradient>
+                                <linearGradient id="colorPaiements" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                                    <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                                </linearGradient>
+                                <linearGradient id="colorDepenses" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor="#f87171" stopOpacity={0.3} />
+                                    <stop offset="95%" stopColor="#f87171" stopOpacity={0} />
+                                </linearGradient>
+                            </defs>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
+                            <XAxis dataKey="name" stroke="#64748b" tickMargin={10} axisLine={false} tickLine={false} />
+                            <YAxis stroke="#64748b" tickFormatter={(value) => `$${value}`} axisLine={false} tickLine={false} />
+                            <Tooltip
+                                contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155', borderRadius: '12px', color: '#fff' }}
+                                itemStyle={{ color: '#e2e8f0' }}
+                                formatter={(value) => `$${value.toLocaleString()}`}
+                            />
+                            <Area type="monotone" dataKey="Facturation" stroke="#6366f1" strokeWidth={3} fillOpacity={1} fill="url(#colorFacturation)" />
+                            <Area type="monotone" dataKey="Paiements" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorPaiements)" />
+                            <Area type="monotone" dataKey="Dépenses" stroke="#f87171" strokeWidth={3} fillOpacity={1} fill="url(#colorDepenses)" />
+                        </AreaChart>
+                    </ResponsiveContainer>
                 </div>
             </div>
 
-            {/* Modal */}
-            {showModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-                    <motion.div
-                        initial={{ scale: 0.9, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        className="bg-dark-800 rounded-2xl w-full max-w-lg border border-white/10 shadow-2xl p-6"
-                    >
-                        <h2 className="text-2xl font-bold mb-6">Add New Expense</h2>
-                        <form onSubmit={handleSubmit} className="space-y-4">
-                            <div>
-                                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Description / Title</label>
-                                <input
-                                    type="text"
-                                    required
-                                    className="w-full bg-dark-900 border border-white/10 rounded-xl px-4 py-3 text-white focus:ring-1 focus:ring-primary-500 outline-none"
-                                    placeholder="e.g. Monthly Software Subscription"
-                                    value={formData.title}
-                                    onChange={e => setFormData({ ...formData, title: e.target.value })}
-                                />
+            {/* Expenses Table (Collapsible) */}
+            <div className="bg-dark-800 rounded-2xl border border-white/5 overflow-hidden transition-all duration-300">
+                <div
+                    className="p-6 border-b border-white/5 flex items-center justify-between cursor-pointer hover:bg-white/5 transition"
+                    onClick={() => setIsExpensesCollapsed(!isExpensesCollapsed)}
+                >
+                    <h2 className="text-xl font-bold flex items-center gap-2">
+                        Recent Expenses
+                        <span className="text-xs font-normal text-slate-500 ml-2">({expenses.length} records)</span>
+                    </h2>
+                    <div className="flex items-center gap-4">
+                        <div className="flex gap-2">
+                            <button className="px-3 py-1.5 text-xs bg-dark-700 hover:bg-dark-600 rounded-lg text-slate-300 transition" onClick={(e) => e.stopPropagation()}>All</button>
+                            <button className="px-3 py-1.5 text-xs bg-dark-900 border border-white/5 hover:border-orange-500/50 rounded-lg text-slate-300 transition" onClick={(e) => e.stopPropagation()}>Pending</button>
+                        </div>
+                        {isExpensesCollapsed ? <ChevronDown size={20} className="text-slate-400" /> : <ChevronUp size={20} className="text-slate-400" />}
+                    </div>
+                </div>
+
+                <AnimatePresence>
+                    {!isExpensesCollapsed && (
+                        <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.3 }}
+                        >
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left">
+                                    <thead className="bg-dark-900/50 text-xs uppercase text-slate-400">
+                                        <tr>
+                                            <th className="px-6 py-4 font-semibold">Title / Description</th>
+                                            <th className="px-6 py-4 font-semibold">Category</th>
+                                            <th className="px-6 py-4 font-semibold">Amount</th>
+                                            <th className="px-6 py-4 font-semibold">Due Date</th>
+                                            <th className="px-6 py-4 font-semibold">Status</th>
+                                            <th className="px-6 py-4 font-semibold text-right">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-white/5">
+                                        {expenses.map(expense => {
+                                            const isOverdue = expense.status === 'pending' && expense.due_date && new Date(expense.due_date) < new Date();
+                                            return (
+                                                <tr key={expense._id} className="hover:bg-white/5 transition group">
+                                                    <td className="px-6 py-4">
+                                                        <div className="font-semibold text-white">{expense.title}</div>
+                                                        {expense.notes && <div className="text-xs text-slate-500">{expense.notes}</div>}
+                                                    </td>
+                                                    <td className="px-6 py-4">
+                                                        <span className="px-2 py-1 bg-dark-700 rounded-md text-xs text-slate-300 border border-white/5">
+                                                            {expense.category}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-6 py-4 font-bold text-white">
+                                                        ${expense.amount.toLocaleString()}
+                                                    </td>
+                                                    <td className="px-6 py-4 text-sm text-slate-400">
+                                                        {expense.due_date ? (
+                                                            <span className={isOverdue ? "text-red-400 font-bold flex items-center gap-1" : ""}>
+                                                                {isOverdue && <AlertCircle size={12} />}
+                                                                {new Date(expense.due_date).toLocaleDateString()}
+                                                            </span>
+                                                        ) : '-'}
+                                                    </td>
+                                                    <td className="px-6 py-4">
+                                                        {expense.status === 'paid' ? (
+                                                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                                                                <CheckCircle size={12} /> Paid
+                                                            </span>
+                                                        ) : (
+                                                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-orange-500/10 text-orange-400 border border-orange-500/20 cursor-pointer hover:bg-orange-500/20" onClick={() => updateStatus(expense._id, 'paid')}>
+                                                                <Clock size={12} /> Pending
+                                                            </span>
+                                                        )}
+                                                    </td>
+                                                    <td className="px-6 py-4 text-right">
+                                                        <button onClick={() => handleDelete(expense._id)} className="text-slate-500 hover:text-red-400 transition">
+                                                            Delete
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
+                                        {expenses.length === 0 && (
+                                            <tr>
+                                                <td colSpan="6" className="px-6 py-12 text-center text-slate-500">
+                                                    No expenses recorded. Add one to get started.
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
                             </div>
-                            <div className="grid grid-cols-2 gap-4">
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+            </div>
+
+            {/* Modal */}
+            {
+                showModal && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            className="bg-dark-800 rounded-2xl w-full max-w-lg border border-white/10 shadow-2xl p-6"
+                        >
+                            <h2 className="text-2xl font-bold mb-6">Add New Expense</h2>
+                            <form onSubmit={handleSubmit} className="space-y-4">
                                 <div>
-                                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Amount ($)</label>
+                                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Description / Title</label>
                                     <input
-                                        type="number"
+                                        type="text"
                                         required
                                         className="w-full bg-dark-900 border border-white/10 rounded-xl px-4 py-3 text-white focus:ring-1 focus:ring-primary-500 outline-none"
-                                        placeholder="0.00"
-                                        value={formData.amount}
-                                        onChange={e => setFormData({ ...formData, amount: parseFloat(e.target.value) })}
+                                        placeholder="e.g. Monthly Software Subscription"
+                                        value={formData.title}
+                                        onChange={e => setFormData({ ...formData, title: e.target.value })}
                                     />
                                 </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Amount ($)</label>
+                                        <input
+                                            type="number"
+                                            required
+                                            className="w-full bg-dark-900 border border-white/10 rounded-xl px-4 py-3 text-white focus:ring-1 focus:ring-primary-500 outline-none"
+                                            placeholder="0.00"
+                                            value={formData.amount}
+                                            onChange={e => setFormData({ ...formData, amount: parseFloat(e.target.value) })}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Category</label>
+                                        <select
+                                            className="w-full bg-dark-900 border border-white/10 rounded-xl px-4 py-3 text-white focus:ring-1 focus:ring-primary-500 outline-none"
+                                            value={formData.category}
+                                            onChange={e => setFormData({ ...formData, category: e.target.value })}
+                                        >
+                                            <option value="Other">Other</option>
+                                            <option value="Marketing">Marketing</option>
+                                            <option value="Software">Software</option>
+                                            <option value="Travel">Travel</option>
+                                            <option value="Commission Payout">Commission Payout</option>
+                                            <option value="Office">Office</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Invoice Date</label>
+                                        <input
+                                            type="date"
+                                            className="w-full bg-dark-900 border border-white/10 rounded-xl px-4 py-3 text-white focus:ring-1 focus:ring-primary-500 outline-none"
+                                            value={formData.date}
+                                            onChange={e => setFormData({ ...formData, date: e.target.value })}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Due Date</label>
+                                        <input
+                                            type="date"
+                                            className="w-full bg-dark-900 border border-white/10 rounded-xl px-4 py-3 text-white focus:ring-1 focus:ring-primary-500 outline-none"
+                                            value={formData.due_date}
+                                            onChange={e => setFormData({ ...formData, due_date: e.target.value })}
+                                        />
+                                    </div>
+                                </div>
                                 <div>
-                                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Category</label>
-                                    <select
+                                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Status</label>
+                                    <div className="flex gap-4">
+                                        <label className="flex items-center gap-2 cursor-pointer">
+                                            <input
+                                                type="radio"
+                                                name="status"
+                                                value="pending"
+                                                checked={formData.status === 'pending'}
+                                                onChange={() => setFormData({ ...formData, status: 'pending' })}
+                                                className="accent-orange-500"
+                                            />
+                                            <span className="text-orange-400">Pending</span>
+                                        </label>
+                                        <label className="flex items-center gap-2 cursor-pointer">
+                                            <input
+                                                type="radio"
+                                                name="status"
+                                                value="paid"
+                                                checked={formData.status === 'paid'}
+                                                onChange={() => setFormData({ ...formData, status: 'paid' })}
+                                                className="accent-emerald-500"
+                                            />
+                                            <span className="text-emerald-400">Paid</span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Notes (Optional)</label>
+                                    <textarea
                                         className="w-full bg-dark-900 border border-white/10 rounded-xl px-4 py-3 text-white focus:ring-1 focus:ring-primary-500 outline-none"
-                                        value={formData.category}
-                                        onChange={e => setFormData({ ...formData, category: e.target.value })}
+                                        rows="2"
+                                        value={formData.notes}
+                                        onChange={e => setFormData({ ...formData, notes: e.target.value })}
+                                    ></textarea>
+                                </div>
+                                <div className="flex gap-3 mt-6">
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowModal(false)}
+                                        className="flex-1 py-3 rounded-xl font-bold bg-dark-700 hover:bg-dark-600 transition"
                                     >
-                                        <option value="Other">Other</option>
-                                        <option value="Marketing">Marketing</option>
-                                        <option value="Software">Software</option>
-                                        <option value="Travel">Travel</option>
-                                        <option value="Commission Payout">Commission Payout</option>
-                                        <option value="Office">Office</option>
-                                    </select>
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        className="flex-1 py-3 rounded-xl font-bold bg-primary-500 hover:bg-primary-600 transition text-white shadow-lg shadow-primary-500/20"
+                                    >
+                                        Save Expense
+                                    </button>
                                 </div>
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Invoice Date</label>
-                                    <input
-                                        type="date"
-                                        className="w-full bg-dark-900 border border-white/10 rounded-xl px-4 py-3 text-white focus:ring-1 focus:ring-primary-500 outline-none"
-                                        value={formData.date}
-                                        onChange={e => setFormData({ ...formData, date: e.target.value })}
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Due Date</label>
-                                    <input
-                                        type="date"
-                                        className="w-full bg-dark-900 border border-white/10 rounded-xl px-4 py-3 text-white focus:ring-1 focus:ring-primary-500 outline-none"
-                                        value={formData.due_date}
-                                        onChange={e => setFormData({ ...formData, due_date: e.target.value })}
-                                    />
-                                </div>
-                            </div>
-                            <div>
-                                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Status</label>
-                                <div className="flex gap-4">
-                                    <label className="flex items-center gap-2 cursor-pointer">
-                                        <input
-                                            type="radio"
-                                            name="status"
-                                            value="pending"
-                                            checked={formData.status === 'pending'}
-                                            onChange={() => setFormData({ ...formData, status: 'pending' })}
-                                            className="accent-orange-500"
-                                        />
-                                        <span className="text-orange-400">Pending</span>
-                                    </label>
-                                    <label className="flex items-center gap-2 cursor-pointer">
-                                        <input
-                                            type="radio"
-                                            name="status"
-                                            value="paid"
-                                            checked={formData.status === 'paid'}
-                                            onChange={() => setFormData({ ...formData, status: 'paid' })}
-                                            className="accent-emerald-500"
-                                        />
-                                        <span className="text-emerald-400">Paid</span>
-                                    </label>
-                                </div>
-                            </div>
-                            <div>
-                                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Notes (Optional)</label>
-                                <textarea
-                                    className="w-full bg-dark-900 border border-white/10 rounded-xl px-4 py-3 text-white focus:ring-1 focus:ring-primary-500 outline-none"
-                                    rows="2"
-                                    value={formData.notes}
-                                    onChange={e => setFormData({ ...formData, notes: e.target.value })}
-                                ></textarea>
-                            </div>
-                            <div className="flex gap-3 mt-6">
-                                <button
-                                    type="button"
-                                    onClick={() => setShowModal(false)}
-                                    className="flex-1 py-3 rounded-xl font-bold bg-dark-700 hover:bg-dark-600 transition"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    type="submit"
-                                    className="flex-1 py-3 rounded-xl font-bold bg-primary-500 hover:bg-primary-600 transition text-white shadow-lg shadow-primary-500/20"
-                                >
-                                    Save Expense
-                                </button>
-                            </div>
-                        </form>
-                    </motion.div>
-                </div>
-            )}
-        </div>
+                            </form>
+                        </motion.div>
+                    </div>
+                )
+            }
+        </div >
     );
 };
 

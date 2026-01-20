@@ -200,6 +200,14 @@ const ClientView = () => {
         </div>
     );
 
+    // Helper for Wall Clock Time (Keep face value regardless of timezone)
+    const getWallClockDate = (isoString) => {
+        if (!isoString) return null;
+        const utc = moment.utc(isoString);
+        // Create date using the UTC components but simply "placed" in the local timeline
+        return new Date(utc.year(), utc.month(), utc.date(), utc.hour(), utc.minute(), utc.second());
+    };
+
     // Prepare events for Big Calendar
     const calendarEvents = itinerary
         .filter(item => item.type !== 'hotel') // Hide hotels from calendar
@@ -207,18 +215,19 @@ const ClientView = () => {
             let start;
             let end;
 
-            // Use moment for more robust parsing
-            const mStart = moment(item.start_time);
+            // Use Wall Clock Time for Calendar positioning
+            const mStart = moment.utc(item.start_time);
 
             if (!mStart.isValid()) return null;
 
-            start = mStart.toDate();
+            // Convert to local Date object matching the face value
+            start = getWallClockDate(item.start_time);
 
             if (item.type === 'flight') {
                 // Force 1 hour for flights
                 end = moment(start).add(1, 'hours').toDate();
             } else if (item.end_time) {
-                let mEnd = moment(item.end_time);
+                let mEnd = moment.utc(item.end_time);
 
                 if (mEnd.isValid()) {
                     // Smart Repair: If end is before start, try to fix it based on time
@@ -231,13 +240,13 @@ const ClientView = () => {
                         });
 
                         // If repaired end is still before start (e.g. ends next day early morning), add 1 day
-                        if (repairedEnd.isBefore(mStart)) {
+                        if (repairedEnd.isBefore(moment(start))) {
                             repairedEnd.add(1, 'day');
                         }
 
                         end = repairedEnd.toDate();
                     } else {
-                        end = mEnd.toDate();
+                        end = getWallClockDate(item.end_time);
                     }
 
                     // Final check: if still invalid or same time, default to 1 hour
@@ -348,7 +357,7 @@ const ClientView = () => {
                     <span className="truncate">{event.title}</span>
                 </div>
                 <div className="text-[9px] text-white/80 font-medium truncate font-mono">
-                    {moment(event.start).format('h:mm A')} - {moment(event.end).format('h:mm A')}
+                    {moment.utc(event.resource.start_time).format('h:mm A')} - {moment.utc(event.resource.end_time || event.end).format('h:mm A')}
                 </div>
             </div>
         );
@@ -544,8 +553,8 @@ const ClientView = () => {
                 <div className="flex justify-between items-center text-sm">
                     <div>
                         <div className="text-slate-500 text-xs mb-1">Departure</div>
-                        <div className="font-bold text-slate-900 dark:text-white">{moment(flight.start_time).format('h:mm A')}</div>
-                        <div className="text-slate-400 text-xs">{moment(flight.start_time).format('MMM D')}</div>
+                        <div className="font-bold text-slate-900 dark:text-white">{moment.utc(flight.start_time).format('h:mm A')}</div>
+                        <div className="text-slate-400 text-xs">{moment.utc(flight.start_time).format('MMM D')}</div>
                     </div>
                     <div className="flex-1 px-4 flex flex-col items-center">
                         <div className="w-full h-px bg-slate-200 dark:bg-white/10 relative">
@@ -555,8 +564,8 @@ const ClientView = () => {
                     </div>
                     <div className="text-right">
                         <div className="text-slate-500 text-xs mb-1">Arrival</div>
-                        <div className="font-bold text-slate-900 dark:text-white">{moment(flight.end_time).format('h:mm A')}</div>
-                        <div className="text-slate-400 text-xs">{moment(flight.end_time).format('MMM D')}</div>
+                        <div className="font-bold text-slate-900 dark:text-white">{moment.utc(flight.end_time).format('h:mm A')}</div>
+                        <div className="text-slate-400 text-xs">{moment.utc(flight.end_time).format('MMM D')}</div>
                     </div>
                 </div>
             </div>
@@ -589,11 +598,11 @@ const ClientView = () => {
                     <div className="grid grid-cols-2 gap-4 mt-3">
                         <div className="bg-slate-50 dark:bg-white/5 p-2 rounded-lg">
                             <div className="text-[10px] text-slate-500 uppercase tracking-wider mb-0.5">Check-in</div>
-                            <div className="text-sm font-bold text-slate-900 dark:text-white">{moment(hotel.start_time).format('MMM D, h:mm A')}</div>
+                            <div className="text-sm font-bold text-slate-900 dark:text-white">{moment.utc(hotel.start_time).format('MMM D, h:mm A')}</div>
                         </div>
                         <div className="bg-slate-50 dark:bg-white/5 p-2 rounded-lg">
                             <div className="text-[10px] text-slate-500 uppercase tracking-wider mb-0.5">Check-out</div>
-                            <div className="text-sm font-bold text-slate-900 dark:text-white">{moment(hotel.end_time).format('MMM D, h:mm A')}</div>
+                            <div className="text-sm font-bold text-slate-900 dark:text-white">{moment.utc(hotel.end_time).format('MMM D, h:mm A')}</div>
                         </div>
                     </div>
                 </div>
@@ -646,7 +655,7 @@ const ClientView = () => {
                                         return (
                                             <div key={flight.id} className="flex flex-col md:flex-row justify-between items-center border-b border-white/10 pb-4 last:border-0 last:pb-0">
                                                 <div className="flex items-center gap-4 mb-2 md:mb-0 w-full md:w-auto">
-                                                    <div className="text-2xl font-bold text-yellow-500 w-16">{moment(flight.start_time).format('HH:mm')}</div>
+                                                    <div className="text-2xl font-bold text-yellow-500 w-16">{moment.utc(flight.start_time).format('HH:mm')}</div>
                                                     <div>
                                                         <div className="text-white font-bold text-lg">{flight.title}</div>
                                                         <div className="text-slate-400 text-sm">{flight.location}</div>
@@ -674,7 +683,7 @@ const ClientView = () => {
 
         // Group activities by day
         const groupedActivities = activities.reduce((acc, item) => {
-            const date = moment(item.start_time).format('YYYY-MM-DD');
+            const date = moment.utc(item.start_time).format('YYYY-MM-DD');
             if (!acc[date]) acc[date] = [];
             acc[date].push(item);
             return acc;
@@ -782,7 +791,8 @@ const ClientView = () => {
                                                         <Ticket size={12} />
                                                         {item.type || 'Activity'}
                                                     </div>
-                                                    <div className="text-slate-500 text-xs font-mono">{moment(item.start_time).format('h:mm A')}</div>
+                                                    <div className="text-slate-500 text-xs font-mono">{moment.utc(item.start_time).format('h:mm A')}</div>
+
                                                 </div>
                                                 <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-1 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">{item.title}</h3>
                                                 <div className="flex items-center gap-4 text-sm text-slate-500 dark:text-slate-400 mb-3">
@@ -791,7 +801,7 @@ const ClientView = () => {
                                                         {item.is_flexible ? (
                                                             <span className="italic text-primary-500 font-medium">Flexible</span>
                                                         ) : (
-                                                            moment(item.start_time).format('h:mm A')
+                                                            moment.utc(item.start_time).format('h:mm A')
                                                         )}
                                                     </div>
                                                     {item.location && (
