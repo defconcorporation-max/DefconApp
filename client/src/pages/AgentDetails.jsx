@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Users, DollarSign, Briefcase, Calendar, MapPin, Mail, Phone, ExternalLink } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useAuth } from '../context/AuthContext';
 import API_URL from '../config';
 
@@ -88,6 +89,48 @@ const AgentDetails = () => {
                         <p className="text-2xl font-bold text-white">{stats.upcomingTrips}</p>
                     </div>
                 </div>
+
+                {/* Revenue Graph */}
+                {stats.monthlyRevenue && stats.monthlyRevenue.length > 0 && (
+                    <div className="bg-dark-800 p-6 rounded-xl border border-white/5 mb-8">
+                        <h2 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
+                            <DollarSign size={20} className="text-emerald-500" />
+                            Revenue History
+                        </h2>
+                        <div className="h-80 w-full">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={stats.monthlyRevenue}>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
+                                    <XAxis
+                                        dataKey="month"
+                                        stroke="#94a3b8"
+                                        tickFormatter={(value) => {
+                                            const [year, month] = value.split('-');
+                                            const date = new Date(year, month - 1);
+                                            return date.toLocaleString('default', { month: 'short' });
+                                        }}
+                                        tick={{ fontSize: 12 }}
+                                        axisLine={false}
+                                        tickLine={false}
+                                    />
+                                    <YAxis
+                                        stroke="#94a3b8"
+                                        tick={{ fontSize: 12 }}
+                                        axisLine={false}
+                                        tickLine={false}
+                                        tickFormatter={(value) => `$${value}`}
+                                    />
+                                    <Tooltip
+                                        contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', color: '#fff', borderRadius: '8px' }}
+                                        cursor={{ fill: '#ffffff05' }}
+                                        formatter={(value) => [`$${value.toLocaleString()}`, 'Revenue']}
+                                    />
+                                    <Bar dataKey="revenue" fill="#10b981" radius={[4, 4, 0, 0]} barSize={40} />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </div>
+                )}
 
                 {/* Clients List */}
                 <div className="bg-dark-800 rounded-xl border border-white/5 overflow-hidden">

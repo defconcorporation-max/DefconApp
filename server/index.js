@@ -164,6 +164,7 @@ app.get('/api/agents/:id/details', auth, async (req, res) => {
 
         let totalRevenue = 0;
         let totalCommission = 0;
+        const monthlyStats = {};
 
         itineraries.forEach(item => {
             // Revenue = Cost (Selling Price) + Service Fees
@@ -182,7 +183,22 @@ app.get('/api/agents/:id/details', auth, async (req, res) => {
             }
 
             totalCommission += comm;
+
+            // Monthly breakdown (last 12 months)
+            if (item.start_time) {
+                const date = new Date(item.start_time);
+                const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+                if (!monthlyStats[monthKey]) monthlyStats[monthKey] = 0;
+                monthlyStats[monthKey] += sales;
+            }
         });
+
+        // Convert monthlyStats to array
+        const sortedMonths = Object.keys(monthlyStats).sort();
+        const monthlyRevenue = sortedMonths.map(key => ({
+            month: key,
+            revenue: monthlyStats[key]
+        }));
 
         res.json({
             agent,
@@ -191,7 +207,8 @@ app.get('/api/agents/:id/details', auth, async (req, res) => {
                 activeClients,
                 upcomingTrips,
                 totalRevenue,
-                totalCommission
+                totalCommission,
+                monthlyRevenue
             }
         });
     } catch (error) {
