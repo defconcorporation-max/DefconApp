@@ -82,20 +82,29 @@ const Dashboard = () => {
                 const active = clientsData.filter(c => c.trip_start && c.trip_end && new Date(c.trip_start) <= now && new Date(c.trip_end) >= now).length;
                 const upcoming = clientsData.filter(c => c.trip_start && new Date(c.trip_start) > now).length;
 
-                // Calculate revenue from itineraries
+                // Calculate revenue from itineraries (Fallback for non-admins or if admin stats fail)
                 const itinerariesData = await itinerariesRes.clone().json().catch(() => []);
-                // Filter itineraries? If Admin, we see all itineraries for all clients?
-                // The /api/itineraries endpoint returns ALL itineraries currently (based on server code check) or filtered?
-                // Let's assume naive sum for fallback.
                 const revenue = itinerariesData.reduce((acc, item) => acc + (item.cost || 0), 0);
 
-                setStats({
-                    totalClients: clientsData.length,
-                    activeTrips: active,
-                    upcomingDepartures: upcoming,
-                    revenue: revenue
-                    // No monthlyRevenue graphs in fallback
-                });
+                if (user?.role === 'admin') {
+                    // For Admin, ONLY update counts from client list
+                    // Do NOT overwrite revenue/graphs which are handled by fetchAdminStats
+                    setStats(prev => ({
+                        ...prev,
+                        totalClients: clientsData.length,
+                        activeTrips: active,
+                        upcomingDepartures: upcoming
+                        // Preserves revenue/monthlyRevenue from fetchAdminStats
+                    }));
+                } else {
+                    setStats({
+                        totalClients: clientsData.length, // Use the fetched list length
+                        activeTrips: active,
+                        upcomingDepartures: upcoming,
+                        revenue: revenue
+                        // No monthlyRevenue graphs in fallback
+                    });
+                }
             }
 
             const itinerariesData = await itinerariesRes.json();
