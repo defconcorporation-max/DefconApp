@@ -91,43 +91,87 @@ const AgentDetails = () => {
                 </div>
 
                 {/* Revenue Graph */}
+                {/* Revenue & Commission Graphs */}
                 {stats.monthlyRevenue && stats.monthlyRevenue.length > 0 && (
-                    <div className="bg-dark-800 p-6 rounded-xl border border-white/5 mb-8">
-                        <h2 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
-                            <DollarSign size={20} className="text-emerald-500" />
-                            Revenue History
-                        </h2>
-                        <div className="h-80 w-full">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={stats.monthlyRevenue}>
-                                    <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
-                                    <XAxis
-                                        dataKey="month"
-                                        stroke="#94a3b8"
-                                        tickFormatter={(value) => {
-                                            const [year, month] = value.split('-');
-                                            const date = new Date(year, month - 1);
-                                            return date.toLocaleString('default', { month: 'short' });
-                                        }}
-                                        tick={{ fontSize: 12 }}
-                                        axisLine={false}
-                                        tickLine={false}
-                                    />
-                                    <YAxis
-                                        stroke="#94a3b8"
-                                        tick={{ fontSize: 12 }}
-                                        axisLine={false}
-                                        tickLine={false}
-                                        tickFormatter={(value) => `$${value}`}
-                                    />
-                                    <Tooltip
-                                        contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', color: '#fff', borderRadius: '8px' }}
-                                        cursor={{ fill: '#ffffff05' }}
-                                        formatter={(value) => [`$${value.toLocaleString()}`, 'Revenue']}
-                                    />
-                                    <Bar dataKey="revenue" fill="#10b981" radius={[4, 4, 0, 0]} barSize={40} />
-                                </BarChart>
-                            </ResponsiveContainer>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                        {/* Total Sales Graph */}
+                        <div className="bg-dark-800 p-6 rounded-xl border border-white/5">
+                            <h2 className="text-sm font-bold text-white mb-4 flex items-center gap-2">
+                                <DollarSign size={16} className="text-emerald-500" />
+                                Sales Trend
+                            </h2>
+                            <div className="h-48 w-full">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <BarChart data={stats.monthlyRevenue}>
+                                        <CartesianGrid strokeDasharray="3 3" stroke="#ffffff05" vertical={false} />
+                                        <XAxis
+                                            dataKey="month"
+                                            stroke="#64748b"
+                                            tickFormatter={(value) => {
+                                                const [year, month] = value.split('-');
+                                                const date = new Date(year, month - 1);
+                                                return date.toLocaleString('default', { month: 'short' });
+                                            }}
+                                            tick={{ fontSize: 10 }}
+                                            axisLine={false}
+                                            tickLine={false}
+                                        />
+                                        <YAxis
+                                            stroke="#64748b"
+                                            tick={{ fontSize: 10 }}
+                                            axisLine={false}
+                                            tickLine={false}
+                                            tickFormatter={(value) => `$${value}`}
+                                        />
+                                        <Tooltip
+                                            contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', color: '#fff', borderRadius: '8px', fontSize: '12px' }}
+                                            cursor={{ fill: '#ffffff05' }}
+                                            formatter={(value) => [`$${value.toLocaleString()}`, 'Sales']}
+                                        />
+                                        <Bar dataKey="revenue" fill="#10b981" radius={[2, 2, 0, 0]} barSize={20} />
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            </div>
+                        </div>
+
+                        {/* Total Commission Graph */}
+                        <div className="bg-dark-800 p-6 rounded-xl border border-white/5">
+                            <h2 className="text-sm font-bold text-white mb-4 flex items-center gap-2">
+                                <DollarSign size={16} className="text-primary-500" />
+                                Commission Trend
+                            </h2>
+                            <div className="h-48 w-full">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <BarChart data={stats.monthlyRevenue}>
+                                        <CartesianGrid strokeDasharray="3 3" stroke="#ffffff05" vertical={false} />
+                                        <XAxis
+                                            dataKey="month"
+                                            stroke="#64748b"
+                                            tickFormatter={(value) => {
+                                                const [year, month] = value.split('-');
+                                                const date = new Date(year, month - 1);
+                                                return date.toLocaleString('default', { month: 'short' });
+                                            }}
+                                            tick={{ fontSize: 10 }}
+                                            axisLine={false}
+                                            tickLine={false}
+                                        />
+                                        <YAxis
+                                            stroke="#64748b"
+                                            tick={{ fontSize: 10 }}
+                                            axisLine={false}
+                                            tickLine={false}
+                                            tickFormatter={(value) => `$${value}`}
+                                        />
+                                        <Tooltip
+                                            contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', color: '#fff', borderRadius: '8px', fontSize: '12px' }}
+                                            cursor={{ fill: '#ffffff05' }}
+                                            formatter={(value) => [`$${value.toLocaleString()}`, 'Commission']}
+                                        />
+                                        <Bar dataKey="commission" fill="#3b82f6" radius={[2, 2, 0, 0]} barSize={20} />
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            </div>
                         </div>
                     </div>
                 )}

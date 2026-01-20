@@ -165,6 +165,7 @@ app.get('/api/agents/:id/details', auth, async (req, res) => {
         let totalRevenue = 0;
         let totalCommission = 0;
         const monthlyStats = {};
+        const monthlyCommissionStats = {};
 
         itineraries.forEach(item => {
             // Revenue = Cost (Selling Price) + Service Fees
@@ -188,8 +189,12 @@ app.get('/api/agents/:id/details', auth, async (req, res) => {
             if (item.start_time) {
                 const date = new Date(item.start_time);
                 const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+
                 if (!monthlyStats[monthKey]) monthlyStats[monthKey] = 0;
                 monthlyStats[monthKey] += sales;
+
+                if (!monthlyCommissionStats[monthKey]) monthlyCommissionStats[monthKey] = 0;
+                monthlyCommissionStats[monthKey] += comm;
             }
         });
 
@@ -197,7 +202,8 @@ app.get('/api/agents/:id/details', auth, async (req, res) => {
         const sortedMonths = Object.keys(monthlyStats).sort();
         const monthlyRevenue = sortedMonths.map(key => ({
             month: key,
-            revenue: monthlyStats[key]
+            revenue: monthlyStats[key],
+            commission: monthlyCommissionStats[key] || 0
         }));
 
         res.json({
