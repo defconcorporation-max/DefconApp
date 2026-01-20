@@ -606,6 +606,14 @@ const ClientDetails = () => {
     };
 
     // Calendar Events
+    // Helper for Wall Clock Time (Keep face value regardless of timezone)
+    const getWallClockDate = (isoString) => {
+        if (!isoString) return null;
+        const utc = moment.utc(isoString);
+        // Create date using the UTC components but simply "placed" in the local timeline
+        return new Date(utc.year(), utc.month(), utc.date(), utc.hour(), utc.minute(), utc.second());
+    };
+
     // Calendar Events
     const events = itinerary
         .filter(item => item.type !== 'hotel') // Optional: Hide hotels from calendar if desired, or keep them
@@ -613,18 +621,19 @@ const ClientDetails = () => {
             let start;
             let end;
 
-            // Use moment for more robust parsing
-            const mStart = moment(item.start_time);
+            // Use Wall Clock Time for Calendar positioning
+            const mStart = moment.utc(item.start_time);
 
             if (!mStart.isValid()) return null;
 
-            start = mStart.toDate();
+            // Convert to local Date object matching the face value
+            start = getWallClockDate(item.start_time);
 
             if (item.type === 'flight') {
                 // Force 1 hour for flights
                 end = moment(start).add(1, 'hours').toDate();
             } else if (item.end_time) {
-                let mEnd = moment(item.end_time);
+                let mEnd = moment.utc(item.end_time);
 
                 if (mEnd.isValid()) {
                     // Smart Repair: If end is before start, try to fix it based on time
@@ -637,13 +646,13 @@ const ClientDetails = () => {
                         });
 
                         // If repaired end is still before start (e.g. ends next day early morning), add 1 day
-                        if (repairedEnd.isBefore(mStart)) {
+                        if (repairedEnd.isBefore(moment(start))) {
                             repairedEnd.add(1, 'day');
                         }
 
                         end = repairedEnd.toDate();
                     } else {
-                        end = mEnd.toDate();
+                        end = getWallClockDate(item.end_time);
                     }
 
                     // Final check: if still invalid or same time, default to 1 hour
@@ -996,7 +1005,7 @@ const ClientDetails = () => {
                                                         <div className="flex flex-col gap-1 mt-2 text-sm text-slate-400">
                                                             <span className="flex items-center gap-2">
                                                                 <Clock size={14} className="text-slate-500" />
-                                                                {new Date(item.start_time).toLocaleDateString()}
+                                                                {moment.utc(item.start_time).format('ddd, MMM D, HH:mm')}
                                                             </span>
                                                             <div className="flex flex-wrap gap-3 mt-2">
                                                                 {item.cost > 0 && (
@@ -1071,7 +1080,7 @@ const ClientDetails = () => {
                                                         <div className="flex flex-col gap-1 mt-2 text-sm text-slate-300">
                                                             <span className="flex items-center gap-2">
                                                                 <Clock size={14} className="text-slate-500" />
-                                                                {new Date(item.start_time).toLocaleString([], { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                                                {moment.utc(item.start_time).format('ddd, MMM D, HH:mm')}
                                                             </span>
                                                             {item.location && (
                                                                 <span className="flex items-center gap-2">
@@ -1156,7 +1165,7 @@ const ClientDetails = () => {
                                                                 <div className="flex items-center gap-3 text-sm text-slate-400 mt-1">
                                                                     <span className="flex items-center gap-1">
                                                                         <Clock size={14} />
-                                                                        {new Date(item.start_time).toLocaleString([], { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                                                        {moment.utc(item.start_time).format('ddd, MMM D, HH:mm')}
                                                                     </span>
                                                                     {item.location && (
                                                                         <span className="flex items-center gap-1">
