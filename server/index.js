@@ -128,6 +128,49 @@ app.get('/api/auth/agents', auth, async (req, res) => {
     }
 });
 
+// Get Global Admin Stats (Total Profit)
+app.get('/api/admin/stats', auth, async (req, res) => {
+    try {
+        if (req.user.role !== 'admin') {
+            return res.status(403).json({ error: 'Access denied' });
+        }
+
+        const itineraries = await ItineraryItem.find({});
+        let totalProfit = 0;
+
+        itineraries.forEach(item => {
+            // Commission Calculation
+            const base = item.type === 'service_fee' ? (item.serviceFee || 0) : (item.cost || 0); // Sell Price
+            let comm = 0;
+            if (item.commissionType === 'fixed') {
+                comm = (item.commissionValue || 0);
+            } else {
+                comm = base * ((item.commissionValue || 0) / 100);
+            }
+
+            // Profit = (Sell Price - Net Price) + Service Fees - Commission
+            // Note: serviceFee is usually the Sell Price for 'service_fee' type, and costPrice is 0.
+            // For standard items: Profit = (cost - costPrice) - comm
+            // For service fees: Profit = serviceFee - comm (since costPrice usually 0)
+
+            // However, to be generic:
+            // Sell Price (Revenue) = item.cost + item.serviceFee
+            // Net Cost = item.costPrice
+
+            // Profit = (Revenue - Net Cost) - Commission
+            const revenue = (item.cost || 0) + (item.serviceFee || 0);
+            const netCost = (item.costPrice || 0);
+
+            const profit = (revenue - netCost) - comm;
+            totalProfit += profit;
+        });
+
+        res.json({ totalProfit });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // Upload Endpoint
 app.post('/api/upload', upload.single('file'), (req, res) => {
     if (!req.file) {
