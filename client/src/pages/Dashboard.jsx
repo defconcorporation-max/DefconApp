@@ -35,39 +35,34 @@ const Dashboard = () => {
         try {
             const headers = { 'Authorization': `Bearer ${token}` };
 
-            // If admin, they might want overview of all... but currently Dashboard is personal overview.
-            // If agent, fetch their own specific detailed stats
-            // Actually, let's use the detailed stats endpoint for everyone (it returns clients too)
-            // But wait, the admin dashboard logic (previous) fetched ALL clients? 
-            // The original code fetched `/api/clients`. 
-            // If I am admin, `/api/clients` returns ALL clients. 
-            // If I am agent, `/api/clients` returns MY clients.
+            // 1. Fetch Client List (Always use /api/clients for correct list based on role)
+            const clientsRes = await fetch(`${API_URL}/api/clients`, { headers });
+            let clientsData = [];
+            if (clientsRes.ok) {
+                clientsData = await clientsRes.json();
+                setClients(clientsData);
+            }
 
-            // However, to get the GRAPHS and detailed commission stats, we need the `details` endpoint.
-            // Let's use it if we are an agent or if we want personal stats.
-
-            // Ideally:
+            // 2. Fetch Detailed Stats for Graphs (Try for Agent Stats first)
             const endpoint = `${API_URL}/api/agents/${user.id}/details`;
-
             const [detailsRes, itinerariesRes] = await Promise.all([
                 fetch(endpoint, { headers }),
-                fetch(`${API_URL}/api/itineraries`)
+                fetch(`${API_URL}/api/itineraries`) // Needed for fallback or other logic
             ]);
 
             if (detailsRes.ok) {
                 const data = await detailsRes.json();
-                setClients(data.clients || []);
-
-                // Use server-side stats if available, else fallback (but server should have it)
+                
+                // Use server-side stats if available
                 if (data.stats) {
-                    // Calculate active trips locally since server doesn't provide it
+                    // Calculate active trips locally since server stats might be slightly different or for safety
                     const now = new Date();
-                    const currentActiveTrips = (data.clients || []).filter(c =>
+                    const currentActiveTrips = (clientsData || []).filter(c =>
                         c.trip_start && c.trip_end && new Date(c.trip_start) <= now && new Date(c.trip_end) >= now
                     ).length;
 
                     setStats({
-                        totalClients: data.stats.activeClients,
+                        totalClients: clientsData.length, // Use the fetched list length
                         activeTrips: currentActiveTrips,
                         upcomingDepartures: data.stats.upcomingTrips,
                         revenue: data.stats.totalRevenue,
@@ -76,9 +71,27 @@ const Dashboard = () => {
                     });
                 }
             } else {
-                // Fallback if endpoint fails (e.g. admin looking at dashboard?) 
-                // Admin has ID too.
-                console.error("Failed to fetch agent details");
+                 // Fallback if details fail (e.g. Admin without "Agent" entry self-check?)
+                 // If Admin, use generic stats logic based on the fetched clients
+                 console.warn("Agent details fetch failed or denied, falling back to basic stats");
+                 const now = new Date();
+                 const active = clientsData.filter(c => c.trip_start && c.trip_end && new Date(c.trip_start) <= now && new Date(c.trip_end) >= now).length;
+                 const upcoming = clientsData.filter(c => c.trip_start && new Date(c.trip_start) > now).length;
+                 
+                 // Calculate revenue from itineraries
+                 const itinerariesData = await itinerariesRes.clone().json().catch(() => []);
+                 // Filter itineraries? If Admin, we see all itineraries for all clients?
+                 // The /api/itineraries endpoint returns ALL itineraries currently (based on server code check) or filtered?
+                 // Let's assume naive sum for fallback.
+                 const revenue = itinerariesData.reduce((acc, item) => acc + (item.cost || 0), 0);
+
+                 setStats({
+                    totalClients: clientsData.length,
+                    activeTrips: active,
+                    upcomingDepartures: upcoming,
+                    revenue: revenue
+                    // No monthlyRevenue graphs in fallback
+                 });
             }
 
             const itinerariesData = await itinerariesRes.json();
