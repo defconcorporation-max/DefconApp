@@ -10,7 +10,6 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 const Finance = () => {
     const { token, user } = useAuth();
     const navigate = useNavigate();
-    const [stats, setStats] = useState(null);
     const [expenses, setExpenses] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
@@ -25,33 +24,16 @@ const Finance = () => {
     });
 
     useEffect(() => {
-        if (token) {
+        if (user && user.role !== 'admin') {
+            navigate('/dashboard');
+        }
+    }, [user, navigate]);
+
+    useEffect(() => {
+        if (token && user?.role === 'admin') {
             fetchExpenses();
         }
-        if (token && user) {
-            fetchAgentStats();
-        }
     }, [token, user]);
-
-    const fetchAgentStats = async () => {
-        try {
-            const userId = user.id || user._id; // Handle potential ID variations
-            if (!userId) return;
-
-            const res = await fetch(`${API_URL}/api/agents/${userId}/details`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            if (res.ok) {
-                const data = await res.json();
-                console.log("Agent Stats Loaded:", data.stats); // Debug
-                setStats(data.stats);
-            } else {
-                console.error("Failed to fetch agent stats: Status", res.status);
-            }
-        } catch (error) {
-            console.error("Failed to fetch agent stats", error);
-        }
-    };
 
     const fetchExpenses = async () => {
         try {
@@ -127,49 +109,15 @@ const Finance = () => {
         }
     };
 
-    // Stats Calculations
-    const totalPendingExpenses = expenses.filter(e => e.status === 'pending').reduce((acc, e) => acc + e.amount, 0);
-    const totalPaidExpenses = expenses.filter(e => e.status === 'paid').reduce((acc, e) => acc + e.amount, 0);
-
-    // Commission Logic
-    // Total Commission Earned (from Itineraries)
-    const totalEarnedCommission = stats?.totalCommission || 0;
-
-    // Commission Payouts (Expenses marked as 'Commission Payout')
-    const commissionPayouts = expenses.filter(e => e.category === 'Commission Payout');
-
-    const paidCommission = commissionPayouts
-        .filter(e => e.status === 'paid')
-        .reduce((acc, e) => acc + e.amount, 0);
-
-    const pendingPayouts = commissionPayouts
-        .filter(e => e.status === 'pending')
-        .reduce((acc, e) => acc + e.amount, 0);
-
-    // Unclaimed Commission = Total Earned - (Paid + Pending Payouts)
-    // This is the amount available to be "Sent to Expenses"
-    const unclaimedCommission = Math.max(0, totalEarnedCommission - (paidCommission + pendingPayouts));
-
-    // Unpaid Commission = Total Earned - Paid (Includes Pending Payouts)
-    // This is what the user wants to see as "Pending" (i.e., not yet in pocket)
-    const unpaidCommission = Math.max(0, totalEarnedCommission - paidCommission);
-
-    const handleClaimCommission = () => {
-        setFormData({
-            title: `Commission Payout - ${new Date().toLocaleDateString()}`,
-            amount: unclaimedCommission > 0 ? unclaimedCommission : '',
-            category: 'Commission Payout',
-            status: 'pending', // Default to pending as requested ("Send to Expenses")
-            date: new Date().toISOString().split('T')[0],
-            due_date: new Date().toISOString().split('T')[0],
-            notes: 'Generated from Pending Commission'
-        });
-        setShowModal(true);
-    };
+    // Stats Calculations for Agency
+    const totalPending = expenses.filter(e => e.status === 'pending').reduce((acc, e) => acc + e.amount, 0);
+    const totalPaid = expenses.filter(e => e.status === 'paid').reduce((acc, e) => acc + e.amount, 0);
 
     // Check overdue
     const now = new Date();
     const overdueCount = expenses.filter(e => e.status === 'pending' && e.due_date && new Date(e.due_date) < now).length;
+
+    if (loading) return null;
 
     return (
         <div className="min-h-screen bg-dark-900 text-white p-4 md:p-8">
@@ -181,9 +129,9 @@ const Finance = () => {
                             <ArrowLeft size={18} className="mr-2" /> Back to Dashboard
                         </Link>
                         <h1 className="text-3xl font-bold flex items-center gap-3">
-                            <DollarSign className="text-primary-500" /> Accounting & Finance
+                            <DollarSign className="text-primary-500" /> Agency Accounting
                         </h1>
-                        <p className="text-slate-500 mt-1">Manage your business expenses and track pending payments.</p>
+                        <p className="text-slate-500 mt-1">Manage all agency expenses and commission payouts.</p>
                     </div>
                     <button
                         onClick={() => setShowModal(true)}
@@ -194,60 +142,33 @@ const Finance = () => {
                 </div>
 
                 {/* Stats Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                    {/* Unclaimed Commission Card */}
-                    <div className="bg-dark-800/60 backdrop-blur-md rounded-2xl p-6 border border-white/5 relative overflow-hidden group hover:border-indigo-500/30 transition flex flex-col justify-between">
-                        <div>
-                            <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition">
-                                <DollarSign size={80} />
-                            </div>
-                            <h3 className="text-slate-400 text-sm font-bold uppercase tracking-wider mb-2">Pending Commission</h3>
-                            <p className="text-3xl font-bold text-indigo-400 flex items-center gap-2">
-                                ${unpaidCommission.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                            </p>
-                            <div className="text-xs text-slate-500 mt-2 space-y-1">
-                                <p className="flex justify-between"><span>Earned:</span> <span className="text-slate-300 font-mono">${totalEarnedCommission.toLocaleString()}</span></p>
-                                <p className="flex justify-between"><span>Paid:</span> <span className="text-emerald-400 font-mono">-${paidCommission.toLocaleString()}</span></p>
-                                <div className="border-t border-white/5 pt-1 mt-1">
-                                    <p className="flex justify-between"><span>Unclaimed:</span> <span className="text-indigo-400 font-mono">${unclaimedCommission.toLocaleString()}</span></p>
-                                    {pendingPayouts > 0 && <p className="flex justify-between"><span>Pending Invoice:</span> <span className="text-orange-400 font-mono">${pendingPayouts.toLocaleString()}</span></p>}
-                                </div>
-                            </div>
-                        </div>
-                        {unclaimedCommission > 0 && (
-                            <button
-                                onClick={handleClaimCommission}
-                                className="mt-4 w-full py-2 bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 rounded-lg text-sm font-semibold transition border border-indigo-500/30"
-                            >
-                                Send to Expenses
-                            </button>
-                        )}
-                    </div>
-
-                    {/* Paid Commission Card */}
-                    <div className="bg-dark-800/60 backdrop-blur-md rounded-2xl p-6 border border-white/5 relative overflow-hidden group hover:border-emerald-500/30 transition">
-                        <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition">
-                            <CheckCircle size={80} />
-                        </div>
-                        <h3 className="text-slate-400 text-sm font-bold uppercase tracking-wider mb-2">Paid Commission</h3>
-                        <p className="text-3xl font-bold text-emerald-400 flex items-center gap-2">
-                            ${paidCommission.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                        </p>
-                        <p className="text-xs text-slate-500 mt-2">
-                            Total Earned: ${totalEarnedCommission.toLocaleString()}
-                        </p>
-                    </div>
-
-                    {/* Pending Expenses (General) */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    {/* Total Pending (Liability) */}
                     <div className="bg-dark-800/60 backdrop-blur-md rounded-2xl p-6 border border-white/5 relative overflow-hidden group hover:border-orange-500/30 transition">
                         <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition">
                             <Clock size={80} />
                         </div>
-                        <h3 className="text-slate-400 text-sm font-bold uppercase tracking-wider mb-2">Pending Expenses</h3>
+                        <h3 className="text-slate-400 text-sm font-bold uppercase tracking-wider mb-2">Total Outstanding</h3>
                         <p className="text-3xl font-bold text-orange-400 flex items-center gap-2">
-                            ${totalPendingExpenses.toLocaleString()}
+                            ${totalPending.toLocaleString()}
                         </p>
-                        <p className="text-xs text-slate-500 mt-2">Includes pending payouts</p>
+                        <p className="text-xs text-slate-500 mt-2">
+                            Total expenses awaiting payment
+                        </p>
+                    </div>
+
+                    {/* Total Paid */}
+                    <div className="bg-dark-800/60 backdrop-blur-md rounded-2xl p-6 border border-white/5 relative overflow-hidden group hover:border-emerald-500/30 transition">
+                        <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition">
+                            <CheckCircle size={80} />
+                        </div>
+                        <h3 className="text-slate-400 text-sm font-bold uppercase tracking-wider mb-2">Total Paid</h3>
+                        <p className="text-3xl font-bold text-emerald-400 flex items-center gap-2">
+                            ${totalPaid.toLocaleString()}
+                        </p>
+                        <p className="text-xs text-slate-500 mt-2">
+                            Total expenses already settled
+                        </p>
                     </div>
 
                     {/* Overdue */}
@@ -466,15 +387,6 @@ const Finance = () => {
                     </motion.div>
                 </div>
             )}
-            {/* Debug Info (Temporary) */}
-            <div className="mt-8 p-4 bg-black/50 rounded-lg text-xs font-mono text-slate-500">
-                <p>Debug Info:</p>
-                <p>User ID: {user?.id || user?._id || 'Missing'}</p>
-                <p>Stats Loaded: {stats ? 'Yes' : 'No'}</p>
-                <p>Total Revenue: ${stats?.totalRevenue || 0}</p>
-                <p>Total Earned: ${stats?.totalCommission || 0}</p>
-                <p>Expenses Loaded: {expenses.length}</p>
-            </div>
         </div>
     );
 };
