@@ -136,23 +136,29 @@ const Finance = () => {
     const totalEarnedCommission = stats?.totalCommission || 0;
 
     // Commission Payouts (Expenses marked as 'Commission Payout')
-    // We consider 'paid' payouts as settled. 'pending' payouts are waiting to be paid but already recorded as an intent.
-    const settledCommission = expenses
-        .filter(e => e.category === 'Commission Payout' && e.status === 'paid')
+    const commissionPayouts = expenses.filter(e => e.category === 'Commission Payout');
+
+    const paidCommission = commissionPayouts
+        .filter(e => e.status === 'paid')
         .reduce((acc, e) => acc + e.amount, 0);
 
-    // Pending Commission = Earned - Settled
-    const pendingCommission = totalEarnedCommission - settledCommission;
+    const pendingPayouts = commissionPayouts
+        .filter(e => e.status === 'pending')
+        .reduce((acc, e) => acc + e.amount, 0);
 
-    const handlePayCommission = () => {
+    // Unclaimed Commission = Total Earned - (Paid + Pending Payouts)
+    // This is the amount available to be "Sent to Expenses"
+    const unclaimedCommission = totalEarnedCommission - (paidCommission + pendingPayouts);
+
+    const handleClaimCommission = () => {
         setFormData({
             title: `Commission Payout - ${new Date().toLocaleDateString()}`,
-            amount: pendingCommission > 0 ? pendingCommission : '',
+            amount: unclaimedCommission > 0 ? unclaimedCommission : '',
             category: 'Commission Payout',
-            status: 'paid', // Default to paid if paying now, or pending if scheduling
+            status: 'pending', // Default to pending as requested ("Send to Expenses")
             date: new Date().toISOString().split('T')[0],
-            due_date: new Date().toISOString().split('T')[0], // Immediate
-            notes: 'Payout for accumulated commissions'
+            due_date: new Date().toISOString().split('T')[0],
+            notes: 'Generated from Pending Commission'
         });
         setShowModal(true);
     };
@@ -175,39 +181,56 @@ const Finance = () => {
                         </h1>
                         <p className="text-slate-500 mt-1">Manage your business expenses and track pending payments.</p>
                     </div>
-                    <div className="flex gap-3">
-                        <button
-                            onClick={handlePayCommission}
-                            className="bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-3 rounded-xl font-semibold shadow-lg shadow-emerald-500/20 flex items-center gap-2 transition transform hover:scale-105"
-                        >
-                            <DollarSign size={20} /> Pay Commission
-                        </button>
-                        <button
-                            onClick={() => setShowModal(true)}
-                            className="bg-primary-500 hover:bg-primary-600 text-white px-6 py-3 rounded-xl font-semibold shadow-lg shadow-primary-500/20 flex items-center gap-2 transition transform hover:scale-105"
-                        >
-                            <Plus size={20} /> Add Expense
-                        </button>
-                    </div>
+                    <button
+                        onClick={() => setShowModal(true)}
+                        className="bg-primary-500 hover:bg-primary-600 text-white px-6 py-3 rounded-xl font-semibold shadow-lg shadow-primary-500/20 flex items-center gap-2 transition transform hover:scale-105"
+                    >
+                        <Plus size={20} /> Add New Expense
+                    </button>
                 </div>
 
                 {/* Stats Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                    {/* Commission Card */}
-                    <div className="bg-dark-800/60 backdrop-blur-md rounded-2xl p-6 border border-white/5 relative overflow-hidden group hover:border-indigo-500/30 transition">
-                        <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition">
-                            <DollarSign size={80} />
+                    {/* Unclaimed Commission Card */}
+                    <div className="bg-dark-800/60 backdrop-blur-md rounded-2xl p-6 border border-white/5 relative overflow-hidden group hover:border-indigo-500/30 transition flex flex-col justify-between">
+                        <div>
+                            <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition">
+                                <DollarSign size={80} />
+                            </div>
+                            <h3 className="text-slate-400 text-sm font-bold uppercase tracking-wider mb-2">Pending Commission</h3>
+                            <p className="text-3xl font-bold text-indigo-400 flex items-center gap-2">
+                                ${unclaimedCommission.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                            </p>
+                            <p className="text-xs text-slate-500 mt-2">
+                                Available to claim
+                            </p>
                         </div>
-                        <h3 className="text-slate-400 text-sm font-bold uppercase tracking-wider mb-2">Pending Commission</h3>
-                        <p className="text-3xl font-bold text-indigo-400 flex items-center gap-2">
-                            ${pendingCommission.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                        {unclaimedCommission > 0 && (
+                            <button
+                                onClick={handleClaimCommission}
+                                className="mt-4 w-full py-2 bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 rounded-lg text-sm font-semibold transition border border-indigo-500/30"
+                            >
+                                Send to Expenses
+                            </button>
+                        )}
+                    </div>
+
+                    {/* Paid Commission Card */}
+                    <div className="bg-dark-800/60 backdrop-blur-md rounded-2xl p-6 border border-white/5 relative overflow-hidden group hover:border-emerald-500/30 transition">
+                        <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition">
+                            <CheckCircle size={80} />
+                        </div>
+                        <h3 className="text-slate-400 text-sm font-bold uppercase tracking-wider mb-2">Paid Commission</h3>
+                        <p className="text-3xl font-bold text-emerald-400 flex items-center gap-2">
+                            ${paidCommission.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                         </p>
                         <p className="text-xs text-slate-500 mt-2">
-                            Earned: ${totalEarnedCommission.toLocaleString()} | Paid: ${settledCommission.toLocaleString()}
+                            Total Earned: ${totalEarnedCommission.toLocaleString()}
                         </p>
                     </div>
 
-                    <div className="bg-dark-800/60 backdrop-blur-md rounded-2xl p-6 border border-white/5 relative overflow-hidden group hover:border-primary-500/30 transition">
+                    {/* Pending Expenses (General) */}
+                    <div className="bg-dark-800/60 backdrop-blur-md rounded-2xl p-6 border border-white/5 relative overflow-hidden group hover:border-orange-500/30 transition">
                         <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition">
                             <Clock size={80} />
                         </div>
@@ -215,20 +238,10 @@ const Finance = () => {
                         <p className="text-3xl font-bold text-orange-400 flex items-center gap-2">
                             ${totalPendingExpenses.toLocaleString()}
                         </p>
-                        <p className="text-xs text-slate-500 mt-2">To be paid by due dates</p>
+                        <p className="text-xs text-slate-500 mt-2">Includes pending payouts</p>
                     </div>
 
-                    <div className="bg-dark-800/60 backdrop-blur-md rounded-2xl p-6 border border-white/5 relative overflow-hidden group hover:border-emerald-500/30 transition">
-                        <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition">
-                            <CheckCircle size={80} />
-                        </div>
-                        <h3 className="text-slate-400 text-sm font-bold uppercase tracking-wider mb-2">Total Paid (YTD)</h3>
-                        <p className="text-3xl font-bold text-emerald-400 flex items-center gap-2">
-                            ${totalPaidExpenses.toLocaleString()}
-                        </p>
-                        <p className="text-xs text-slate-500 mt-2">Successfully settled</p>
-                    </div>
-
+                    {/* Overdue */}
                     <div className="bg-dark-800/60 backdrop-blur-md rounded-2xl p-6 border border-white/5 relative overflow-hidden group hover:border-red-500/30 transition">
                         <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition">
                             <AlertCircle size={80} />
