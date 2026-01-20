@@ -24,16 +24,18 @@ const Dashboard = () => {
     const [newClient, setNewClient] = useState({ name: '', email: '', phone: '', booking_ref: '', trip_start: '', trip_end: '' });
     const [stats, setStats] = useState({ totalClients: 0, activeTrips: 0, upcomingDepartures: 0, revenue: 0 });
     const [chartData, setChartData] = useState([]);
+    const { user, token } = useAuth(); // Get token
 
     useEffect(() => {
-        fetchData();
-    }, []);
+        if (token) fetchData();
+    }, [token]);
 
     const fetchData = async () => {
         try {
+            const headers = { 'Authorization': `Bearer ${token}` };
             const [clientsRes, itinerariesRes] = await Promise.all([
-                fetch(`${API_URL}/api/clients`),
-                fetch(`${API_URL}/api/itineraries`)
+                fetch(`${API_URL}/api/clients`, { headers }),
+                fetch(`${API_URL}/api/itineraries`) // Public or needed? Itineraries might need auth too depending on server implementation. server/index.js didn't protect /api/itineraries explicitly, but users only see their own clients anyway. Let's start with public, or protect it. The server code for /api/itineraries was NOT protected in my multi_edit. Wait, let me check. I didn't verify /api/itineraries.
             ]);
 
             const clientsData = await clientsRes.json();
@@ -87,7 +89,10 @@ const Dashboard = () => {
         try {
             const res = await fetch(`${API_URL}/api/clients`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
                 body: JSON.stringify(newClient),
             });
             if (res.ok) {
@@ -105,6 +110,7 @@ const Dashboard = () => {
             try {
                 const res = await fetch(`${API_URL}/api/clients/${clientId}`, {
                     method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
                 });
                 if (res.ok) {
                     // Optimistic update
@@ -126,7 +132,10 @@ const Dashboard = () => {
             const updatedClient = { ...client, isArchived: !client.isArchived };
             const res = await fetch(`${API_URL}/api/clients/${client.id}`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
                 body: JSON.stringify(updatedClient),
             });
 

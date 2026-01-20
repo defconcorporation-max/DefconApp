@@ -26,7 +26,12 @@ const clientSchema = new mongoose.Schema({
     travelers: [{
         name: String,
         pass_url: String
-    }]
+    }],
+    agent_id: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        default: null
+    }
 }, {
     timestamps: true
 });

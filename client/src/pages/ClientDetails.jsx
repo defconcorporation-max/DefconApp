@@ -20,7 +20,7 @@ import { useAuth } from '../context/AuthContext';
 const ClientDetails = () => {
     const { id } = useParams();
     const navigate = useNavigate();
-    const { user, login, logout } = useAuth();
+    const { user, login, logout, token } = useAuth();
     const [client, setClient] = useState(null);
     const [itinerary, setItinerary] = useState([]);
     const [activities, setActivities] = useState([]);
@@ -75,7 +75,9 @@ const ClientDetails = () => {
 
     const fetchClient = async () => {
         try {
-            const res = await fetch(`${API_URL}/api/clients/${id}`);
+            const res = await fetch(`${API_URL}/api/clients/${id}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
             if (res.ok) {
                 const data = await res.json();
                 setClient(data);
@@ -87,7 +89,9 @@ const ClientDetails = () => {
 
     const fetchItinerary = async () => {
         try {
-            const res = await fetch(`${API_URL}/api/itinerary/${id}`);
+            const res = await fetch(`${API_URL}/api/itinerary/${id}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
             if (res.ok) {
                 const data = await res.json();
                 setItinerary(data);
@@ -99,7 +103,9 @@ const ClientDetails = () => {
 
     const fetchActivities = async () => {
         try {
-            const res = await fetch(`${API_URL}/api/activities`);
+            const res = await fetch(`${API_URL}/api/activities`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
             if (res.ok) {
                 const data = await res.json();
                 setActivities(data);
@@ -115,6 +121,7 @@ const ClientDetails = () => {
         try {
             const res = await fetch(`${API_URL}/api/upload`, {
                 method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` },
                 body: formData
             });
             if (res.ok) {
@@ -220,7 +227,11 @@ const ClientDetails = () => {
                     const uploadFormData = new FormData();
                     uploadFormData.append('file', travelerPassFiles[idx]);
                     try {
-                        const res = await fetch(`${API_URL}/api/upload`, { method: 'POST', body: uploadFormData });
+                        const res = await fetch(`${API_URL}/api/upload`, {
+                            method: 'POST',
+                            headers: { 'Authorization': `Bearer ${token}` },
+                            body: uploadFormData
+                        });
                         if (res.ok) {
                             const data = await res.json();
                             passUrl = data.url;
@@ -276,7 +287,10 @@ const ClientDetails = () => {
         try {
             const res = await fetch(url, {
                 method,
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
                 body: JSON.stringify(body)
             });
 
@@ -292,7 +306,10 @@ const ClientDetails = () => {
     const handleDelete = async (itemId) => {
         if (confirm('Are you sure you want to delete this item?')) {
             try {
-                await fetch(`${API_URL}/api/itinerary/${itemId}`, { method: 'DELETE' });
+                await fetch(`${API_URL}/api/itinerary/${itemId}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
                 fetchItinerary();
             } catch (error) {
                 console.error("Failed to delete item", error);
@@ -375,7 +392,10 @@ const ClientDetails = () => {
         try {
             const res = await fetch(`${API_URL}/api/clients/${id}`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
                 body: JSON.stringify(client)
             });
             if (res.ok) {
@@ -427,7 +447,10 @@ const ClientDetails = () => {
         try {
             const res = await fetch(`${API_URL}/api/itinerary/${event.id}`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
                 body: JSON.stringify({
                     ...updatedEvent,
                     client_id: id // Ensure client_id is preserved
@@ -629,25 +652,8 @@ const ClientDetails = () => {
                         </div>
 
                         {/* Switch Role Button */}
-                        {user?.role === 'admin' ? (
-                            <button
-                                onClick={() => login('lvqc2468')}
-                                className="flex items-center gap-2 px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-full transition text-xs font-medium text-slate-300"
-                                title="Switch to Agent View"
-                            >
-                                <Eye size={14} />
-                                View as Agent
-                            </button>
-                        ) : (
-                            <button
-                                onClick={() => navigate('/login')}
-                                className="flex items-center gap-2 px-3 py-1.5 bg-primary-500/10 hover:bg-primary-500/20 border border-primary-500/20 text-primary-400 rounded-full transition text-xs font-medium"
-                                title="Switch to Admin"
-                            >
-                                <Shield size={14} />
-                                Switch to Admin
-                            </button>
-                        )}
+                        {/* Switch Role Button Removed - Requires Re-Login with Real Auth */}
+                        <div className="hidden lg:block"></div>
 
                         <button
                             onClick={logout}
@@ -678,7 +684,10 @@ const ClientDetails = () => {
                                     const newStatus = !client.isSchedulePending;
                                     const res = await fetch(`${API_URL}/api/clients/${client.id}`, {
                                         method: 'PUT',
-                                        headers: { 'Content-Type': 'application/json' },
+                                        headers: {
+                                            'Content-Type': 'application/json',
+                                            'Authorization': `Bearer ${token}`
+                                        },
                                         body: JSON.stringify({ isSchedulePending: newStatus }),
                                     });
                                     if (res.ok) {

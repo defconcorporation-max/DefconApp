@@ -4,20 +4,22 @@ import { Lock, AlertCircle } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 const Login = () => {
+    const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
-    const [error, setError] = useState(false);
+    const [error, setError] = useState('');
     const { login } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
 
-    const from = location.state?.from?.pathname || "/";
+    const from = location.state?.from?.pathname || "/dashboard";
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        if (login(password)) {
+        const result = await login(username, password);
+        if (result.success) {
             navigate(from, { replace: true });
         } else {
-            setError(true);
+            setError(result.error || 'Invalid credentials');
             setPassword('');
         }
     };
@@ -36,12 +38,19 @@ const Login = () => {
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <div>
                         <input
+                            type="text"
+                            placeholder="Username"
+                            className="w-full px-5 py-4 bg-gray-50 dark:bg-dark-800 border border-slate-200 dark:border-dark-700 focus:ring-primary-500 rounded-xl outline-none focus:ring-2 transition-all dark:text-white mb-4"
+                            value={username}
+                            onChange={(e) => setUsername(e.target.value)}
+                            autoFocus
+                        />
+                        <input
                             type="password"
                             placeholder="Password"
                             className={`w-full px-5 py-4 bg-gray-50 dark:bg-dark-800 border ${error ? 'border-red-500 focus:ring-red-500' : 'border-slate-200 dark:border-dark-700 focus:ring-primary-500'} rounded-xl outline-none focus:ring-2 transition-all dark:text-white`}
                             value={password}
                             onChange={(e) => { setPassword(e.target.value); setError(false); }}
-                            autoFocus
                         />
                         {error && (
                             <div className="flex items-center gap-2 mt-2 text-red-500 text-sm">

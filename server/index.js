@@ -7,6 +7,10 @@ import connectDB from './config/db.js';
 import Client from './models/Client.js';
 import ItineraryItem from './models/ItineraryItem.js';
 import Activity from './models/Activity.js';
+import User from './models/User.js';
+import auth from './middleware/auth.js';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -44,6 +48,84 @@ const storage = new CloudinaryStorage({
 const upload = multer({ storage });
 
 // Routes
+
+// --- Auth Routes ---
+
+// Login
+app.post('/api/auth/login', async (req, res) => {
+    try {
+        const { username, password } = req.body;
+        const user = await User.findOne({ username });
+
+        if (!user) {
+            return res.status(401).json({ error: 'Invalid credentials' });
+        }
+
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) {
+            return res.status(401).json({ error: 'Invalid credentials' });
+        }
+
+        const token = jwt.sign(
+            { id: user._id, role: user.role, name: user.name },
+            process.env.JWT_SECRET || 'fallback_secret_key_change_me',
+            { expiresIn: '24h' }
+        );
+
+        res.json({
+            token,
+            user: {
+                id: user._id,
+                username: user.username,
+                name: user.name,
+                role: user.role
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Create Agent (Admin Only)
+app.post('/api/auth/agents', auth, async (req, res) => {
+    try {
+        if (req.user.role !== 'admin') {
+            return res.status(403).json({ error: 'Access denied' });
+        }
+
+        const { username, password, name } = req.body;
+
+        const existingUser = await User.findOne({ username });
+        if (existingUser) {
+            return res.status(400).json({ error: 'Username already exists' });
+        }
+
+        const hashedPassword = await bcrypt.hash(password, 8);
+        const newUser = await User.create({
+            username,
+            password: hashedPassword,
+            name,
+            role: 'agent'
+        });
+
+        res.json({ id: newUser._id, username: newUser.username, name: newUser.name });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Get All Agents (Admin Only)
+app.get('/api/auth/agents', auth, async (req, res) => {
+    try {
+        if (req.user.role !== 'admin') {
+            return res.status(403).json({ error: 'Access denied' });
+        }
+        const agents = await User.find({ role: 'agent' }).select('-password');
+        res.json(agents);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
 
 // Upload Endpoint
 app.post('/api/upload', upload.single('file'), (req, res) => {
@@ -106,20 +188,28 @@ app.put('/api/activities/:id', async (req, res) => {
 
 // --- Client Routes ---
 
-// Get all clients
-app.get('/api/clients', async (req, res) => {
+// Get all clients (Filtered by Agent)
+app.get('/api/clients', auth, async (req, res) => {
     try {
-        const clients = await Client.find({});
+        let query = {};
+
+        // If agent, only show their clients
+        if (req.user.role === 'agent') {
+            query = { agent_id: req.user.id };
+        }
+
+        const clients = await Client.find(query).populate('agent_id', 'name');
         res.json(clients);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
 });
 
-// Create client
-app.post('/api/clients', async (req, res) => {
+// Create client (Auto-Assign Agent)
+app.post('/api/clients', auth, async (req, res) => {
     try {
         const { name, email, phone, booking_ref, trip_start, trip_end, pass_url, notes, preferences, travelers } = req.body;
+
         const newClient = await Client.create({
             id: Date.now(),
             name,
@@ -131,7 +221,8 @@ app.post('/api/clients', async (req, res) => {
             pass_url,
             notes,
             preferences,
-            travelers: travelers || []
+            travelers: travelers || [],
+            agent_id: req.user.id // Assign creator as agent
         });
         res.json({ id: newClient.id });
     } catch (error) {
@@ -176,14 +267,19 @@ app.delete('/api/clients/:id', async (req, res) => {
     }
 });
 
-// Get client by ID (with itinerary)
-app.get('/api/clients/:id', async (req, res) => {
+// Get client by ID (Security Check + Itinerary)
+app.get('/api/clients/:id', auth, async (req, res) => {
     try {
         const { id } = req.params;
         const client = await Client.findOne({ id: parseInt(id) });
 
         if (!client) {
             return res.status(404).json({ error: 'Client not found' });
+        }
+
+        // Data Isolation Check: If agent, ensure they own the client
+        if (req.user.role === 'agent' && client.agent_id && client.agent_id.toString() !== req.user.id) {
+            return res.status(403).json({ error: 'Access denied: You do not own this client' });
         }
 
         const itinerary = await ItineraryItem.find({ client_id: parseInt(id) }).sort({ start_time: 1 });
