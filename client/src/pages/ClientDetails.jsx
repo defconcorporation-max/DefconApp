@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plane, Hotel, Calendar, Plus, Trash2, Upload, Pencil, Download, MapPin, Clock, FileText, ExternalLink, Image, Heart, Ticket, CheckCircle, Receipt, Crown, LogOut, Shield, Eye } from 'lucide-react';
+import { ArrowLeft, Plane, Hotel, Calendar, Plus, Trash2, Upload, Pencil, Download, MapPin, Clock, FileText, ExternalLink, Image, Heart, Ticket, CheckCircle, Receipt, Crown, LogOut, Shield, Eye, Users } from 'lucide-react';
 import { Calendar as BigCalendar, momentLocalizer } from 'react-big-calendar';
 import withDragAndDrop from 'react-big-calendar/lib/addons/dragAndDrop';
 import moment from 'moment';
@@ -29,6 +29,53 @@ const ClientDetails = () => {
     const [editingItem, setEditingItem] = useState(null);
     const [wizardStep, setWizardStep] = useState(1); // 1: Flights, 2: Hotel, 3: Activities
     const [showEditClientModal, setShowEditClientModal] = useState(false);
+
+    // Agent Assignment (Admin Only)
+    const [agents, setAgents] = useState([]);
+
+    useEffect(() => {
+        if (user?.role === 'admin') {
+            fetchAgents();
+        }
+    }, [user]);
+
+    const fetchAgents = async () => {
+        try {
+            const res = await fetch(`${API_URL}/api/auth/agents`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setAgents(data);
+            }
+        } catch (error) {
+            console.error("Error fetching agents:", error);
+        }
+    };
+
+    const handleAgentChange = async (e) => {
+        const newAgentId = e.target.value;
+        try {
+            const res = await fetch(`${API_URL}/api/clients/${id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ agent_id: newAgentId }) // Ensure backend supports null/empty for unassign checking
+            });
+            if (res.ok) {
+                const updatedClient = await res.json();
+                setClient(prev => ({ ...prev, agent_id: updatedClient.agent_id }));
+                alert('Agent assigned successfully');
+            } else {
+                alert('Failed to update agent');
+            }
+        } catch (error) {
+            console.error('Error updating agent:', error);
+            alert('Error updating agent');
+        }
+    };
 
     const getImageUrl = (url) => {
         if (!url) return null;
@@ -647,105 +694,124 @@ const ClientDetails = () => {
                                         <span>{new Date(client.trip_start).toLocaleDateString()} - {new Date(client.trip_end).toLocaleDateString()}</span>
                                     </>
                                 )}
+                                {/* Admin Agent Assignment */}
+                                {user?.role === 'admin' && (
+                                    <>
+                                        <span>•</span>
+                                        <div className="flex items-center gap-2">
+                                            <Users size={12} />
+                                            <select
+                                                value={client.agent_id || ''}
+                                                onChange={handleAgentChange}
+                                                className="bg-transparent border-none text-primary-500 font-bold focus:ring-0 cursor-pointer py-0 pl-0 pr-6 text-xs uppercase tracking-wider"
+                                            >
+                                                <option value="">Unassigned</option>
+                                                {agents.map(a => (
+                                                    <option key={a._id} value={a._id}>{a.name}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    </>
+                                )}
                             </div>
                         </div>
-                    </div>
-                    <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10">
-                            <div className={`w-2 h-2 rounded-full ${user?.role === 'admin' ? 'bg-red-500' : 'bg-green-500'}`}></div>
-                            <span className="text-xs font-medium text-slate-300 uppercase tracking-wider">{user?.role || 'Guest'}</span>
+                        <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10">
+                                <div className={`w-2 h-2 rounded-full ${user?.role === 'admin' ? 'bg-red-500' : 'bg-green-500'}`}></div>
+                                <span className="text-xs font-medium text-slate-300 uppercase tracking-wider">{user?.role || 'Guest'}</span>
+                            </div>
+
+                            {/* Switch Role Button */}
+                            {/* Switch Role Button Removed - Requires Re-Login with Real Auth */}
+                            <div className="hidden lg:block"></div>
+
+                            <button
+                                onClick={logout}
+                                className="p-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-full transition"
+                                title="Logout"
+                            >
+                                <LogOut size={20} />
+                            </button>
                         </div>
-
-                        {/* Switch Role Button */}
-                        {/* Switch Role Button Removed - Requires Re-Login with Real Auth */}
-                        <div className="hidden lg:block"></div>
-
-                        <button
-                            onClick={logout}
-                            className="p-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-full transition"
-                            title="Logout"
-                        >
-                            <LogOut size={20} />
-                        </button>
-                    </div>
-                    <div className="flex items-center gap-3">
-                        <button
-                            onClick={handleCopyLink}
-                            className="p-2 hover:bg-white/5 rounded-lg text-slate-400 hover:text-white transition"
-                            title="Copy Link"
-                        >
-                            <ExternalLink size={18} />
-                        </button>
-                        <button
-                            onClick={handleExportPDF}
-                            className="flex items-center gap-2 px-4 py-2 bg-dark-800 border border-white/10 text-slate-300 rounded-lg hover:bg-dark-700 transition text-sm font-medium"
-                        >
-                            <Download size={16} />
-                            Export PDF
-                        </button>
-                        <button
-                            onClick={async () => {
-                                try {
-                                    const newStatus = !client.isSchedulePending;
-                                    const res = await fetch(`${API_URL}/api/clients/${client.id}`, {
-                                        method: 'PUT',
-                                        headers: {
-                                            'Content-Type': 'application/json',
-                                            'Authorization': `Bearer ${token}`
-                                        },
-                                        body: JSON.stringify({ isSchedulePending: newStatus }),
-                                    });
-                                    if (res.ok) {
-                                        setClient({ ...client, isSchedulePending: newStatus });
+                        <div className="flex items-center gap-3">
+                            <button
+                                onClick={handleCopyLink}
+                                className="p-2 hover:bg-white/5 rounded-lg text-slate-400 hover:text-white transition"
+                                title="Copy Link"
+                            >
+                                <ExternalLink size={18} />
+                            </button>
+                            <button
+                                onClick={handleExportPDF}
+                                className="flex items-center gap-2 px-4 py-2 bg-dark-800 border border-white/10 text-slate-300 rounded-lg hover:bg-dark-700 transition text-sm font-medium"
+                            >
+                                <Download size={16} />
+                                Export PDF
+                            </button>
+                            <button
+                                onClick={async () => {
+                                    try {
+                                        const newStatus = !client.isSchedulePending;
+                                        const res = await fetch(`${API_URL}/api/clients/${client.id}`, {
+                                            method: 'PUT',
+                                            headers: {
+                                                'Content-Type': 'application/json',
+                                                'Authorization': `Bearer ${token}`
+                                            },
+                                            body: JSON.stringify({ isSchedulePending: newStatus }),
+                                        });
+                                        if (res.ok) {
+                                            setClient({ ...client, isSchedulePending: newStatus });
+                                        }
+                                    } catch (err) {
+                                        console.error('Error toggling schedule status:', err);
                                     }
-                                } catch (err) {
-                                    console.error('Error toggling schedule status:', err);
-                                }
-                            }}
-                            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition text-sm font-medium border ${client.isSchedulePending
-                                ? 'bg-orange-500/10 text-orange-400 border-orange-500/20 hover:bg-orange-500/20'
-                                : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20'}`}
-                        >
-                            {client.isSchedulePending ? <Clock size={16} /> : <CheckCircle size={16} />}
-                            {client.isSchedulePending ? 'Mark Schedule Complete' : 'Schedule Complete'}
-                        </button>
-                        <div className="h-6 w-px bg-white/10 mx-2"></div>
-                        <div className="flex bg-dark-800 rounded-lg p-1 border border-white/5">
-                            <button
-                                onClick={() => openModal('flight')}
-                                className="p-2 hover:bg-white/5 rounded-md text-slate-400 hover:text-primary-500 transition"
-                                title="Add Flight"
+                                }}
+                                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition text-sm font-medium border ${client.isSchedulePending
+                                    ? 'bg-orange-500/10 text-orange-400 border-orange-500/20 hover:bg-orange-500/20'
+                                    : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20'}`}
                             >
-                                <Plane size={18} />
+                                {client.isSchedulePending ? <Clock size={16} /> : <CheckCircle size={16} />}
+                                {client.isSchedulePending ? 'Mark Schedule Complete' : 'Schedule Complete'}
                             </button>
-                            <button
-                                onClick={() => openModal('hotel')}
-                                className="p-2 hover:bg-white/5 rounded-md text-slate-400 hover:text-primary-500 transition"
-                                title="Add Hotel"
-                            >
-                                <Hotel size={18} />
-                            </button>
-                            <button
-                                onClick={() => openModal('activity')}
-                                className="p-2 hover:bg-white/5 rounded-md text-slate-400 hover:text-primary-500 transition"
-                                title="Add Activity"
-                            >
-                                <Calendar size={18} />
-                            </button>
-                            <button
-                                onClick={() => openModal('service_fee')}
-                                className="p-2 hover:bg-white/5 rounded-md text-slate-400 hover:text-emerald-500 transition"
-                                title="Add Service Fee"
-                            >
-                                <Receipt size={18} />
-                            </button>
-                            <button
-                                onClick={() => openModal('viva_las_vegas_pass')}
-                                className="p-2 hover:bg-white/5 rounded-md text-slate-400 hover:text-purple-500 transition"
-                                title="Add Viva Vegas Pass"
-                            >
-                                <Crown size={18} />
-                            </button>
+                            <div className="h-6 w-px bg-white/10 mx-2"></div>
+                            <div className="flex bg-dark-800 rounded-lg p-1 border border-white/5">
+                                <button
+                                    onClick={() => openModal('flight')}
+                                    className="p-2 hover:bg-white/5 rounded-md text-slate-400 hover:text-primary-500 transition"
+                                    title="Add Flight"
+                                >
+                                    <Plane size={18} />
+                                </button>
+                                <button
+                                    onClick={() => openModal('hotel')}
+                                    className="p-2 hover:bg-white/5 rounded-md text-slate-400 hover:text-primary-500 transition"
+                                    title="Add Hotel"
+                                >
+                                    <Hotel size={18} />
+                                </button>
+                                <button
+                                    onClick={() => openModal('activity')}
+                                    className="p-2 hover:bg-white/5 rounded-md text-slate-400 hover:text-primary-500 transition"
+                                    title="Add Activity"
+                                >
+                                    <Calendar size={18} />
+                                </button>
+                                <button
+                                    onClick={() => openModal('service_fee')}
+                                    className="p-2 hover:bg-white/5 rounded-md text-slate-400 hover:text-emerald-500 transition"
+                                    title="Add Service Fee"
+                                >
+                                    <Receipt size={18} />
+                                </button>
+                                <button
+                                    onClick={() => openModal('viva_las_vegas_pass')}
+                                    className="p-2 hover:bg-white/5 rounded-md text-slate-400 hover:text-purple-500 transition"
+                                    title="Add Viva Vegas Pass"
+                                >
+                                    <Crown size={18} />
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>

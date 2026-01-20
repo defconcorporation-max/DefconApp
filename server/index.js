@@ -137,6 +137,76 @@ app.post('/api/upload', upload.single('file'), (req, res) => {
     res.json({ url: req.file.path });
 });
 
+// Get specific agent details with stats (Admin only)
+app.get('/api/agents/:id/details', auth, async (req, res) => {
+    try {
+        if (req.user.role !== 'admin') {
+            return res.status(403).json({ error: 'Access denied' });
+        }
+
+        const { id } = req.params;
+        const agent = await User.findById(id).select('-password');
+
+        if (!agent) {
+            return res.status(404).json({ error: 'Agent not found' });
+        }
+
+        const clients = await Client.find({ agent_id: id });
+
+        // Stats Calculation
+        const activeClients = clients.length;
+        const upcomingTrips = clients.filter(c => c.trip_start && new Date(c.trip_start) > new Date()).length;
+
+        // Fetch Itineraries for detailed financial stats
+        // This might be heavy if many clients, but necessary for accurate totals
+        const clientLegacyIds = clients.map(c => c.id).filter(Boolean); // Filter out any without legacy ID if mixed
+        const itineraries = await ItineraryItem.find({ client_id: { $in: clientLegacyIds } });
+
+        let totalRevenue = 0;
+        let totalCommission = 0;
+
+        itineraries.forEach(item => {
+            // Revenue = Cost (Selling Price)
+            if (item.cost) totalRevenue += item.cost;
+
+            // Commission
+            if (item.commissionType === 'fixed') {
+                totalCommission += (item.commissionValue || 0);
+            } else {
+                // percent
+                // Assuming Commission is based on (Selling Price - Net Cost) aka Profit, or just Selling Price?
+                // Usually commission is % of Profit or % of Total.
+                // Based on models, we have cost, costPrice, serviceFee.
+                // Let's assume % of Profit (cost - costPrice) as standard agency model, or % of Total if configured.
+                // For safety/simplicity and common use: % of Profit.
+                const profit = (item.cost || 0) - (item.costPrice || 0);
+                if (profit > 0) {
+                    totalCommission += profit * ((item.commissionValue || 0) / 100);
+                }
+            }
+
+            // Add Service Fees directly to commission/profit?
+            if (item.serviceFee) {
+                totalCommission += item.serviceFee;
+                totalRevenue += item.serviceFee;
+            }
+        });
+
+        res.json({
+            agent,
+            clients,
+            stats: {
+                activeClients,
+                upcomingTrips,
+                totalRevenue,
+                totalCommission
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // --- Activity Catalog Routes ---
 
 // Get all activities

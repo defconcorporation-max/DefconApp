@@ -77,15 +77,17 @@ const AdminAgents = () => {
                         ) : (
                             <div className="space-y-3">
                                 {agents.map(agent => (
-                                    <div key={agent._id || agent.id} className="p-4 bg-dark-900 rounded-xl border border-white/5 flex justify-between items-center">
-                                        <div>
-                                            <p className="font-bold text-white">{agent.name}</p>
-                                            <p className="text-sm text-slate-500">@{agent.username}</p>
+                                    <Link key={agent._id || agent.id} to={`/admin/agents/${agent._id || agent.id}`} className="block">
+                                        <div className="p-4 bg-dark-900 rounded-xl border border-white/5 flex justify-between items-center hover:bg-dark-950 transition cursor-pointer group">
+                                            <div>
+                                                <p className="font-bold text-white group-hover:text-primary-500 transition">{agent.name}</p>
+                                                <p className="text-sm text-slate-500">@{agent.username}</p>
+                                            </div>
+                                            <div className="px-3 py-1 bg-green-500/10 text-green-400 text-xs rounded-full border border-green-500/20">
+                                                Active
+                                            </div>
                                         </div>
-                                        <div className="px-3 py-1 bg-green-500/10 text-green-400 text-xs rounded-full border border-green-500/20">
-                                            Active
-                                        </div>
-                                    </div>
+                                    </Link>
                                 ))}
                                 {agents.length === 0 && <p className="text-slate-500 italic">No agents found.</p>}
                             </div>

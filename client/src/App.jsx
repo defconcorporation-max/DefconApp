@@ -7,6 +7,7 @@ import ClientView from './pages/ClientView';
 import Catalog from './pages/Catalog';
 import Login from './pages/Login';
 import AdminAgents from './pages/AdminAgents';
+import AgentDetails from './pages/AgentDetails';
 
 const Home = () => (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-primary-900 to-primary-700 text-white">
@@ -59,6 +60,11 @@ function App() {
                 <Route path="/admin/agents" element={
                     <RequireAuth>
                         <AdminAgents />
+                    </RequireAuth>
+                } />
+                <Route path="/admin/agents/:id" element={
+                    <RequireAuth>
+                        <AgentDetails />
                     </RequireAuth>
                 } />
 
