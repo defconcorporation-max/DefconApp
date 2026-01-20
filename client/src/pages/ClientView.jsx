@@ -109,7 +109,8 @@ const ClientView = () => {
     const fetchClientData = async () => {
         try {
             setError(null);
-            const res = await fetch(`${API_URL}/api/clients/${id}`);
+            setError(null);
+            const res = await fetch(`${API_URL}/api/public/client/${id}`);
             if (res.ok) {
                 const data = await res.json();
                 setClient(data);

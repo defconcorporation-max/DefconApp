@@ -302,6 +302,30 @@ app.get('/api/clients/:id', auth, async (req, res) => {
     }
 });
 
+// Get Public Client View (No Auth)
+app.get('/api/public/client/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        let query = {};
+        if (mongoose.isValidObjectId(id)) {
+            query = { _id: id };
+        } else {
+            query = { id: parseInt(id) };
+        }
+
+        const client = await Client.findOne(query);
+
+        if (!client) {
+            return res.status(404).json({ error: 'Client not found' });
+        }
+
+        const itinerary = await ItineraryItem.find({ client_id: client.id }).sort({ start_time: 1 });
+        res.json({ ...client.toObject(), itinerary });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // Get ALL itineraries (for analytics)
 app.get('/api/itineraries', async (req, res) => {
     try {
