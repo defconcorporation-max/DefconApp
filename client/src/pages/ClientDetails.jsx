@@ -81,6 +81,11 @@ const ClientDetails = () => {
             if (res.ok) {
                 const data = await res.json();
                 setClient(data);
+            } else {
+                const err = await res.json();
+                console.error('Fetch error:', err);
+                // Optionally set an error state to display to user
+                alert(err.error || 'Failed to load client');
             }
         } catch (error) {
             console.error('Error fetching client:', error);

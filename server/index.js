@@ -271,14 +271,16 @@ app.delete('/api/clients/:id', async (req, res) => {
 app.get('/api/clients/:id', auth, async (req, res) => {
     try {
         const { id } = req.params;
+        console.log(`[DEBUG] GET /clients/${id} by ${req.user.username} (${req.user.role})`);
         const client = await Client.findOne({ id: parseInt(id) });
+        console.log(`[DEBUG] Client found: ${!!client}, AgentID: ${client?.agent_id}`);
 
         if (!client) {
             return res.status(404).json({ error: 'Client not found' });
         }
 
-        // Data Isolation Check: If agent, ensure they own the client
         if (req.user.role === 'agent' && client.agent_id && client.agent_id.toString() !== req.user.id) {
+            console.log(`[DEBUG] Access DENIED. Client Owner: ${client.agent_id}, Requesting User: ${req.user.id}`);
             return res.status(403).json({ error: 'Access denied: You do not own this client' });
         }
 
