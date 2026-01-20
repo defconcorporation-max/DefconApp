@@ -9,102 +9,58 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 
 const Finance = () => {
     const { token, user } = useAuth();
-    const navigate = useNavigate();
-    const [expenses, setExpenses] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [showModal, setShowModal] = useState(false);
-    const [currentTab, setCurrentTab] = useState('overview'); // overview, expenses
-    const [formData, setFormData] = useState({
-        title: '',
-        amount: '',
-        category: 'Other',
-        status: 'pending',
-        date: new Date().toISOString().split('T')[0],
-        due_date: '',
-        notes: ''
-    });
+    const [stats, setStats] = useState(null);
 
     useEffect(() => {
         fetchExpenses();
+        fetchAgentStats();
     }, [token]);
 
-    const fetchExpenses = async () => {
+    const fetchAgentStats = async () => {
         try {
-            const res = await fetch(`${API_URL}/api/expenses`, {
+            const res = await fetch(`${API_URL}/api/agents/${user.id}/details`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (res.ok) {
                 const data = await res.json();
-                setExpenses(data);
+                setStats(data.stats);
             }
         } catch (error) {
-            console.error("Failed to fetch expenses", error);
-        } finally {
-            setLoading(false);
+            console.error("Failed to fetch agent stats", error);
         }
     };
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        try {
-            const res = await fetch(`${API_URL}/api/expenses`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify(formData)
-            });
-            if (res.ok) {
-                setShowModal(false);
-                setFormData({
-                    title: '',
-                    amount: '',
-                    category: 'Other',
-                    status: 'pending',
-                    date: new Date().toISOString().split('T')[0],
-                    due_date: '',
-                    notes: ''
-                });
-                fetchExpenses();
-            }
-        } catch (error) {
-            console.error("Error adding expense", error);
-        }
-    };
+    // ... fetchExpenses and others ...
 
-    const updateStatus = async (id, newStatus) => {
-        try {
-            const res = await fetch(`${API_URL}/api/expenses/${id}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({ status: newStatus })
-            });
-            if (res.ok) fetchExpenses();
-        } catch (error) {
-            console.error("Error updating status", error);
-        }
-    };
+    // Stats Calculations
+    const totalPendingExpenses = expenses.filter(e => e.status === 'pending').reduce((acc, e) => acc + e.amount, 0);
+    const totalPaidExpenses = expenses.filter(e => e.status === 'paid').reduce((acc, e) => acc + e.amount, 0);
 
-    const handleDelete = async (id) => {
-        if (!confirm("Are you sure?")) return;
-        try {
-            const res = await fetch(`${API_URL}/api/expenses/${id}`, {
-                method: 'DELETE',
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            if (res.ok) fetchExpenses();
-        } catch (error) {
-            console.error("Error deleting expense", error);
-        }
-    };
+    // Commission Logic
+    // Total Commission Earned (from Itineraries)
+    const totalEarnedCommission = stats?.totalCommission || 0;
 
-    // Stats
-    const totalPending = expenses.filter(e => e.status === 'pending').reduce((acc, e) => acc + e.amount, 0);
-    const totalPaid = expenses.filter(e => e.status === 'paid').reduce((acc, e) => acc + e.amount, 0);
+    // Commission Payouts (Expenses marked as 'Commission Payout')
+    // We consider 'paid' payouts as settled. 'pending' payouts are waiting to be paid but already recorded as an intent.
+    const settledCommission = expenses
+        .filter(e => e.category === 'Commission Payout' && e.status === 'paid')
+        .reduce((acc, e) => acc + e.amount, 0);
+
+    // Pending Commission = Earned - Settled
+    const pendingCommission = totalEarnedCommission - settledCommission;
+
+    const handlePayCommission = () => {
+        setFormData({
+            title: `Commission Payout - ${new Date().toLocaleDateString()}`,
+            amount: pendingCommission > 0 ? pendingCommission : '',
+            category: 'Commission Payout',
+            status: 'paid', // Default to paid if paying now, or pending if scheduling
+            date: new Date().toISOString().split('T')[0],
+            due_date: new Date().toISOString().split('T')[0], // Immediate
+            notes: 'Payout for accumulated commissions'
+        });
+        setShowModal(true);
+    };
 
     // Check overdue
     const now = new Date();
@@ -124,23 +80,45 @@ const Finance = () => {
                         </h1>
                         <p className="text-slate-500 mt-1">Manage your business expenses and track pending payments.</p>
                     </div>
-                    <button
-                        onClick={() => setShowModal(true)}
-                        className="bg-primary-500 hover:bg-primary-600 text-white px-6 py-3 rounded-xl font-semibold shadow-lg shadow-primary-500/20 flex items-center gap-2 transition transform hover:scale-105"
-                    >
-                        <Plus size={20} /> Add New Expense
-                    </button>
+                    <div className="flex gap-3">
+                        <button
+                            onClick={handlePayCommission}
+                            className="bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-3 rounded-xl font-semibold shadow-lg shadow-emerald-500/20 flex items-center gap-2 transition transform hover:scale-105"
+                        >
+                            <DollarSign size={20} /> Pay Commission
+                        </button>
+                        <button
+                            onClick={() => setShowModal(true)}
+                            className="bg-primary-500 hover:bg-primary-600 text-white px-6 py-3 rounded-xl font-semibold shadow-lg shadow-primary-500/20 flex items-center gap-2 transition transform hover:scale-105"
+                        >
+                            <Plus size={20} /> Add Expense
+                        </button>
+                    </div>
                 </div>
 
                 {/* Stats Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                    {/* Commission Card */}
+                    <div className="bg-dark-800/60 backdrop-blur-md rounded-2xl p-6 border border-white/5 relative overflow-hidden group hover:border-indigo-500/30 transition">
+                        <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition">
+                            <DollarSign size={80} />
+                        </div>
+                        <h3 className="text-slate-400 text-sm font-bold uppercase tracking-wider mb-2">Pending Commission</h3>
+                        <p className="text-3xl font-bold text-indigo-400 flex items-center gap-2">
+                            ${pendingCommission.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                        </p>
+                        <p className="text-xs text-slate-500 mt-2">
+                            Earned: ${totalEarnedCommission.toLocaleString()} | Paid: ${settledCommission.toLocaleString()}
+                        </p>
+                    </div>
+
                     <div className="bg-dark-800/60 backdrop-blur-md rounded-2xl p-6 border border-white/5 relative overflow-hidden group hover:border-primary-500/30 transition">
                         <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition">
                             <Clock size={80} />
                         </div>
-                        <h3 className="text-slate-400 text-sm font-bold uppercase tracking-wider mb-2">Total Pending</h3>
+                        <h3 className="text-slate-400 text-sm font-bold uppercase tracking-wider mb-2">Pending Expenses</h3>
                         <p className="text-3xl font-bold text-orange-400 flex items-center gap-2">
-                            ${totalPending.toLocaleString()}
+                            ${totalPendingExpenses.toLocaleString()}
                         </p>
                         <p className="text-xs text-slate-500 mt-2">To be paid by due dates</p>
                     </div>
@@ -151,7 +129,7 @@ const Finance = () => {
                         </div>
                         <h3 className="text-slate-400 text-sm font-bold uppercase tracking-wider mb-2">Total Paid (YTD)</h3>
                         <p className="text-3xl font-bold text-emerald-400 flex items-center gap-2">
-                            ${totalPaid.toLocaleString()}
+                            ${totalPaidExpenses.toLocaleString()}
                         </p>
                         <p className="text-xs text-slate-500 mt-2">Successfully settled</p>
                     </div>
