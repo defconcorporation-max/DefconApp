@@ -269,6 +269,14 @@ const Dashboard = () => {
                     )}
 
                     <Link
+                        to="/finance"
+                        className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition font-medium"
+                    >
+                        <FileText size={20} />
+                        <span>Accounting</span>
+                    </Link>
+
+                    <Link
                         to="/catalog"
                         className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition font-medium"
                     >
