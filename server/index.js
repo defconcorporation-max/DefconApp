@@ -11,6 +11,7 @@ import User from './models/User.js';
 import auth from './middleware/auth.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import mongoose from 'mongoose';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -272,8 +273,16 @@ app.get('/api/clients/:id', auth, async (req, res) => {
     try {
         const { id } = req.params;
         console.log(`[DEBUG] GET /clients/${id} by ${req.user.username} (${req.user.role})`);
-        const client = await Client.findOne({ id: parseInt(id) });
-        console.log(`[DEBUG] Client found: ${!!client}, AgentID: ${client?.agent_id}`);
+
+        let query = {};
+        if (mongoose.isValidObjectId(id)) {
+            query = { _id: id };
+        } else {
+            query = { id: parseInt(id) };
+        }
+
+        const client = await Client.findOne(query);
+        console.log(`[DEBUG] Client found: ${!!client}, ID Checked: ${JSON.stringify(query)}`);
 
         if (!client) {
             return res.status(404).json({ error: 'Client not found' });
@@ -309,7 +318,15 @@ app.get('/api/itineraries', async (req, res) => {
 app.get('/api/itinerary/:client_id', async (req, res) => {
     try {
         const { client_id } = req.params;
-        const itinerary = await ItineraryItem.find({ client_id: parseInt(client_id) }).sort({ start_time: 1 });
+        let numericId = parseInt(client_id);
+
+        // If it's an ObjectId, we need to find the client first to get the numeric ID
+        if (mongoose.isValidObjectId(client_id)) {
+            const client = await Client.findOne({ _id: client_id });
+            if (client) numericId = client.id;
+        }
+
+        const itinerary = await ItineraryItem.find({ client_id: numericId }).sort({ start_time: 1 });
         res.json(itinerary);
     } catch (error) {
         res.status(500).json({ error: error.message });
