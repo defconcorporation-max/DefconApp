@@ -142,18 +142,32 @@ const Finance = () => {
                 </div>
 
                 {/* Stats Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                    {/* Total Pending (Liability) */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                    {/* Unpaid Operations (Liabilities) */}
                     <div className="bg-dark-800/60 backdrop-blur-md rounded-2xl p-6 border border-white/5 relative overflow-hidden group hover:border-orange-500/30 transition">
                         <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition">
                             <Clock size={80} />
                         </div>
-                        <h3 className="text-slate-400 text-sm font-bold uppercase tracking-wider mb-2">Total Outstanding</h3>
+                        <h3 className="text-slate-400 text-sm font-bold uppercase tracking-wider mb-2">Unpaid Expenses</h3>
                         <p className="text-3xl font-bold text-orange-400 flex items-center gap-2">
-                            ${totalPending.toLocaleString()}
+                            ${operationalPending.toLocaleString()}
                         </p>
                         <p className="text-xs text-slate-500 mt-2">
-                            Total expenses awaiting payment
+                            Operational costs (software, rent, etc.)
+                        </p>
+                    </div>
+
+                    {/* Unpaid Commissions (Focused) */}
+                    <div className="bg-dark-800/60 backdrop-blur-md rounded-2xl p-6 border border-white/5 relative overflow-hidden group hover:border-indigo-500/30 transition">
+                        <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition">
+                            <DollarSign size={80} />
+                        </div>
+                        <h3 className="text-slate-400 text-sm font-bold uppercase tracking-wider mb-2">Unpaid Commissions</h3>
+                        <p className="text-3xl font-bold text-indigo-400 flex items-center gap-2">
+                            ${commissionPending.toLocaleString()}
+                        </p>
+                        <p className="text-xs text-slate-500 mt-2">
+                            Agent payouts waiting for payment
                         </p>
                     </div>
 
@@ -167,7 +181,7 @@ const Finance = () => {
                             ${totalPaid.toLocaleString()}
                         </p>
                         <p className="text-xs text-slate-500 mt-2">
-                            Total expenses already settled
+                            All settled expenses & commissions
                         </p>
                     </div>
 
