@@ -13,6 +13,7 @@ const AgentDetails = () => {
     const [agent, setAgent] = useState(null);
     const [clients, setClients] = useState([]);
     const [stats, setStats] = useState({ activeClients: 0, upcomingTrips: 0, totalRevenue: 0, totalCommission: 0 });
+    const [expenses, setExpenses] = useState([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -21,14 +22,21 @@ const AgentDetails = () => {
 
     const fetchAgentDetails = async () => {
         try {
-            const res = await fetch(`${API_URL}/api/agents/${id}/details`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            if (res.ok) {
-                const data = await res.json();
+            const [agentRes, expensesRes] = await Promise.all([
+                fetch(`${API_URL}/api/agents/${id}/details`, { headers: { 'Authorization': `Bearer ${token}` } }),
+                fetch(`${API_URL}/api/expenses?agent_id=${id}`, { headers: { 'Authorization': `Bearer ${token}` } })
+            ]);
+
+            if (agentRes.ok) {
+                const data = await agentRes.json();
                 setAgent(data.agent);
                 setClients(data.clients || []);
                 setStats(data.stats || {});
+            }
+
+            if (expensesRes.ok) {
+                const expensesData = await expensesRes.json();
+                setExpenses(expensesData);
             }
         } catch (error) {
             console.error('Error fetching agent details:', error);
@@ -59,6 +67,7 @@ const AgentDetails = () => {
 
             <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 {/* Stats Grid */}
+                {/* Stats Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                     <div className="bg-dark-800 p-6 rounded-xl border border-white/5">
                         <div className="flex items-center gap-3 mb-2 text-slate-400">
@@ -67,13 +76,32 @@ const AgentDetails = () => {
                         </div>
                         <p className="text-2xl font-bold text-white">${stats.totalRevenue?.toLocaleString() || '0'}</p>
                     </div>
-                    <div className="bg-dark-800 p-6 rounded-xl border border-white/5">
-                        <div className="flex items-center gap-3 mb-2 text-slate-400">
-                            <DollarSign size={18} className="text-primary-500" />
-                            <span className="text-xs font-bold uppercase tracking-wider">Commission Earned</span>
-                        </div>
-                        <p className="text-2xl font-bold text-white">${stats.totalCommission?.toLocaleString() || '0'}</p>
-                    </div>
+
+                    {/* Commission Breakdown */}
+                    {(() => {
+                        const totalEarned = stats.totalCommission || 0;
+                        const commissionPayouts = expenses.filter(e => e.category === 'Commission Payout');
+                        const paid = commissionPayouts.filter(e => e.status === 'paid').reduce((acc, e) => acc + e.amount, 0);
+                        const pendingPayouts = commissionPayouts.filter(e => e.status === 'pending').reduce((acc, e) => acc + e.amount, 0);
+                        const unclaimed = totalEarned - (paid + pendingPayouts);
+
+                        return (
+                            <>
+                                <div className="bg-dark-800 p-6 rounded-xl border border-white/5">
+                                    <div className="flex items-center gap-3 mb-2 text-slate-400">
+                                        <DollarSign size={18} className="text-primary-500" />
+                                        <span className="text-xs font-bold uppercase tracking-wider">Total Commission</span>
+                                    </div>
+                                    <p className="text-2xl font-bold text-white">${totalEarned.toLocaleString()}</p>
+                                    <div className="mt-2 text-xs grid grid-cols-2 gap-2 text-slate-500">
+                                        <div>Paid: <span className="text-emerald-400">${paid.toLocaleString()}</span></div>
+                                        <div>Unclaimed: <span className="text-indigo-400">${unclaimed.toLocaleString()}</span></div>
+                                    </div>
+                                </div>
+                            </>
+                        );
+                    })()}
+
                     <div className="bg-dark-800 p-6 rounded-xl border border-white/5">
                         <div className="flex items-center gap-3 mb-2 text-slate-400">
                             <Briefcase size={18} className="text-blue-500" />
