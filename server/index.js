@@ -164,8 +164,16 @@ app.get('/api/agents/:id/details', auth, async (req, res) => {
 
         let totalRevenue = 0;
         let totalCommission = 0;
+        const currentYear = new Date().getFullYear();
         const monthlyStats = {};
         const monthlyCommissionStats = {};
+
+        // Initialize all 12 months for Current Year to ensure Jan-Dec sorting
+        for (let i = 1; i <= 12; i++) {
+            const key = `${currentYear}-${String(i).padStart(2, '0')}`;
+            monthlyStats[key] = 0;
+            monthlyCommissionStats[key] = 0;
+        }
 
         itineraries.forEach(item => {
             // Revenue = Cost (Selling Price) + Service Fees
@@ -185,16 +193,17 @@ app.get('/api/agents/:id/details', auth, async (req, res) => {
 
             totalCommission += comm;
 
-            // Monthly breakdown (last 12 months)
+            // Monthly breakdown (Current Year Only)
             if (item.start_time) {
                 const date = new Date(item.start_time);
-                const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+                if (date.getFullYear() === currentYear) {
+                    const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
 
-                if (!monthlyStats[monthKey]) monthlyStats[monthKey] = 0;
-                monthlyStats[monthKey] += sales;
-
-                if (!monthlyCommissionStats[monthKey]) monthlyCommissionStats[monthKey] = 0;
-                monthlyCommissionStats[monthKey] += comm;
+                    if (monthlyStats.hasOwnProperty(monthKey)) {
+                        monthlyStats[monthKey] += sales;
+                        monthlyCommissionStats[monthKey] += comm;
+                    }
+                }
             }
         });
 
