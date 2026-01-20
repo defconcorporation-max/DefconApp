@@ -206,8 +206,12 @@ const Finance = () => {
                                 ${unpaidCommission.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                             </p>
                             <div className="text-xs text-slate-500 mt-2 space-y-1">
-                                <p>Unclaimed: <span className="text-slate-300">${unclaimedCommission.toLocaleString()}</span></p>
-                                {pendingPayouts > 0 && <p>Invoiced: <span className="text-orange-400">${pendingPayouts.toLocaleString()}</span></p>}
+                                <p className="flex justify-between"><span>Earned:</span> <span className="text-slate-300 font-mono">${totalEarnedCommission.toLocaleString()}</span></p>
+                                <p className="flex justify-between"><span>Paid:</span> <span className="text-emerald-400 font-mono">-${paidCommission.toLocaleString()}</span></p>
+                                <div className="border-t border-white/5 pt-1 mt-1">
+                                    <p className="flex justify-between"><span>Unclaimed:</span> <span className="text-indigo-400 font-mono">${unclaimedCommission.toLocaleString()}</span></p>
+                                    {pendingPayouts > 0 && <p className="flex justify-between"><span>Pending Invoice:</span> <span className="text-orange-400 font-mono">${pendingPayouts.toLocaleString()}</span></p>}
+                                </div>
                             </div>
                         </div>
                         {unclaimedCommission > 0 && (
