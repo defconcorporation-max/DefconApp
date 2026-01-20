@@ -13,6 +13,7 @@ import { useNavigate } from 'react-router-dom';
 const localizer = momentLocalizer(moment);
 
 import API_URL from '../config';
+import { useAuth } from '../context/AuthContext';
 
 const Dashboard = () => {
     const navigate = useNavigate();
