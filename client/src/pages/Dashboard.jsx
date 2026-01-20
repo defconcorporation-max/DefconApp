@@ -115,6 +115,15 @@ const Dashboard = () => {
                 if (adminStatsRes.ok) {
                     const adminData = await adminStatsRes.json();
                     setAdminStats(adminData);
+
+                    // Also populate main dashboard stats for Admin View (Global Overlay)
+                    setStats(prev => ({
+                        ...prev,
+                        revenue: adminData.totalRevenue,
+                        totalCommission: adminData.totalCommission,
+                        monthlyRevenue: adminData.monthlyRevenue,
+                        // Keep client counts as they are (fetched via clients list)
+                    }));
                 }
             } catch (error) {
                 console.error('Error fetching admin stats:', error);

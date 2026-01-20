@@ -137,6 +137,18 @@ app.get('/api/admin/stats', auth, async (req, res) => {
 
         const itineraries = await ItineraryItem.find({});
         let totalProfit = 0;
+        let totalRevenue = 0;
+        let totalCommission = 0;
+        const currentYear = new Date().getFullYear();
+        const monthlyStats = {};
+        const monthlyCommissionStats = {};
+
+        // Initialize months
+        for (let i = 1; i <= 12; i++) {
+            const key = `${currentYear}-${String(i).padStart(2, '0')}`;
+            monthlyStats[key] = 0;
+            monthlyCommissionStats[key] = 0;
+        }
 
         itineraries.forEach(item => {
             // Commission Calculation
@@ -149,23 +161,39 @@ app.get('/api/admin/stats', auth, async (req, res) => {
             }
 
             // Profit = (Sell Price - Net Price) + Service Fees - Commission
-            // Note: serviceFee is usually the Sell Price for 'service_fee' type, and costPrice is 0.
-            // For standard items: Profit = (cost - costPrice) - comm
-            // For service fees: Profit = serviceFee - comm (since costPrice usually 0)
-
-            // However, to be generic:
             // Sell Price (Revenue) = item.cost + item.serviceFee
             // Net Cost = item.costPrice
-
             // Profit = (Revenue - Net Cost) - Commission
+
             const revenue = (item.cost || 0) + (item.serviceFee || 0);
             const netCost = (item.costPrice || 0);
-
             const profit = (revenue - netCost) - comm;
+
             totalProfit += profit;
+            totalRevenue += revenue;
+            totalCommission += comm;
+
+            // Monthly breakdown (Current Year)
+            if (item.start_time) {
+                const date = new Date(item.start_time);
+                if (date.getFullYear() === currentYear) {
+                    const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+                    if (monthlyStats.hasOwnProperty(monthKey)) {
+                        monthlyStats[monthKey] += revenue;
+                        monthlyCommissionStats[monthKey] += comm;
+                    }
+                }
+            }
         });
 
-        res.json({ totalProfit });
+        const sortedMonths = Object.keys(monthlyStats).sort();
+        const monthlyRevenue = sortedMonths.map(key => ({
+            month: key,
+            revenue: monthlyStats[key],
+            commission: monthlyCommissionStats[key] || 0
+        }));
+
+        res.json({ title: "Global Stats", totalProfit, totalRevenue, totalCommission, monthlyRevenue });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
