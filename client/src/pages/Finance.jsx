@@ -113,6 +113,12 @@ const Finance = () => {
     const totalPending = expenses.filter(e => e.status === 'pending').reduce((acc, e) => acc + e.amount, 0);
     const totalPaid = expenses.filter(e => e.status === 'paid').reduce((acc, e) => acc + e.amount, 0);
 
+    const commissionPending = expenses.filter(e => e.category === 'Commission Payout' && e.status === 'pending').reduce((acc, e) => acc + e.amount, 0);
+    const commissionPaid = expenses.filter(e => e.category === 'Commission Payout' && e.status === 'paid').reduce((acc, e) => acc + e.amount, 0);
+
+    // Operational Expenses (Excluding Commissions)
+    const operationalPending = totalPending - commissionPending;
+
     // Check overdue
     const now = new Date();
     const overdueCount = expenses.filter(e => e.status === 'pending' && e.due_date && new Date(e.due_date) < now).length;
