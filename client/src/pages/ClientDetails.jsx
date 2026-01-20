@@ -329,9 +329,9 @@ const ClientDetails = () => {
             type: activeTab,
             // For service fees and passes, default to trip start or now if not set
             start_time: (activeTab === 'service_fee' || activeTab === 'viva_las_vegas_pass') && !formData.start_time
-                ? (client.trip_start ? new Date(client.trip_start).toISOString() : new Date().toISOString())
-                : (formData.start_time ? new Date(formData.start_time).toISOString() : null),
-            end_time: finalEndTime ? new Date(finalEndTime).toISOString() : null,
+                ? (client.trip_start ? moment.utc(client.trip_start).toISOString() : moment.utc().toISOString())
+                : (formData.start_time ? moment.utc(formData.start_time).toISOString() : null),
+            end_time: finalEndTime ? moment.utc(finalEndTime).toISOString() : null,
             peopleCount: formData.peopleCount,
             isPremium: formData.isPremium
         };
@@ -386,8 +386,8 @@ const ClientDetails = () => {
             setFormData({
                 type: item.type,
                 title: item.title,
-                start_time: item.start_time ? moment(item.start_time).format('YYYY-MM-DDTHH:mm') : '',
-                end_time: item.end_time ? moment(item.end_time).format('YYYY-MM-DDTHH:mm') : '',
+                start_time: item.start_time ? moment.utc(item.start_time).format('YYYY-MM-DDTHH:mm') : '',
+                end_time: item.end_time ? moment.utc(item.end_time).format('YYYY-MM-DDTHH:mm') : '',
                 location: item.location || '',
                 description: item.description || '',
                 image_url: item.image_url || '',
