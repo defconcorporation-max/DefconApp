@@ -173,9 +173,9 @@ app.get('/api/admin/stats', auth, async (req, res) => {
             totalRevenue += revenue;
             totalCommission += comm;
 
-            // Monthly breakdown (Current Year)
-            if (item.start_time) {
-                const date = new Date(item.start_time);
+            // Monthly breakdown (Current Year) - Based on Sale Date (createdAt)
+            if (item.createdAt) {
+                const date = new Date(item.createdAt);
                 if (date.getFullYear() === currentYear) {
                     const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
                     if (monthlyStats.hasOwnProperty(monthKey)) {
