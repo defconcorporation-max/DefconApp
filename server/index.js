@@ -266,9 +266,9 @@ app.get('/api/agents/:id/details', auth, async (req, res) => {
 
             totalCommission += comm;
 
-            // Monthly breakdown (Current Year Only)
-            if (item.start_time) {
-                const date = new Date(item.start_time);
+            // Monthly breakdown (Current Year Only) - Based on Sale Date
+            if (item.createdAt) {
+                const date = new Date(item.createdAt);
                 if (date.getFullYear() === currentYear) {
                     const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
 
