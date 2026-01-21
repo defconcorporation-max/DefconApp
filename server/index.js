@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
@@ -50,9 +51,29 @@ const upload = multer({ storage });
 
 // Routes
 
-// --- Auth Routes ---
+// Auth Routes
+app.post('/api/auth/register', async (req, res) => {
+    try {
+        const { username, password, name } = req.body;
+        const existingUser = await User.findOne({ username });
+        if (existingUser) {
+            return res.status(400).json({ error: 'Username already exists' });
+        }
 
-// Login
+        const hashedPassword = await bcrypt.hash(password, 8);
+        const newUser = await User.create({
+            username,
+            password: hashedPassword,
+            name,
+            role: 'agent'
+        });
+
+        res.json({ id: newUser._id, username: newUser.username, name: newUser.name });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 app.post('/api/auth/login', async (req, res) => {
     try {
         const { username, password } = req.body;
@@ -67,33 +88,19 @@ app.post('/api/auth/login', async (req, res) => {
             return res.status(401).json({ error: 'Invalid credentials' });
         }
 
-        const token = jwt.sign(
-            { id: user._id, role: user.role, name: user.name },
-            process.env.JWT_SECRET || 'fallback_secret_key_change_me',
-            { expiresIn: '24h' }
-        );
-
-        res.json({
-            token,
-            user: {
-                id: user._id,
-                username: user.username,
-                name: user.name,
-                role: user.role
-            }
-        });
+        const token = jwt.sign({ id: user._id, role: user.role, username: user.username }, process.env.JWT_SECRET);
+        res.json({ token, user: { id: user._id, username: user.username, role: user.role, name: user.name } });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
 });
 
-// Create Agent (Admin Only)
+// Create Agent (Admin Only) -> This was missing? No, user requested Agent Management separately.
 app.post('/api/auth/agents', auth, async (req, res) => {
     try {
         if (req.user.role !== 'admin') {
             return res.status(403).json({ error: 'Access denied' });
         }
-
         const { username, password, name } = req.body;
 
         const existingUser = await User.findOne({ username });
@@ -688,13 +695,6 @@ app.delete('/api/expenses/:id', auth, async (req, res) => {
     }
 });
 
-
-// Export for Vercel
-export default app;
-
-// Only listen if not running on Vercel
-if (process.env.NODE_ENV !== 'production') {
-    app.listen(PORT, () => {
-        console.log(`Server running on http://localhost:${PORT}`);
-    });
-}
+app.listen(PORT, () => {
+    console.log(`Server running on http://localhost:${PORT}`);
+});
