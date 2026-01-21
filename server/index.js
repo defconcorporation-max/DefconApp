@@ -88,7 +88,7 @@ app.post('/api/auth/login', async (req, res) => {
             return res.status(401).json({ error: 'Invalid credentials' });
         }
 
-        const token = jwt.sign({ id: user._id, role: user.role, username: user.username }, process.env.JWT_SECRET);
+        const token = jwt.sign({ id: user._id, role: user.role, username: user.username }, process.env.JWT_SECRET || 'fallback_secret_key_change_me');
         res.json({ token, user: { id: user._id, username: user.username, role: user.role, name: user.name } });
     } catch (error) {
         res.status(500).json({ error: error.message });
