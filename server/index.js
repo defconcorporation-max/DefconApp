@@ -173,9 +173,11 @@ app.get('/api/admin/stats', auth, async (req, res) => {
             totalRevenue += revenue;
             totalCommission += comm;
 
-            // Monthly breakdown (Current Year) - Based on Sale Date (createdAt)
-            if (item.createdAt) {
-                const date = new Date(item.createdAt);
+            // Monthly breakdown (Current Year) - Based on Sale Date (createdAt) with Fallback to Start Time
+            // Check if date is valid
+            const relevantDate = item.createdAt || item.start_time;
+            if (relevantDate) {
+                const date = new Date(relevantDate);
                 if (date.getFullYear() === currentYear) {
                     const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
                     if (monthlyStats.hasOwnProperty(monthKey)) {
@@ -266,9 +268,10 @@ app.get('/api/agents/:id/details', auth, async (req, res) => {
 
             totalCommission += comm;
 
-            // Monthly breakdown (Current Year Only) - Based on Sale Date
-            if (item.createdAt) {
-                const date = new Date(item.createdAt);
+            // Monthly breakdown (Current Year Only) - Based on Sale Date with Fallback
+            const relevantDate = item.createdAt || item.start_time;
+            if (relevantDate) {
+                const date = new Date(relevantDate);
                 if (date.getFullYear() === currentYear) {
                     const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
 
