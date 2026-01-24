@@ -641,7 +641,7 @@ app.delete('/api/itinerary/:id', async (req, res) => {
 
 // --- Expense Routes ---
 
-import Expense from './models/Expense.js';
+
 
 // Get Expenses
 app.get('/api/expenses', auth, async (req, res) => {
