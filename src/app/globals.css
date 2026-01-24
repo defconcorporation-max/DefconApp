@@ -1,0 +1,127 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* The Monolith Palette */
+  --bg-root: #050505;
+  /* Pure Void */
+  --bg-surface: #0A0A0A;
+  /* Surface */
+  --bg-surface-hover: #121212;
+
+  --border-subtle: #1F1F1F;
+  --border-focus: #333333;
+
+  --text-primary: #EEEEEE;
+  --text-secondary: #888888;
+  --text-tertiary: #444444;
+
+  --accent-primary: #D4D4D4;
+  --accent-blue: #3b82f6;
+  --accent-violet: #8b5cf6;
+}
+
+body {
+  background-color: var(--bg-root);
+  color: var(--text-primary);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  letter-spacing: -0.015em;
+  font-feature-settings: "ss01", "ss02", "cv01", "cv02";
+  /* Technical Font Features */
+}
+
+/* Subtle Noise Texture */
+body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* Utilities */
+.pro-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+.pro-card {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  transition: all 0.2s cubic-bezier(0.25, 1, 0.5, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.pro-card:hover {
+  background-color: var(--bg-surface-hover);
+  border-color: #2a2a2a;
+  box-shadow: 0 8px 24px -8px rgba(0, 0, 0, 0.5);
+  transform: translateY(-1px);
+}
+
+.pro-input {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  font-size: 0.8125rem;
+  /* 13px */
+  border-radius: 4px;
+  padding: 0.4rem 0.6rem;
+  transition: all 0.15s ease;
+  outline: none;
+}
+
+.pro-input:focus {
+  border-color: var(--text-secondary);
+  background: #111;
+}
+
+.pro-button {
+  background: white;
+  color: black;
+  font-weight: 500;
+  font-size: 0.8125rem;
+  padding: 0.4rem 0.8rem;
+  border-radius: 4px;
+  letter-spacing: -0.01em;
+  transition: all 0.15s ease;
+}
+
+.pro-button:hover {
+  background: #e5e5e5;
+  transform: translateY(-0.5px);
+}
+
+.pro-badge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  padding: 2px 4px;
+  border-radius: 3px;
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+/* Headers */
+h1,
+h2,
+h3 {
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
+
+/* Custom Gradients for "Ultra Modern" feel */
+.neo-gradient {
+  background: linear-gradient(135deg, white 0%, #a3a3a3 100%);
+  -webkit-background-clip: text;
+  color: transparent;
+}

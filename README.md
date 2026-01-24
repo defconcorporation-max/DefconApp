@@ -1,46 +1,36 @@
+This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
-## Setup Instructions
+## Getting Started
 
-Once Node.js is installed, follow these steps to set up the project:
+First, run the development server:
 
-1.  **Install Client Dependencies**
-    Open a terminal/command prompt in the `client` folder:
-    ```bash
-    cd client
-    npm install
-    ```
+```bash
+npm run dev
+# or
+yarn dev
+# or
+pnpm dev
+# or
+bun dev
+```
 
-2.  **Install Server Dependencies**
-    Open a terminal/command prompt in the `server` folder:
-    ```bash
-    cd server
-    npm install
-    ```
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-## Running the Application
+You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
-You need to run both the backend server and the frontend client simultaneously.
+This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
-1.  **Start the Backend Server**
-    In the `server` terminal:
-    ```bash
-    npm start
-    ```
-    The server will start on `http://localhost:3000`.
+## Learn More
 
-2.  **Start the Frontend Client**
-    In the `client` terminal:
-    ```bash
-    npm run dev
-    ```
-    The client will start (usually on `http://localhost:5173`).
+To learn more about Next.js, take a look at the following resources:
 
-## Usage
+- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
+- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
 
-1.  Open the client URL (e.g., `http://localhost:5173`) in your browser.
-2.  Click **Agent Login** to access the Dashboard.
-3.  **Add a Client**: Click the "Add Client" button and fill in the details.
-4.  **Manage Itinerary**: Click "Manage Itinerary" on a client card.
-    -   Add Flights, Hotels, and Activities.
-    -   Upload QR codes or images for passes.
-5.  **Client View**: Click the "External Link" icon on the dashboard or use the "Client Demo" link to see what the client sees.
+You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+
+## Deploy on Vercel
+
+The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+
+Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
