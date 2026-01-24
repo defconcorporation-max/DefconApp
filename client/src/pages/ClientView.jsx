@@ -127,15 +127,26 @@ const ClientView = () => {
     if (error) {
         return (
             <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 dark:bg-dark-900 text-slate-900 dark:text-white transition-colors duration-300">
-                <div className="p-8 bg-white dark:bg-dark-800 rounded-2xl shadow-xl text-center border border-slate-200 dark:border-white/5">
+                <div className="p-8 bg-white dark:bg-dark-800 rounded-2xl shadow-xl text-center border border-slate-200 dark:border-white/5 max-w-sm w-full">
                     <div className="w-16 h-16 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
                         <Info className="w-8 h-8 text-red-500" />
                     </div>
-                    <h2 className="text-2xl font-bold mb-2">{t('error', 'Error')}</h2>
-                    <p className="text-slate-500 dark:text-slate-400 mb-6">{error}</p>
-                    <a href="/" className="px-6 py-3 bg-primary-500 text-white rounded-lg font-semibold hover:bg-primary-600 transition">
-                        {t('goHome', 'Go Home')}
-                    </a>
+                    <h2 className="text-2xl font-bold mb-2">{t('error', 'Something went wrong')}</h2>
+                    <p className="text-slate-500 dark:text-slate-400 mb-6">{error === 'Failed to load client data' ? 'Unable to connect to server.' : error}</p>
+
+                    <div className="flex flex-col gap-3">
+                        <button
+                            onClick={() => fetchClientData()}
+                            className="px-6 py-3 bg-primary-500 text-white rounded-lg font-semibold hover:bg-primary-600 transition flex items-center justify-center gap-2"
+                        >
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 4v6h-6"></path><path d="M1 20v-6h6"></path><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+                            {t('retry', 'Try Again')}
+                        </button>
+
+                        <a href="/" className="px-6 py-3 bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300 rounded-lg font-semibold hover:bg-slate-200 dark:hover:bg-white/10 transition">
+                            {t('goHome', 'Go Home')}
+                        </a>
+                    </div>
                 </div>
             </div>
         );
