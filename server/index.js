@@ -9,6 +9,7 @@ import Client from './models/Client.js';
 import ItineraryItem from './models/ItineraryItem.js';
 import Activity from './models/Activity.js';
 import User from './models/User.js';
+import Expense from './models/Expense.js';
 import auth from './middleware/auth.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
@@ -142,67 +143,106 @@ app.get('/api/admin/stats', auth, async (req, res) => {
             return res.status(403).json({ error: 'Access denied' });
         }
 
-        const itineraries = await ItineraryItem.find({});
-        let totalProfit = 0;
-        let totalRevenue = 0;
-        let totalCommission = 0;
+        if (req.user.role !== 'admin') {
+            return res.status(403).json({ error: 'Access denied' });
+        }
+
         const currentYear = new Date().getFullYear();
-        const monthlyStats = {};
-        const monthlyCommissionStats = {};
+
+        // MongoDB Aggregation for efficiency (Fixes Memory Leak)
+        const stats = await ItineraryItem.aggregate([
+            {
+                $project: {
+                    revenue: { $add: [{ $ifNull: ["$cost", 0] }, { $ifNull: ["$serviceFee", 0] }] },
+                    netCost: { $ifNull: ["$costPrice", 0] },
+                    commission: {
+                        $cond: {
+                            if: { $eq: ["$commissionType", "fixed"] },
+                            then: { $ifNull: ["$commissionValue", 0] },
+                            else: {
+                                $multiply: [
+                                    { $cond: [{ $eq: ["$type", "service_fee"] }, { $ifNull: ["$serviceFee", 0] }, { $ifNull: ["$cost", 0] }] },
+                                    { $divide: [{ $ifNull: ["$commissionValue", 0] }, 100] }
+                                ]
+                            }
+                        }
+                    },
+                    relevantDate: { $ifNull: ["$createdAt", "$start_time"] }
+                }
+            },
+            {
+                $group: {
+                    _id: null,
+                    totalRevenue: { $sum: "$revenue" },
+                    totalCommission: { $sum: "$commission" },
+                    totalGrossProfit: { $sum: { $subtract: [{ $subtract: ["$revenue", "$netCost"] }, "$commission"] } },
+                    monthlyStats: {
+                        $push: {
+                            date: "$relevantDate",
+                            revenue: "$revenue",
+                            commission: "$commission"
+                        }
+                    }
+                }
+            }
+        ]);
+
+        const itineraryStats = stats[0] || { totalRevenue: 0, totalCommission: 0, totalGrossProfit: 0, monthlyStats: [] };
+
+        // Calculate Total Expenses
+        const expenseStats = await Expense.aggregate([
+            {
+                $group: {
+                    _id: null,
+                    totalAmount: { $sum: "$amount" }
+                }
+            }
+        ]);
+
+        const totalExpenses = expenseStats[0]?.totalAmount || 0;
+
+        // Final Profit = (Itinerary Profit) - Expenses
+        const totalProfit = itineraryStats.totalGrossProfit - totalExpenses;
+
+        // Process monthly stats in JS
+        const monthlyData = {};
+        const monthlyCommissionData = {};
 
         // Initialize months
         for (let i = 1; i <= 12; i++) {
             const key = `${currentYear}-${String(i).padStart(2, '0')}`;
-            monthlyStats[key] = 0;
-            monthlyCommissionStats[key] = 0;
+            monthlyData[key] = 0;
+            monthlyCommissionData[key] = 0;
         }
 
-        itineraries.forEach(item => {
-            // Commission Calculation
-            const base = item.type === 'service_fee' ? (item.serviceFee || 0) : (item.cost || 0); // Sell Price
-            let comm = 0;
-            if (item.commissionType === 'fixed') {
-                comm = (item.commissionValue || 0);
-            } else {
-                comm = base * ((item.commissionValue || 0) / 100);
-            }
-
-            // Profit = (Sell Price - Net Price) + Service Fees - Commission
-            // Sell Price (Revenue) = item.cost + item.serviceFee
-            // Net Cost = item.costPrice
-            // Profit = (Revenue - Net Cost) - Commission
-
-            const revenue = (item.cost || 0) + (item.serviceFee || 0);
-            const netCost = (item.costPrice || 0);
-            const profit = (revenue - netCost) - comm;
-
-            totalProfit += profit;
-            totalRevenue += revenue;
-            totalCommission += comm;
-
-            // Monthly breakdown (Current Year) - Based on Sale Date (createdAt) with Fallback to Start Time
-            // Check if date is valid
-            const relevantDate = item.createdAt || item.start_time;
-            if (relevantDate) {
-                const date = new Date(relevantDate);
+        itineraryStats.monthlyStats.forEach(item => {
+            if (item.date) {
+                const date = new Date(item.date);
                 if (date.getFullYear() === currentYear) {
                     const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-                    if (monthlyStats.hasOwnProperty(monthKey)) {
-                        monthlyStats[monthKey] += revenue;
-                        monthlyCommissionStats[monthKey] += comm;
+                    if (monthlyData.hasOwnProperty(monthKey)) {
+                        monthlyData[monthKey] += item.revenue;
+                        monthlyCommissionData[monthKey] += item.commission;
                     }
                 }
             }
         });
 
-        const sortedMonths = Object.keys(monthlyStats).sort();
+        const sortedMonths = Object.keys(monthlyData).sort();
         const monthlyRevenue = sortedMonths.map(key => ({
             month: key,
-            revenue: monthlyStats[key],
-            commission: monthlyCommissionStats[key] || 0
+            revenue: monthlyData[key],
+            commission: monthlyCommissionData[key]
         }));
 
-        res.json({ title: "Global Stats", totalProfit, totalRevenue, totalCommission, monthlyRevenue });
+        res.json({
+            title: "Global Stats",
+            totalProfit: totalProfit, // Now includes Expenses deduction
+            totalRevenue: itineraryStats.totalRevenue,
+            totalCommission: itineraryStats.totalCommission,
+            totalExpenses: totalExpenses, // Optional field if frontend wants to see it
+            monthlyRevenue
+        });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
