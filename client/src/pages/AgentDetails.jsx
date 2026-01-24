@@ -69,22 +69,28 @@ const AgentDetails = () => {
                 {/* Stats Grid */}
                 {/* Stats Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                    <div className="bg-dark-800 p-6 rounded-xl border border-white/5">
+                    {/* Hidden Card - Total Revenue was requested to be removed */}
+                    {/* <div className="bg-dark-800 p-6 rounded-xl border border-white/5">
                         <div className="flex items-center gap-3 mb-2 text-slate-400">
                             <DollarSign size={18} className="text-green-500" />
                             <span className="text-xs font-bold uppercase tracking-wider">Total Revenue</span>
                         </div>
                         <p className="text-2xl font-bold text-white">${stats.totalRevenue?.toLocaleString() || '0'}</p>
-                    </div>
+                    </div> */}
 
                     {/* Commission Breakdown */}
                     {(() => {
                         const totalEarned = stats.totalCommission || 0;
                         const commissionPayouts = expenses.filter(e => e.category === 'Commission Payout');
                         const paid = commissionPayouts.filter(e => e.status === 'paid').reduce((acc, e) => acc + e.amount, 0);
-                        const pendingPayouts = commissionPayouts.filter(e => e.status === 'pending').reduce((acc, e) => acc + e.amount, 0);
-                        const unclaimed = Math.max(0, totalEarned - (paid + pendingPayouts));
-                        const unpaid = Math.max(0, totalEarned - paid);
+                        // Total Pending = (Total Earned - Total Paid)
+                        // This includes both "Unclaimed/Uninvoiced" AND "Invoiced but Pending"
+                        const pendingTotal = Math.max(0, totalEarned - paid);
+
+                        // Break it down further for clarity if needed:
+                        // Unclaimed = TotalEarned - (Paid + PendingInvoices)
+                        const pendingInvoicesAmount = commissionPayouts.filter(e => e.status === 'pending').reduce((acc, e) => acc + e.amount, 0);
+                        const unclaimed = Math.max(0, totalEarned - (paid + pendingInvoicesAmount));
 
                         const handleCreateInvoice = async () => {
                             if (!confirm(`Create an invoice for $${unclaimed.toLocaleString()}?`)) return;
@@ -96,7 +102,7 @@ const AgentDetails = () => {
                                         'Authorization': `Bearer ${token}`
                                     },
                                     body: JSON.stringify({
-                                        agent_id: agent._id || agent.id || id, // Pass agent ID
+                                        agent_id: agent._id || agent.id || id,
                                         title: `Commission Payout - ${new Date().toLocaleDateString()}`,
                                         amount: unclaimed,
                                         category: 'Commission Payout',
@@ -121,16 +127,26 @@ const AgentDetails = () => {
 
                         return (
                             <>
+                                <div className="bg-dark-800 p-6 rounded-xl border border-white/5">
+                                    <div className="flex items-center gap-3 mb-2 text-slate-400">
+                                        <DollarSign size={18} className="text-emerald-500" />
+                                        <span className="text-xs font-bold uppercase tracking-wider">Commission Paid</span>
+                                    </div>
+                                    <p className="text-2xl font-bold text-white">${paid.toLocaleString()}</p>
+                                    <div className="mt-2 text-xs text-slate-500">
+                                        Lifetime Payouts
+                                    </div>
+                                </div>
+
                                 <div className="bg-dark-800 p-6 rounded-xl border border-white/5 flex flex-col justify-between">
                                     <div>
                                         <div className="flex items-center gap-3 mb-2 text-slate-400">
-                                            <DollarSign size={18} className="text-primary-500" />
-                                            <span className="text-xs font-bold uppercase tracking-wider">Total Commission</span>
+                                            <Briefcase size={18} className="text-orange-500" />
+                                            <span className="text-xs font-bold uppercase tracking-wider">Commission Pending</span>
                                         </div>
-                                        <p className="text-2xl font-bold text-white">${totalEarned.toLocaleString()}</p>
-                                        <div className="mt-2 text-xs grid grid-cols-2 gap-2 text-slate-500">
-                                            <div>Paid: <span className="text-emerald-400">${paid.toLocaleString()}</span></div>
-                                            <div>Unpaid: <span className="text-orange-400">${unpaid.toLocaleString()}</span></div>
+                                        <p className="text-2xl font-bold text-white">${pendingTotal.toLocaleString()}</p>
+                                        <div className="mt-2 text-xs text-slate-500">
+                                            {unclaimed > 0 ? `$${unclaimed.toLocaleString()} available to cash out` : 'All caught up'}
                                         </div>
                                     </div>
                                     {unclaimed > 0 && (
@@ -163,8 +179,7 @@ const AgentDetails = () => {
                 </div>
 
                 {/* Revenue Graph */}
-                {/* Revenue & Commission Graphs */}
-                {stats.monthlyRevenue && stats.monthlyRevenue.length > 0 && (
+                {(stats.monthlyRevenue && stats.monthlyRevenue.reduce((acc, curr) => acc + curr.revenue + curr.commission, 0) > 0) ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                         {/* Total Sales Graph */}
                         <div className="bg-dark-800 p-6 rounded-xl border border-white/5">
@@ -246,12 +261,21 @@ const AgentDetails = () => {
                             </div>
                         </div>
                     </div>
+                ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                        <div className="bg-dark-800 p-6 rounded-xl border border-white/5 flex items-center justify-center h-48">
+                            <p className="text-slate-500 text-sm">No sales data available yet.</p>
+                        </div>
+                        <div className="bg-dark-800 p-6 rounded-xl border border-white/5 flex items-center justify-center h-48">
+                            <p className="text-slate-500 text-sm">No commission data available yet.</p>
+                        </div>
+                    </div>
                 )}
 
                 {/* Clients List */}
                 <div className="bg-dark-800 rounded-xl border border-white/5 overflow-hidden">
                     <div className="p-6 border-b border-white/5">
-                        <h2 className="text-lg font-bold text-white">Assigned Clients</h2>
+                        <h2 className="text-lg font-bold text-white">Commissions per Client</h2>
                     </div>
                     <div className="divide-y divide-white/5">
                         {clients.length === 0 ? (
@@ -265,29 +289,36 @@ const AgentDetails = () => {
                                         </div>
                                         <div>
                                             <h3 className="text-white font-medium">{client.name}</h3>
-                                            <p className="text-xs text-slate-500">{client.email}</p>
+                                            <p className="text-xs text-slate-500">Ref: {client.booking_ref || 'N/A'}</p>
                                         </div>
                                     </div>
-                                    <div className="flex items-center gap-3 opacity-0 group-hover:opacity-100 transition">
-                                        <button
-                                            onClick={() => navigate(`/dashboard/client/${client.id || client._id}`)}
-                                            className="px-3 py-1.5 bg-primary-500/10 text-primary-500 rounded-lg text-xs font-bold hover:bg-primary-500 hover:text-white transition"
-                                        >
-                                            Manage
-                                        </button>
-                                        <a
-                                            href={`/client/${client.id || client._id}`}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="p-2 text-slate-400 hover:text-white transition"
-                                        >
-                                            <ExternalLink size={16} />
-                                        </a>
+                                    <div className="flex items-center gap-6">
+                                        <div className="text-right">
+                                            <div className="text-xs text-slate-500">Commission</div>
+                                            <div className="font-bold text-emerald-400">
+                                                ${(client.totalCommission || 0).toLocaleString()}
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-3 opacity-0 group-hover:opacity-100 transition">
+                                            <button
+                                                onClick={() => navigate(`/dashboard/client/${client.id || client._id}`)}
+                                                className="px-3 py-1.5 bg-primary-500/10 text-primary-500 rounded-lg text-xs font-bold hover:bg-primary-500 hover:text-white transition"
+                                            >
+                                                Manage
+                                            </button>
+                                            <a
+                                                href={`/client/${client.id || client._id}`}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="p-2 text-slate-400 hover:text-white transition"
+                                            >
+                                                <ExternalLink size={16} />
+                                            </a>
+                                        </div>
                                     </div>
-                                </div>
-                            ))
+                                    ))
                         )}
-                    </div>
+                                </div>
                 </div>
             </main>
         </div>

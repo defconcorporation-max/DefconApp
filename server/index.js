@@ -274,78 +274,116 @@ app.get('/api/agents/:id/details', auth, async (req, res) => {
         }
 
         const clients = await Client.find({ agent_id: id });
+        const clientIds = clients.map(c => c.id).filter(Boolean); // Legacy numeric IDs
+        const clientMap = clients.reduce((acc, client) => {
+            acc[client.id] = client;
+            return acc;
+        }, {});
 
         // Stats Calculation
         const activeClients = clients.length;
         const upcomingTrips = clients.filter(c => c.trip_start && new Date(c.trip_start) > new Date()).length;
-
-        // Fetch Itineraries for detailed financial stats
-        // This might be heavy if many clients, but necessary for accurate totals
-        const clientLegacyIds = clients.map(c => c.id).filter(Boolean); // Filter out any without legacy ID if mixed
-        const itineraries = await ItineraryItem.find({ client_id: { $in: clientLegacyIds } });
-
-        let totalRevenue = 0;
-        let totalCommission = 0;
         const currentYear = new Date().getFullYear();
-        const monthlyStats = {};
-        const monthlyCommissionStats = {};
 
-        // Initialize all 12 months for Current Year to ensure Jan-Dec sorting
+        // Optimized Aggregation for Financials
+        // We match by client_id (which corresponds to client.id)
+        const stats = await ItineraryItem.aggregate([
+            { $match: { client_id: { $in: clientIds } } },
+            {
+                $project: {
+                    client_id: 1,
+                    revenue: { $add: [{ $ifNull: ["$cost", 0] }, { $ifNull: ["$serviceFee", 0] }] },
+                    commission: {
+                        $cond: {
+                            if: { $eq: ["$commissionType", "fixed"] },
+                            then: { $ifNull: ["$commissionValue", 0] },
+                            else: {
+                                $multiply: [
+                                    { $cond: [{ $eq: ["$type", "service_fee"] }, { $ifNull: ["$serviceFee", 0] }, { $ifNull: ["$cost", 0] }] },
+                                    { $divide: [{ $ifNull: ["$commissionValue", 0] }, 100] }
+                                ]
+                            }
+                        }
+                    },
+                    relevantDate: { $ifNull: ["$createdAt", "$start_time"] }
+                }
+            },
+            {
+                $group: {
+                    _id: null,
+                    totalRevenue: { $sum: "$revenue" },
+                    totalCommission: { $sum: "$commission" },
+                    monthlyStats: {
+                        $push: {
+                            date: "$relevantDate",
+                            revenue: "$revenue",
+                            commission: "$commission"
+                        }
+                    },
+                    byClient: {
+                        $push: {
+                            client_id: "$client_id",
+                            commission: "$commission"
+                        }
+                    }
+                }
+            }
+        ]);
+
+        const result = stats[0] || { totalRevenue: 0, totalCommission: 0, monthlyStats: [], byClient: [] };
+
+        // Process Client Commission Breakdown
+        const clientCommissionMap = {};
+        result.byClient.forEach(item => {
+            if (!clientCommissionMap[item.client_id]) clientCommissionMap[item.client_id] = 0;
+            clientCommissionMap[item.client_id] += item.commission;
+        });
+
+        // Create detailed client list with commission
+        const detailedClients = clients.map(client => ({
+            ...client.toObject(),
+            totalCommission: clientCommissionMap[client.id] || 0
+        })).sort((a, b) => b.totalCommission - a.totalCommission); // Sort by highest earner
+
+        // Process monthly stats in JS
+        const monthlyData = {};
+        const monthlyCommissionData = {};
+
+        // Initialize months
         for (let i = 1; i <= 12; i++) {
             const key = `${currentYear}-${String(i).padStart(2, '0')}`;
-            monthlyStats[key] = 0;
-            monthlyCommissionStats[key] = 0;
+            monthlyData[key] = 0;
+            monthlyCommissionData[key] = 0;
         }
 
-        itineraries.forEach(item => {
-            // Revenue = Cost (Selling Price) + Service Fees
-            const sales = (item.cost || 0) + (item.serviceFee || 0);
-            totalRevenue += sales;
-
-            // Commission Calculation (Matching ClientDetails.jsx)
-            const base = item.type === 'service_fee' ? (item.serviceFee || 0) : (item.cost || 0);
-
-            let comm = 0;
-            if (item.commissionType === 'fixed') {
-                comm = (item.commissionValue || 0);
-            } else {
-                // Percent of Base (Selling Price)
-                comm = base * ((item.commissionValue || 0) / 100);
-            }
-
-            totalCommission += comm;
-
-            // Monthly breakdown (Current Year Only) - Based on Sale Date with Fallback
-            const relevantDate = item.createdAt || item.start_time;
-            if (relevantDate) {
-                const date = new Date(relevantDate);
+        result.monthlyStats.forEach(item => {
+            if (item.date) {
+                const date = new Date(item.date);
                 if (date.getFullYear() === currentYear) {
                     const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-
-                    if (monthlyStats.hasOwnProperty(monthKey)) {
-                        monthlyStats[monthKey] += sales;
-                        monthlyCommissionStats[monthKey] += comm;
+                    if (monthlyData.hasOwnProperty(monthKey)) {
+                        monthlyData[monthKey] += item.revenue;
+                        monthlyCommissionData[monthKey] += item.commission;
                     }
                 }
             }
         });
 
-        // Convert monthlyStats to array
-        const sortedMonths = Object.keys(monthlyStats).sort();
+        const sortedMonths = Object.keys(monthlyData).sort();
         const monthlyRevenue = sortedMonths.map(key => ({
             month: key,
-            revenue: monthlyStats[key],
-            commission: monthlyCommissionStats[key] || 0
+            revenue: monthlyData[key],
+            commission: monthlyCommissionStats[key]
         }));
 
         res.json({
             agent,
-            clients,
+            clients: detailedClients, // Now includes commission totals per client
             stats: {
                 activeClients,
                 upcomingTrips,
-                totalRevenue,
-                totalCommission,
+                totalRevenue: result.totalRevenue,
+                totalCommission: result.totalCommission,
                 monthlyRevenue
             }
         });
