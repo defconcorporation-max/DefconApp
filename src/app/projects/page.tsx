@@ -1,23 +1,21 @@
 import Link from 'next/link';
-import { db } from '@/lib/db';
+import { turso as db } from '@/lib/turso';
 import { Project, Client } from '@/types';
 import { Folder, Clock, Hash, DollarSign } from 'lucide-react';
-// Filter/Sort logic can be added here later.
-// We need a server component to fetch all projects. 
-// Standard getProjects action is by clientId. We'll make a new query inline or add action.
-// Let's add action `getAllProjects` to clean this up later, but for now inline db call or new action.
 
 async function getAllProjectsFull() {
     'use server';
     // Join with clients to get names
-    return db.prepare(`
+    const { rows } = await db.execute(`
         SELECT p.*, c.company_name as client_name, c.name as client_contact,
         (SELECT COUNT(*) FROM shoots s WHERE s.project_id = p.id) as shoot_count,
         (SELECT COALESCE(SUM(rate * quantity), 0) FROM project_services ps WHERE ps.project_id = p.id) as total_value
         FROM projects p
         JOIN clients c ON p.client_id = c.id
         ORDER BY p.created_at DESC
-    `).all() as (Project & { client_name: string, client_contact: string, shoot_count: number, total_value: number })[];
+    `);
+
+    return rows as (Project & { client_name: string, client_contact: string, shoot_count: number, total_value: number })[];
 }
 
 export default async function ProjectsPage() {
