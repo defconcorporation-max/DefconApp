@@ -88,7 +88,7 @@ export async function getSocials(clientId: number): Promise<SocialLink[]> {
 }
 
 export async function addSocial(formData: FormData) {
-    const clientId = formData.get('clientId');
+    const clientId = Number(formData.get('clientId'));
     const platform = formData.get('platform') as string;
     const url = formData.get('url') as string;
 
@@ -101,8 +101,8 @@ export async function addSocial(formData: FormData) {
 }
 
 export async function deleteSocial(formData: FormData) {
-    const id = formData.get('id');
-    const clientId = formData.get('clientId');
+    const id = Number(formData.get('id'));
+    const clientId = Number(formData.get('clientId'));
     await db.execute({
         sql: 'DELETE FROM social_links WHERE id = ?',
         args: [id]
@@ -119,7 +119,7 @@ export async function getIdeas(clientId: number): Promise<ContentIdea[]> {
 }
 
 export async function addIdea(formData: FormData) {
-    const clientId = formData.get('clientId');
+    const clientId = Number(formData.get('clientId'));
     const title = formData.get('title') as string;
     const description = formData.get('description') as string;
 
@@ -175,9 +175,9 @@ export async function addCommission(formData: FormData) {
 }
 
 export async function deleteCommission(formData: FormData) {
-    const id = formData.get('id');
-    const clientId = formData.get('clientId');
-    const projectId = formData.get('projectId');
+    const id = Number(formData.get('id'));
+    const clientId = Number(formData.get('clientId'));
+    const projectId = formData.get('projectId') ? Number(formData.get('projectId')) : null;
 
     await db.execute({
         sql: 'DELETE FROM commissions WHERE id = ?',
@@ -245,7 +245,7 @@ export async function getAllShoots(): Promise<ShootWithClient[]> {
 }
 
 export async function addShoot(formData: FormData) {
-    const clientId = formData.get('clientId');
+    const clientId = Number(formData.get('clientId'));
     const title = formData.get('title') as string;
     const date = formData.get('date') as string;
     const startTime = formData.get('startTime') as string;
@@ -266,8 +266,8 @@ export async function addShoot(formData: FormData) {
 }
 
 export async function updateShoot(formData: FormData) {
-    const id = formData.get('id');
-    const clientId = formData.get('clientId');
+    const id = Number(formData.get('id'));
+    const clientId = Number(formData.get('clientId'));
     const title = formData.get('title') as string;
     const date = formData.get('date') as string;
     const startTime = formData.get('startTime') as string;
@@ -287,7 +287,7 @@ export async function updateShoot(formData: FormData) {
 }
 
 export async function deleteShoot(formData: FormData) {
-    const id = formData.get('id');
+    const id = Number(formData.get('id'));
     await db.execute({
         sql: 'DELETE FROM shoots WHERE id = ?',
         args: [id]
@@ -330,10 +330,10 @@ export async function getShootVideoNotes(shootId: number): Promise<ShootVideoNot
 }
 
 export async function addShootVideoNote(formData: FormData) {
-    const videoId = formData.get('videoId');
-    const content = formData.get('content');
-    const shootId = formData.get('shootId');
-    const clientId = formData.get('clientId');
+    const videoId = Number(formData.get('videoId'));
+    const content = formData.get('content') as string;
+    const shootId = formData.get('shootId') ? Number(formData.get('shootId')) : null;
+    const clientId = formData.get('clientId') ? Number(formData.get('clientId')) : null;
 
     await db.execute({
         sql: 'INSERT INTO shoot_video_notes (video_id, content) VALUES (?, ?)',
@@ -345,8 +345,8 @@ export async function addShootVideoNote(formData: FormData) {
 }
 
 export async function deleteShootVideoNote(formData: FormData) {
-    const id = formData.get('id');
-    const shootId = formData.get('shootId');
+    const id = Number(formData.get('id'));
+    const shootId = formData.get('shootId') ? Number(formData.get('shootId')) : null;
     await db.execute({
         sql: 'DELETE FROM shoot_video_notes WHERE id = ?',
         args: [id]
@@ -355,8 +355,8 @@ export async function deleteShootVideoNote(formData: FormData) {
 }
 
 export async function addShootVideo(formData: FormData) {
-    const shootId = formData.get('shootId');
-    const clientId = formData.get('clientId');
+    const shootId = Number(formData.get('shootId'));
+    const clientId = Number(formData.get('clientId'));
     const title = formData.get('title') as string;
 
     await db.execute({
@@ -388,8 +388,8 @@ export async function updateShootVideoNotes(id: number, notes: string, clientId:
 }
 
 export async function deleteShootVideo(formData: FormData) {
-    const id = formData.get('id');
-    const shootId = formData.get('shootId');
+    const id = Number(formData.get('id'));
+    const shootId = formData.get('shootId') ? Number(formData.get('shootId')) : null;
     await db.execute({
         sql: 'DELETE FROM shoot_videos WHERE id = ?',
         args: [id]
@@ -423,10 +423,10 @@ export async function getCredentials(clientId: number) {
 }
 
 export async function addCredential(formData: FormData) {
-    const clientId = formData.get('clientId');
-    const service = formData.get('service');
-    const username = formData.get('username');
-    const password = formData.get('password');
+    const clientId = Number(formData.get('clientId'));
+    const service = formData.get('service') as string;
+    const username = formData.get('username') as string;
+    const password = formData.get('password') as string;
 
     await db.execute({
         sql: 'INSERT INTO credentials (client_id, service_name, username, password) VALUES (?, ?, ?, ?)',
@@ -437,10 +437,10 @@ export async function addCredential(formData: FormData) {
 
 export async function addPayment(formData: FormData) {
     const clientId = Number(formData.get('clientId'));
-    const amount = formData.get('amount');
+    const amount = Number(formData.get('amount'));
     const status = 'Paid';
-    const date = formData.get('date') || new Date().toISOString().split('T')[0];
-    const description = formData.get('description');
+    const date = (formData.get('date') as string) || new Date().toISOString().split('T')[0];
+    const description = formData.get('description') as string;
     const projectId = Number(formData.get('projectId'));
 
     await db.execute({
@@ -455,7 +455,7 @@ export async function addPayment(formData: FormData) {
 export async function getDashboardStats() {
     // 1. Settings
     const settingsRes = await db.execute('SELECT * FROM settings WHERE id = 1');
-    const settings = (settingsRes.rows[0] as { tax_tps_rate: number, tax_tvq_rate: number }) || { tax_tps_rate: 5, tax_tvq_rate: 9.975 };
+    const settings = (settingsRes.rows[0] as unknown as { tax_tps_rate: number, tax_tvq_rate: number }) || { tax_tps_rate: 5, tax_tvq_rate: 9.975 };
     const taxMultiplier = 1 + ((settings.tax_tps_rate || 5) + (settings.tax_tvq_rate || 9.975)) / 100;
 
     // 2. Total Collected Revenue
@@ -463,7 +463,7 @@ export async function getDashboardStats() {
         SELECT COALESCE(SUM(amount), 0) as total 
         FROM payments
     `);
-    const totalCollectedRevenue = (totalCollectedRes.rows[0] as { total: number });
+    const totalCollectedRevenue = (totalCollectedRes.rows[0] as unknown as { total: number });
 
     // 3. Total Project Value
     const totalProjectValueRes = await db.execute(`
@@ -472,7 +472,7 @@ export async function getDashboardStats() {
         JOIN projects p ON ps.project_id = p.id
         WHERE p.status != 'Archived'
     `);
-    const totalProjectValue = (totalProjectValueRes.rows[0] as { total: number });
+    const totalProjectValue = (totalProjectValueRes.rows[0] as unknown as { total: number });
 
     const totalProjectValueIncTax = (totalProjectValue?.total || 0) * taxMultiplier;
     const pendingRevenue = Math.max(0, totalProjectValueIncTax - totalCollectedRevenue.total);
@@ -481,9 +481,9 @@ export async function getDashboardStats() {
     const totalClientsRes = await db.execute("SELECT COUNT(*) as count FROM clients");
     const upcomingShootsRes = await db.execute("SELECT COUNT(*) as count FROM shoots WHERE shoot_date >= date('now')");
 
-    const activeClients = activeClientsRes.rows[0] as { count: number };
-    const totalClients = totalClientsRes.rows[0] as { count: number };
-    const upcomingShoots = upcomingShootsRes.rows[0] as { count: number };
+    const activeClients = activeClientsRes.rows[0] as unknown as { count: number };
+    const totalClients = totalClientsRes.rows[0] as unknown as { count: number };
+    const upcomingShoots = upcomingShootsRes.rows[0] as unknown as { count: number };
 
     return {
         totalRevenue: totalCollectedRevenue.total,
@@ -497,7 +497,7 @@ export async function getDashboardStats() {
 export async function getFinanceData() {
     // Fetch tax rates
     const settingsRes = await db.execute('SELECT * FROM settings WHERE id = 1');
-    const settings = (settingsRes.rows[0] as { tax_tps_rate: number, tax_tvq_rate: number }) || { tax_tps_rate: 5, tax_tvq_rate: 9.975 };
+    const settings = (settingsRes.rows[0] as unknown as { tax_tps_rate: number, tax_tvq_rate: number }) || { tax_tps_rate: 5, tax_tvq_rate: 9.975 };
     const taxMultiplier = 1 + ((settings.tax_tps_rate || 5) + (settings.tax_tvq_rate || 9.975)) / 100;
 
     // 1. Total Collected
@@ -505,7 +505,7 @@ export async function getFinanceData() {
         SELECT COALESCE(SUM(amount), 0) as total 
         FROM payments
     `);
-    const totalCollectedRevenue = (totalCollectedRes.rows[0] as { total: number });
+    const totalCollectedRevenue = (totalCollectedRes.rows[0] as unknown as { total: number });
 
     // 2. Total Project Value
     const totalProjectValueRes = await db.execute(`
@@ -514,7 +514,7 @@ export async function getFinanceData() {
         JOIN projects p ON ps.project_id = p.id
         WHERE p.status != 'Archived' 
     `);
-    const totalProjectValue = (totalProjectValueRes.rows[0] as { total: number });
+    const totalProjectValue = (totalProjectValueRes.rows[0] as unknown as { total: number });
 
     // 3. Client Performance
     const clientsWithRevenueRes = await db.execute({
@@ -562,7 +562,7 @@ export async function getFinanceData() {
                     sql: "SELECT SUM(rate * quantity) as total FROM project_services WHERE project_id = ?",
                     args: [comm.project_id]
                 });
-                const projectTotal = projectTotalRes.rows[0] as { total: number };
+                const projectTotal = projectTotalRes.rows[0] as unknown as { total: number };
                 totalCommissionsPaid += (projectTotal?.total || 0) * (comm.rate_value / 100);
             }
         }
@@ -626,15 +626,15 @@ export async function savePipelineStage(stage: Partial<PipelineStage>) {
     if (!isNew && stage.id) {
         await db.execute({
             sql: 'UPDATE pipeline_stages SET label = ?, value = ?, color = ? WHERE id = ?',
-            args: [stage.label, stage.value, stage.color, stage.id]
+            args: [stage.label ?? null, stage.value ?? null, stage.color ?? null, stage.id]
         });
     } else {
         const resultRes = await db.execute('SELECT MAX(order_index) as maxOrder FROM pipeline_stages');
-        const result = resultRes.rows[0] as { maxOrder: number };
+        const result = resultRes.rows[0] as unknown as { maxOrder: number };
         const nextOrder = (result?.maxOrder ?? -1) + 1;
         await db.execute({
             sql: 'INSERT INTO pipeline_stages (label, value, color, order_index) VALUES (?, ?, ?, ?)',
-            args: [stage.label, stage.value, stage.color, nextOrder]
+            args: [stage.label ?? null, stage.value ?? null, stage.color ?? 'gray', nextOrder]
         });
     }
     revalidatePath('/');
@@ -776,7 +776,7 @@ export async function updateProject(formData: FormData) {
         sql: 'SELECT client_id FROM projects WHERE id = ?',
         args: [id]
     });
-    const project = projectRes.rows[0] as { client_id: number };
+    const project = projectRes.rows[0] as unknown as { client_id: number };
 
     revalidatePath(`/projects/${id}`);
     if (project) {
@@ -789,7 +789,7 @@ export async function getProjectById(id: number) {
         sql: 'SELECT p.*, c.company_name as client_company FROM projects p JOIN clients c ON p.client_id = c.id WHERE p.id = ?',
         args: [id]
     });
-    return rows[0];
+    return rows[0] as unknown as any;
 }
 
 export async function getProjectShoots(projectId: number) {
@@ -806,7 +806,7 @@ export async function getProjectShoots(projectId: number) {
         `,
         args: [projectId]
     });
-    return rows;
+    return rows as unknown as any[];
 }
 
 export async function getProjectServices(projectId: number) {
@@ -814,7 +814,7 @@ export async function getProjectServices(projectId: number) {
         sql: 'SELECT * FROM project_services WHERE project_id = ?',
         args: [projectId]
     });
-    return rows;
+    return rows as unknown as any[];
 }
 
 export async function addProjectService(formData: FormData) {
@@ -854,7 +854,7 @@ export async function updateProjectStatus(formData: FormData) {
 // --- SERVICES CATALOG ACTIONS ---
 export async function getServices() {
     const { rows } = await db.execute('SELECT * FROM services ORDER BY name ASC');
-    return rows;
+    return rows as unknown as any[];
 }
 
 export async function createService(formData: FormData) {
@@ -917,7 +917,7 @@ export async function getPostProdItems() {
         JOIN clients c ON s.client_id = c.id
         ORDER BY pp.updated_at DESC
     `);
-    return rows;
+    return rows as unknown as any[];
 }
 
 export async function updatePostProdStatus(id: number, status: string) {
@@ -930,7 +930,7 @@ export async function updatePostProdStatus(id: number, status: string) {
 
 export async function getSettings() {
     const { rows } = await db.execute('SELECT * FROM settings WHERE id = 1');
-    return (rows[0] as { id: number, tax_tps_rate: number, tax_tvq_rate: number });
+    return (rows[0] as unknown as { id: number, tax_tps_rate: number, tax_tvq_rate: number });
 }
 
 export async function updateSettings(formData: FormData) {
@@ -958,7 +958,7 @@ export async function addTeamMember(formData: FormData) {
     const email = formData.get('email') as string;
     const phone = formData.get('phone') as string;
     const hourlyRate = Number(formData.get('hourly_rate')) || 0;
-    const color = formData.get('color') as string || 'indigo';
+    const color = (formData.get('color') as string) || 'indigo';
 
     await db.execute({
         sql: 'INSERT INTO team_members (name, role, email, phone, hourly_rate, color) VALUES (?, ?, ?, ?, ?, ?)',
@@ -989,7 +989,7 @@ export async function getTeamMember(id: number) {
         sql: 'SELECT * FROM team_members WHERE id = ?',
         args: [id]
     });
-    return rows[0];
+    return rows[0] as unknown as any;
 }
 
 export async function getMemberAvailability(memberId: number) {
@@ -997,7 +997,7 @@ export async function getMemberAvailability(memberId: number) {
         sql: 'SELECT * FROM team_availability WHERE member_id = ?',
         args: [memberId]
     });
-    return rows;
+    return rows as unknown as any[];
 }
 
 export async function setMemberAvailability(memberId: number, date: string, status: string, note: string = '') {
@@ -1005,7 +1005,7 @@ export async function setMemberAvailability(memberId: number, date: string, stat
         sql: 'SELECT id FROM team_availability WHERE member_id = ? AND date = ?',
         args: [memberId, date]
     });
-    const existing = existingRes.rows[0] as { id: number };
+    const existing = existingRes.rows[0] as unknown as { id: number };
 
     if (existing) {
         await db.execute({
@@ -1026,7 +1026,7 @@ export async function getMemberFinancials(memberId: number) {
         sql: 'SELECT name FROM team_members WHERE id = ?',
         args: [memberId]
     });
-    const member = memberRes.rows[0] as { name: string };
+    const member = memberRes.rows[0] as unknown as { name: string };
     if (!member) return [];
 
     const { rows } = await db.execute({
@@ -1039,7 +1039,7 @@ export async function getMemberFinancials(memberId: number) {
         `,
         args: [member.name]
     });
-    return rows;
+    return rows as unknown as any[];
 }
 
 // --- GLOBAL SEARCH ACTION ---
@@ -1136,12 +1136,12 @@ export async function getProjectTasks(projectId: number): Promise<any[]> {
         `,
         args: [projectId]
     });
-    return rows;
+    return rows as unknown as any[];
 }
 
 export async function getTaskStages(): Promise<any[]> {
     const { rows } = await db.execute('SELECT * FROM task_stages ORDER BY position ASC, id ASC');
-    return rows;
+    return rows as unknown as any[];
 }
 
 export async function addProjectTask(formData: FormData) {
@@ -1155,7 +1155,7 @@ export async function addProjectTask(formData: FormData) {
 
     // Get default stage
     const defaultStageRes = await db.execute('SELECT id FROM task_stages WHERE is_default = 1');
-    const defaultStage = defaultStageRes.rows[0] as { id: number };
+    const defaultStage = defaultStageRes.rows[0] as unknown as { id: number };
     const stageId = defaultStage?.id || 1;
 
     await db.execute({
@@ -1171,18 +1171,18 @@ export async function toggleProjectTask(id: number, projectId: number) {
         sql: 'SELECT is_completed FROM project_tasks WHERE id = ?',
         args: [id]
     });
-    const task = taskRes.rows[0] as { is_completed: number };
+    const task = taskRes.rows[0] as unknown as { is_completed: number };
 
     let targetStageId;
     if (task.is_completed) {
         // Move to To Do
         const defRes = await db.execute('SELECT id FROM task_stages WHERE is_default = 1');
-        const def = defRes.rows[0] as { id: number };
+        const def = defRes.rows[0] as unknown as { id: number };
         targetStageId = def?.id || 1;
     } else {
         // Move to Done
         const doneRes = await db.execute("SELECT id FROM task_stages WHERE name = 'Done'");
-        const done = doneRes.rows[0] as { id: number };
+        const done = doneRes.rows[0] as unknown as { id: number };
         targetStageId = done?.id || 4;
     }
 
@@ -1194,7 +1194,7 @@ export async function updateTaskStage(taskId: number, stageId: number, projectId
         sql: 'SELECT name FROM task_stages WHERE id = ?',
         args: [stageId]
     });
-    const stage = stageRes.rows[0] as { name: string };
+    const stage = stageRes.rows[0] as unknown as { name: string };
     const isCompleted = stage.name === 'Done' ? 1 : 0;
 
     await db.execute({
@@ -1229,7 +1229,7 @@ export async function addTaskStage(formData: FormData) {
     if (!name) return;
 
     const maxRes = await db.execute('SELECT MAX(position) as m FROM task_stages');
-    const max = maxRes.rows[0] as { m: number };
+    const max = maxRes.rows[0] as unknown as { m: number };
     const position = (max.m || 0) + 1;
 
     await db.execute({
@@ -1245,11 +1245,11 @@ export async function deleteTaskStage(id: number) {
         sql: 'SELECT is_default FROM task_stages WHERE id = ?',
         args: [id]
     });
-    const stage = stageRes.rows[0] as { is_default: number };
+    const stage = stageRes.rows[0] as unknown as { is_default: number };
     if (stage.is_default) return;
 
     const defaultStageRes = await db.execute('SELECT id FROM task_stages WHERE is_default = 1');
-    const defaultStage = defaultStageRes.rows[0] as { id: number };
+    const defaultStage = defaultStageRes.rows[0] as unknown as { id: number };
     if (defaultStage) {
         await db.execute({
             sql: 'UPDATE project_tasks SET stage_id = ? WHERE stage_id = ?',
@@ -1319,5 +1319,5 @@ export async function deleteExpense(id: number) {
 
 export async function getExpenses() {
     const { rows } = await db.execute('SELECT * FROM expenses ORDER BY date DESC');
-    return rows;
+    return rows as unknown as any[];
 }

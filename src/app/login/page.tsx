@@ -1,6 +1,6 @@
 'use client';
 
-import { login } from '@/lib/auth';
+import { login } from '@/app/auth-actions';
 import { useState, useTransition } from 'react';
 import { Lock, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';

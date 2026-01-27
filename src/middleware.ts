@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { decrypt } from './lib/auth'; // Ensure this path is correct alias or relative
+import { decrypt } from './lib/auth-utils';
 
 export async function middleware(request: NextRequest) {
     // 1. Check for session cookie

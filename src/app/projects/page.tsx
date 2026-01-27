@@ -15,7 +15,7 @@ async function getAllProjectsFull() {
         ORDER BY p.created_at DESC
     `);
 
-    return rows as (Project & { client_name: string, client_contact: string, shoot_count: number, total_value: number })[];
+    return rows as unknown as (Project & { client_name: string, client_contact: string, shoot_count: number, total_value: number })[];
 }
 
 export default async function ProjectsPage() {
