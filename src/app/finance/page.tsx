@@ -8,6 +8,8 @@ import ExpenseManager from '@/components/ExpenseManager';
 import { getCommissions } from '../actions';
 import { Commission } from '@/types';
 
+export const dynamic = 'force-dynamic';
+
 export default async function FinancePage() {
     const data = await getFinanceData();
     const commissions = await getAllCommissions();

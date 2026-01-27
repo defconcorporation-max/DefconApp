@@ -4,6 +4,9 @@ import Link from 'next/link';
 import { UserPlus, Users, Phone, Mail, ArrowRight } from 'lucide-react';
 import { revalidatePath } from 'next/cache';
 
+
+export const dynamic = 'force-dynamic';
+
 export default async function TeamPage() {
     const members = await getTeamMembers();
 

@@ -18,6 +18,8 @@ async function getAllProjectsFull() {
     return rows as unknown as (Project & { client_name: string, client_contact: string, shoot_count: number, total_value: number })[];
 }
 
+export const dynamic = 'force-dynamic';
+
 export default async function ProjectsPage() {
     const projects = await getAllProjectsFull();
 

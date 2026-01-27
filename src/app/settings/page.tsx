@@ -3,6 +3,9 @@ import SettingsForm from '@/components/SettingsForm';
 import TaskStageManager from '@/components/TaskStageManager';
 import Link from 'next/link';
 
+
+export const dynamic = 'force-dynamic';
+
 export default async function Page() {
     const settings = await getSettings();
     const stages = await getTaskStages();

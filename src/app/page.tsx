@@ -4,6 +4,8 @@ import DashboardCalendar from '@/components/DashboardCalendar';
 import ClientKanban from '@/components/ClientKanban';
 import TaskManager from '@/components/TaskManager';
 
+export const dynamic = 'force-dynamic';
+
 export default async function Home() {
   const clients = await getClients();
   const allShoots = await getAllShoots();
