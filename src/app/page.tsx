@@ -7,14 +7,33 @@ import TaskManager from '@/components/TaskManager';
 export const dynamic = 'force-dynamic';
 
 export default async function Home() {
-  const clients = await getClients();
-  const allShoots = await getAllShoots();
-  const stats = await getDashboardStats();
-  const stages = await getPipelineStages();
-  const tasks = await getAllDashboardTasks();
+  let clients: any[] = [];
+  let allShoots: any[] = [];
+  let stats: any = null;
+  let stages: any[] = [];
+  let tasks: any[] = [];
+  let error = null;
+
+  try {
+    clients = await getClients();
+    allShoots = await getAllShoots();
+    stats = await getDashboardStats();
+    stages = await getPipelineStages();
+    tasks = await getAllDashboardTasks();
+  } catch (e: any) {
+    console.warn('Dashboard Data Fetch Error:', e);
+    error = e.message || 'Unknown database error';
+    // Fallback Mock Data to prevent crash
+    stats = { totalRevenue: 0, pendingRevenue: 0, activeClients: 0, totalClients: 0, upcomingShoots: 0 };
+  }
 
   return (
     <main className="min-h-screen p-8">
+      {error && (
+        <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-4 rounded-xl mb-6">
+          <strong>Warning:</strong> Connecting to database failed. ({error})
+        </div>
+      )}
       <header className="flex flex-col md:flex-row justify-between items-center mb-8 gap-6 pb-6 border-b border-[var(--border-subtle)]">
         <div>
           <h1 className="text-xl font-medium tracking-tight text-white gap-2 flex items-center mb-2">
