@@ -3,30 +3,21 @@
 @tailwind utilities;
 
 :root {
-  /* The Monolith Palette - Slate Edition */
-  --bg-root: #020617;
-  /* Slate-950 */
-  --bg-surface: #0f172a;
-  /* Slate-900 */
-  --bg-surface-hover: #1e293b;
-  /* Slate-800 */
+  /* The Monolith Palette - Pale Night Edition */
+  --bg-root: #18181b; /* Zinc-900 - Significantly lighter than black */
+  --bg-surface: #27272a; /* Zinc-800 - distinct gray cards */
+  --bg-surface-hover: #313135; /* Custom mid-tone */
 
-  --border-subtle: #1e293b;
-  /* Slate-800 */
-  --border-focus: #334155;
-  /* Slate-700 */
+  --border-subtle: #3f3f46; /* Zinc-700 - Higher contrast borders */
+  --border-focus: #52525b; /* Zinc-600 */
 
-  --text-primary: #f8fafc;
-  /* Slate-50 */
-  --text-secondary: #94a3b8;
-  /* Slate-400 */
-  --text-tertiary: #475569;
-  /* Slate-600 */
+  --text-primary: #fafafa; /* Zinc-50 - Bright White */
+  --text-secondary: #d4d4d8; /* Zinc-300 - High legibility secondary */
+  --text-tertiary: #a1a1aa; /* Zinc-400 - Readable tertiary */
 
-  --accent-primary: #e2e8f0;
-  /* Slate-200 */
-  --accent-blue: #3b82f6;
-  --accent-violet: #8b5cf6;
+  --accent-primary: #ffffff;
+  --accent-blue: #60a5fa; /* Lighter Blue */
+  --accent-violet: #a78bfa; /* Lighter Violet */
 }
 
 body {
