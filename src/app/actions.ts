@@ -19,23 +19,23 @@ export async function createClient(formData: FormData) {
     const folderName = `${safeName}`;
     let folderPath = '';
 
-    try {
-        // Only attempt folder creation if we are likely in a local environment
-        // or just catch the error if it fails (Vercel)
-        if (process.env.NODE_ENV !== 'production') {
-            const path = (await import('path')).default;
-            const fs = (await import('fs')).default;
+    // try {
+    //     // Only attempt folder creation if we are likely in a local environment
+    //     // or just catch the error if it fails (Vercel)
+    //     if (process.env.NODE_ENV !== 'production') {
+    //         const path = (await import('path')).default;
+    //         const fs = (await import('fs')).default;
 
-            folderPath = path.join(process.cwd(), 'Clients', folderName);
-            if (!fs.existsSync(folderPath)) {
-                fs.mkdirSync(folderPath, { recursive: true });
-            }
-        }
-    } catch (err) {
-        console.warn('Could not create local folder (expected on Vercel):', err);
-        // Fallback or leave empty, but don't crash the request
-        folderPath = '';
-    }
+    //         folderPath = path.join(process.cwd(), 'Clients', folderName);
+    //         if (!fs.existsSync(folderPath)) {
+    //             fs.mkdirSync(folderPath, { recursive: true });
+    //         }
+    //     }
+    // } catch (err) {
+    //     console.warn('Could not create local folder (expected on Vercel):', err);
+    //     // Fallback or leave empty, but don't crash the request
+    //     folderPath = ''; 
+    // }
 
     await db.execute({
         sql: 'INSERT INTO clients (name, company_name, plan, folder_path) VALUES (?, ?, ?, ?)',
@@ -51,12 +51,12 @@ export async function openClientFolder(folderPath: string) {
     // Cloud: process.cwd() is server. exec opens on server.
     // For local dev this works. For Vercel this does nothing/errors.
     // Keeping as is for local support.
-    try {
-        const { exec } = require('child_process');
-        exec(`start "" "${folderPath}"`);
-    } catch (e) {
-        console.error('Failed to open folder:', e);
-    }
+    // try {
+    //     const { exec } = require('child_process');
+    //     exec(`start "" "${folderPath}"`);
+    // } catch (e) {
+    //     console.error('Failed to open folder:', e);
+    // }
 }
 
 export async function getClient(id: number): Promise<Client | undefined> {
