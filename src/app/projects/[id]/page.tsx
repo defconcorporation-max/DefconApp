@@ -4,11 +4,11 @@ import { Project, Shoot, Service, ProjectService, Commission, Client, ProjectTas
 import Link from 'next/link';
 import { ArrowLeft, Calendar, DollarSign, Trash2, Video, Plus } from 'lucide-react';
 import ShootManager from '@/components/ShootManager';
-import StatusSelector from '@/components/StatusSelector';
+import StatusSelector from '@/components/ProjectStatusSelect';
 import ProjectTitleEditor from '@/components/ProjectTitleEditor';
+import { DynamicInvoiceButton as InvoiceButton } from '@/components/InvoiceHelpers';
 import CommissionCalculator from '@/components/CommissionCalculator';
 
-import { InvoiceButton } from '@/components/InvoiceButton';
 import ProjectTaskManager from '@/components/ProjectTaskManager';
 
 export const dynamic = 'force-dynamic';

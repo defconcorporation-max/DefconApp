@@ -32,8 +32,8 @@ export default async function ShootsPage() {
                                     <span className="text-xl font-bold">{new Date(shoot.shoot_date).getDate()}</span>
                                 </div>
                                 <div className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider border ${shoot.status === 'Completed'
-                                        ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                                        : 'bg-blue-500/10 text-blue-400 border-blue-500/20'
+                                    ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                                    : 'bg-blue-500/10 text-blue-400 border-blue-500/20'
                                     }`}>
                                     {shoot.status}
                                 </div>
@@ -44,7 +44,7 @@ export default async function ShootsPage() {
                                 <ExternalLink size={12} className="opacity-0 group-hover:opacity-100 transition-opacity translate-y-0.5" />
                             </h3>
                             <p className="text-sm text-[var(--text-tertiary)] mb-6 flex items-center gap-2">
-                                For: <span className="text-[var(--text-secondary)]">{shoot.clientName}</span>
+                                For: <span className="text-[var(--text-secondary)]">{shoot.client_name}</span>
                             </p>
 
                             <div className="pt-4 border-t border-[var(--border-subtle)] flex items-center justify-between text-xs">
