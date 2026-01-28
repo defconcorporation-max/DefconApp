@@ -97,10 +97,17 @@ export async function deleteSocialPost(id: number) {
     revalidatePath('/social');
 }
 
-export async function updateSocialPost(id: number, scheduledDate: string) {
-    await db.execute({
-        sql: 'UPDATE social_posts SET scheduled_date = ? WHERE id = ?',
-        args: [scheduledDate, id]
-    });
+export async function updateSocialPost(id: number, scheduledDate: string, content?: string) {
+    if (content) {
+        await db.execute({
+            sql: 'UPDATE social_posts SET scheduled_date = ?, content = ? WHERE id = ?',
+            args: [scheduledDate, content, id]
+        });
+    } else {
+        await db.execute({
+            sql: 'UPDATE social_posts SET scheduled_date = ? WHERE id = ?',
+            args: [scheduledDate, id]
+        });
+    }
     revalidatePath('/social');
 }
