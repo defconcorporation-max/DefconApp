@@ -9,6 +9,8 @@ export interface Client {
     folder_path?: string;
     email?: string;
     created_at: string;
+    password_hash?: string;
+    portal_enabled?: boolean;
 }
 
 export interface SocialLink {
