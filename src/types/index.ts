@@ -206,7 +206,7 @@ export interface ShootWithClient extends Shoot {
 export interface SocialAccount {
     id: number;
     client_id?: number | null;
-    platform: 'instagram' | 'linkedin' | 'facebook';
+    platform: 'instagram' | 'linkedin' | 'facebook' | 'tiktok' | 'youtube';
     handle: string;
     avatar_url?: string;
     connected_at: string;

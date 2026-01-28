@@ -11,7 +11,9 @@ export async function signInAction(platform: string, clientId?: number) {
     const providerMap: Record<string, string> = {
         instagram: 'facebook',
         facebook: 'facebook',
-        linkedin: 'linkedin'
+        linkedin: 'linkedin',
+        tiktok: 'tiktok',
+        youtube: 'google'
     };
 
     const provider = providerMap[platform] || 'facebook';

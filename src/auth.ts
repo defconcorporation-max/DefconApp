@@ -1,6 +1,8 @@
 import NextAuth from "next-auth";
 import Facebook from "next-auth/providers/facebook";
 import LinkedIn from "next-auth/providers/linkedin";
+import Google from "next-auth/providers/google"; // For YouTube
+import TikTok from "next-auth/providers/tiktok";
 import { turso as db } from "@/lib/turso";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
@@ -21,6 +23,24 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                 params: { scope: "openid profile email w_member_social" },
             },
         }),
+        Google({
+            clientId: process.env.AUTH_GOOGLE_ID,
+            clientSecret: process.env.AUTH_GOOGLE_SECRET,
+            authorization: {
+                params: {
+                    scope: "openid profile email https://www.googleapis.com/auth/youtube.upload https://www.googleapis.com/auth/youtube.readonly"
+                }
+            }
+        }),
+        TikTok({
+            clientId: process.env.AUTH_TIKTOK_KEY,
+            clientSecret: process.env.AUTH_TIKTOK_SECRET,
+            authorization: {
+                params: {
+                    scope: "user.info.basic,video.list,video.upload"
+                }
+            }
+        })
     ],
     callbacks: {
         async signIn({ user, account, profile }) {
@@ -33,8 +53,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
             // Upsert into social_accounts
             try {
-                const platform = account.provider === 'facebook' ? 'facebook' :
-                    account.provider === 'linkedin' ? 'linkedin' : 'instagram';
+                let platform = 'instagram'; // default
+                if (account.provider === 'facebook') platform = 'facebook';
+                else if (account.provider === 'linkedin') platform = 'linkedin';
+                else if (account.provider === 'google') platform = 'youtube';
+                else if (account.provider === 'tiktok') platform = 'tiktok';
 
                 const handle = user.name || user.email || 'Unknown';
                 const avatar = user.image || '';

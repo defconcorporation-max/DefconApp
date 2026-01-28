@@ -137,9 +137,11 @@ export default function ClientTabs({
 
                             <div className="flex flex-col gap-2">
                                 <div className="text-xs text-[var(--text-tertiary)] uppercase font-bold mb-1">Add New</div>
-                                <div className="flex gap-2">
+                                <div className="flex flex-wrap gap-2">
                                     <ConnectAccountBtn platform="instagram" clientId={client.id} />
                                     <ConnectAccountBtn platform="linkedin" clientId={client.id} />
+                                    <ConnectAccountBtn platform="tiktok" clientId={client.id} />
+                                    <ConnectAccountBtn platform="youtube" clientId={client.id} />
                                 </div>
                             </div>
                         </div>
