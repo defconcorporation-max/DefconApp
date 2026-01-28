@@ -1,13 +1,15 @@
 'use client';
 
 import { useState } from 'react';
-import { LayoutDashboard, Folder, Fingerprint, Lightbulb, User, Calendar, DollarSign, CreditCard } from 'lucide-react';
-import { Client, Project, SocialLink, Commission, Idea, Payment, Credential } from '@/types';
+import { LayoutDashboard, Folder, Fingerprint, Lightbulb, User, Calendar, DollarSign, CreditCard, Share2 } from 'lucide-react';
+import { Client, Project, SocialLink, Commission, Idea, Payment, Credential, SocialAccount, SocialPost } from '@/types';
 import ProjectManager from '@/components/ProjectManager';
 import SocialLinks from '@/components/SocialLinks';
 import IdeaBox from '@/components/IdeaBox';
 import PaymentTracker from '@/components/PaymentTracker';
 import CredentialsBox from '@/components/CredentialsBox';
+import SocialPlanner from '@/components/social/SocialPlanner';
+import ConnectAccountBtn from '@/components/social/ConnectAccountBtn';
 
 interface ClientTabsProps {
     client: Client;
@@ -17,6 +19,8 @@ interface ClientTabsProps {
     commissions: Commission[];
     payments: Payment[];
     credentials: Credential[];
+    socialAccounts: SocialAccount[];
+    socialPosts: SocialPost[];
 }
 
 export default function ClientTabs({
@@ -26,13 +30,16 @@ export default function ClientTabs({
     ideas,
     commissions,
     payments,
-    credentials
+    credentials,
+    socialAccounts,
+    socialPosts
 }: ClientTabsProps) {
     const [activeTab, setActiveTab] = useState('overview');
 
     const tabs = [
         { id: 'overview', label: 'Overview', icon: <LayoutDashboard size={16} /> },
         { id: 'projects', label: 'Projects', icon: <Folder size={16} /> },
+        { id: 'social', label: 'Social Media', icon: <Share2 size={16} /> },
         { id: 'brand', label: 'Brand & Info', icon: <Fingerprint size={16} /> },
         { id: 'ideas', label: 'Ideas', icon: <Lightbulb size={16} /> },
     ];
@@ -113,11 +120,36 @@ export default function ClientTabs({
                     <ProjectManager clientId={client.id} projects={projects} />
                 )}
 
+                {/* --- SOCIAL MEDIA TAB (NEW) --- */}
+                {activeTab === 'social' && (
+                    <div className="space-y-8">
+                        {/* Connected Accounts Header */}
+                        <div className="flex items-center justify-between bg-[#0A0A0A] border border-[var(--border-subtle)] p-4 rounded-xl">
+                            <div className="flex items-center gap-4">
+                                {socialAccounts.map(acc => (
+                                    <div key={acc.id} className="relative w-10 h-10 rounded-full border border-[var(--border-subtle)] overflow-hidden" title={acc.handle}>
+                                        <img src={acc.avatar_url} alt={acc.handle} className="w-full h-full object-cover" />
+                                        <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border border-black"></div>
+                                    </div>
+                                ))}
+                                {socialAccounts.length === 0 && <span className="text-sm text-[var(--text-tertiary)] italic">No accounts connected</span>}
+                            </div>
+                            <div className="flex gap-2">
+                                <ConnectAccountBtn platform="instagram" clientId={client.id} />
+                                <ConnectAccountBtn platform="linkedin" clientId={client.id} />
+                            </div>
+                        </div>
+
+                        {/* Social Planner */}
+                        <SocialPlanner initialPosts={socialPosts} accounts={socialAccounts} clients={[client]} />
+                    </div>
+                )}
+
                 {/* --- BRAND & INFO TAB --- */}
                 {activeTab === 'brand' && (
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                         <div>
-                            <h3 className="font-bold mb-4 text-[var(--text-secondary)] text-sm uppercase tracking-wider">Social Presence</h3>
+                            <h3 className="font-bold mb-4 text-[var(--text-secondary)] text-sm uppercase tracking-wider">Social Presence (Legacy Links)</h3>
                             <SocialLinks clientId={client.id} socials={socials} />
                         </div>
                         <div>

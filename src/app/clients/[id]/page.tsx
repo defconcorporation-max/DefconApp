@@ -1,4 +1,5 @@
 import { getClient, getSocials, getIdeas, getCommissions, getShoots, getShootVideos, getPayments, getCredentials, getProjects } from '@/app/actions';
+import { getSocialAccounts, getSocialPosts } from '@/app/social-actions';
 import FolderButton from '@/components/FolderButton';
 import { ClientSettingsButton } from '@/components/ClientSettingsModal';
 import Link from 'next/link';
@@ -10,7 +11,7 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
     const { id } = await params;
     const clientId = Number(id);
     const client = await getClient(clientId);
-    const socials = await getSocials(clientId);
+    const socials = await getSocials(clientId); // Legacy simple links
     const ideas = await getIdeas(clientId);
     const commissions = await getCommissions(clientId);
     const payments = await getPayments(clientId);
@@ -18,6 +19,10 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
 
     // Fetch Projects instead of raw shoots
     const projects = await getProjects(clientId);
+
+    // Fetch New Social Media Data
+    const socialAccounts = await getSocialAccounts(clientId);
+    const socialPosts = await getSocialPosts(clientId);
 
     if (!client) return <div>Client not found</div>;
 
@@ -53,6 +58,8 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
                     commissions={commissions}
                     payments={payments}
                     credentials={credentials}
+                    socialAccounts={socialAccounts}
+                    socialPosts={socialPosts}
                 />
             </div>
         </main>
