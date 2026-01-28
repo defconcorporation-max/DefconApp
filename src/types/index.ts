@@ -7,6 +7,7 @@ export interface Client {
     status: string;
     avatar_url?: string;
     folder_path?: string;
+    email?: string;
     created_at: string;
 }
 
@@ -200,4 +201,23 @@ export interface ShootWithClient extends Shoot {
     client_name: string;
     client_company?: string;
     project_title?: string;
+}
+
+export interface SocialAccount {
+    id: number;
+    platform: 'instagram' | 'linkedin' | 'facebook';
+    handle: string;
+    avatar_url?: string;
+    connected_at: string;
+}
+
+export interface SocialPost {
+    id: number;
+    account_id: number;
+    content: string;
+    media_url?: string;
+    scheduled_date: string;
+    status: 'Draft' | 'Scheduled' | 'Published';
+    created_at: string;
+    account?: SocialAccount; // For joined queries
 }

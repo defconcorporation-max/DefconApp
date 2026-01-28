@@ -3,10 +3,12 @@ import { getProjectById, getProjectServices, getClient, getSettings } from '@/ap
 import { Project, ProjectService } from '@/types';
 import Link from 'next/link';
 
+import InvoiceActions from '@/components/InvoiceActions';
+
 export default async function InvoicePage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
     const projectId = Number(id);
-    const project = await getProjectById(projectId) as Project;
+    const project = await getProjectById(projectId) as any; // Cast to any to access new fields safely for now
 
     if (!project) return <div>Project not found</div>;
 
@@ -23,17 +25,22 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
     const tvqAmount = subtotal * (tvqRate / 100);
     const total = subtotal + tpsAmount + tvqAmount;
 
-    const today = new Date().toLocaleDateString('fr-CA'); // ISO-like format YYYY-MM-DD usually preferred or local
+    const today = new Date().toLocaleDateString('fr-CA');
 
     return (
         <main className="min-h-screen bg-white text-black p-8 md:p-16 font-sans">
-            {/* Print-only CSS to hide non-print elements if any, though entire page is invoice */}
             <div className="max-w-4xl mx-auto">
-                <div className="flex justify-between items-start mb-16 no-print">
-                    <Link href={`/projects/${projectId}`} className="text-sm text-gray-500 hover:text-black transition-colors">
+                <div className="mb-8 no-print">
+                    <Link href={`/projects/${projectId}`} className="text-sm text-gray-500 hover:text-black transition-colors mb-4 block">
                         ← Back to Project
                     </Link>
-                    {/* Print Button is handled by the floating action button */}
+
+                    <InvoiceActions
+                        projectId={projectId}
+                        clientEmail={client?.email || ''}
+                        currentStatus={project.invoice_status || 'Draft'}
+                        sentAt={project.invoice_sent_at}
+                    />
                 </div>
 
                 {/* Invoice Header */}
@@ -55,6 +62,7 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
                         <h3 className="text-xs font-bold uppercase text-gray-400 mb-2 tracking-wider">Bill To</h3>
                         <div className="text-lg font-bold">{client?.company_name}</div>
                         <div className="text-gray-600">{client?.name}</div>
+                        <div className="text-gray-600 text-sm mt-1">{client?.email}</div>
                     </div>
                     <div className="text-right">
                         <div className="mb-4">
@@ -119,13 +127,6 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
                     <p>Thank you for your business.</p>
                 </footer>
             </div>
-
-
-
-            <PrintButton />
         </main >
     );
 }
-
-// Client Component for Print Button
-import PrintButton from '@/components/PrintButton';
