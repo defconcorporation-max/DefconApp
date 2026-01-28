@@ -229,7 +229,7 @@ export default async function ProjectDetailsPage({ params }: { params: Promise<{
                        ShootManager takes `clientId`. `addShoot` action needs to be updated to look for project_id.
                    */}
 
-                    <ShootManager clientId={project.client_id} shoots={shoots} videosMap={videosMap} />
+                    <ShootManager clientId={project.client_id} shoots={shoots} videosMap={videosMap} projectId={project.id} />
 
                     {/* Note: The ShootManager's "Schedule" form currently only sends clientId. 
                        We need to ensure it associates with THIS project.

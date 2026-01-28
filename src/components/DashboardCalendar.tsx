@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { ShootWithClient, addShoot, updateShoot, deleteShoot } from '@/app/actions';
+import { ShootWithClient, addShoot, updateShoot, deleteShoot, getProjects } from '@/app/actions';
 
 interface CalendarProps {
     shoots: ShootWithClient[];
@@ -181,12 +181,7 @@ export default function DashboardCalendar({ shoots, clients = [] }: CalendarProp
                             onChange={(e) => {
                                 // Fetch projects for this client
                                 const cid = Number(e.target.value);
-                                // We need to update state to show projects. 
-                                // Since this is a simple form, let's just trigger a fetch or use a swr-like pattern?
-                                // For MVP, let's simple fetch:
-                                import('@/app/actions').then(({ getProjects }) => {
-                                    getProjects(cid).then(projs => setAvailableProjects(projs));
-                                });
+                                getProjects(cid).then(projs => setAvailableProjects(projs));
                             }}
                             className="w-full bg-[var(--bg-root)] border border-[var(--border-subtle)] text-white text-sm rounded px-2 py-2 focus:border-[var(--text-secondary)] outline-none"
                             required
