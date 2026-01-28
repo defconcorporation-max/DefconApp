@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
-import { ShootWithClient, addShoot, updateShoot, deleteShoot, getProjects } from '@/app/actions';
+import { ShootWithClient } from '@/types';
+import { addShoot, updateShoot, deleteShoot, getProjects } from '@/app/actions';
 
 interface CalendarProps {
     shoots: ShootWithClient[];

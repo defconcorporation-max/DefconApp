@@ -2,7 +2,7 @@
 
 import { turso as db } from '@/lib/turso';
 import { revalidatePath } from 'next/cache';
-import { Client, Shoot, ShootVideo, ShootVideoNote, PipelineStage, Task, SocialLink, ContentIdea, Project, Commission, TeamMember } from '@/types';
+import { Client, Shoot, ShootVideo, ShootVideoNote, PipelineStage, Task, SocialLink, ContentIdea, Project, Commission, TeamMember, Payment, Credential, ShootWithClient } from '@/types';
 
 export async function getClients(): Promise<Client[]> {
     const { rows } = await db.execute('SELECT * FROM clients ORDER BY created_at DESC');
@@ -219,11 +219,7 @@ export async function getShoots(clientId: number): Promise<Shoot[]> {
     return rows as unknown as Shoot[];
 }
 
-export interface ShootWithClient extends Shoot {
-    client_name: string;
-    client_company?: string;
-    project_title?: string;
-}
+
 
 export async function getAllShoots(): Promise<ShootWithClient[]> {
     const { rows } = await db.execute(`
@@ -403,7 +399,7 @@ export async function getPayments(clientId: number) {
         sql: 'SELECT * FROM payments WHERE client_id = ? ORDER BY date DESC',
         args: [clientId]
     });
-    return rows;
+    return rows as unknown as Payment[];
 }
 
 export async function getCredentials(clientId: number) {
@@ -411,7 +407,7 @@ export async function getCredentials(clientId: number) {
         sql: 'SELECT * FROM credentials WHERE client_id = ?',
         args: [clientId]
     });
-    return rows;
+    return rows as unknown as Credential[];
 }
 
 export async function addCredential(formData: FormData) {
@@ -581,6 +577,19 @@ export async function getFinanceData() {
 
     const netProfit = revenuePreTax - totalCommissionsPaid - totalExpensesPreTax;
 
+    // 7. Revenue Chart Data (Last 6 Months)
+    const revenueChartRes = await db.execute(`
+        SELECT strftime('%Y-%m', date) as month, SUM(amount) as total
+        FROM payments
+        GROUP BY month
+        ORDER BY month ASC
+        LIMIT 6
+    `);
+    const revenueChartData = revenueChartRes.rows.map((r: any) => ({
+        date: r.month,
+        amount: r.total
+    }));
+
     return {
         stats: {
             totalRevenue: revenuePreTax,
@@ -598,6 +607,8 @@ export async function getFinanceData() {
             businessExpenses: totalExpensesPreTax,
             netProfit: netProfit
         },
+        revenueChart: revenueChartData,
+
         clients: clientsWithRevenue,
         projects: projectsWithValue,
         settings,

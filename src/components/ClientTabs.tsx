@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { LayoutDashboard, Folder, Fingerprint, Lightbulb, User, Calendar, DollarSign, CreditCard } from 'lucide-react';
-import { Client, Project, SocialLink, Commission } from '@/types';
+import { Client, Project, SocialLink, Commission, Idea, Payment, Credential } from '@/types';
 import ProjectManager from '@/components/ProjectManager';
 import SocialLinks from '@/components/SocialLinks';
 import IdeaBox from '@/components/IdeaBox';
@@ -13,10 +13,10 @@ interface ClientTabsProps {
     client: Client;
     projects: Project[];
     socials: SocialLink[];
-    ideas: any[];
+    ideas: Idea[];
     commissions: Commission[];
-    payments: any[];
-    credentials: any[];
+    payments: Payment[];
+    credentials: Credential[];
 }
 
 export default function ClientTabs({

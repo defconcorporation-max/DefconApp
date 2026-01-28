@@ -5,6 +5,7 @@ import { ArrowUpRight, DollarSign, Wallet, PieChart, Users, LayoutGrid, Receipt,
 import ProjectFinancialList from '@/components/ProjectFinancialList';
 import CommissionTracker from '@/components/CommissionTracker';
 import ExpenseManager from '@/components/ExpenseManager';
+import RevenueChart from '@/components/RevenueChart';
 import { Commission, Settings } from '@/types';
 
 interface FinanceTabsProps {
@@ -106,6 +107,9 @@ export default function FinanceTabs({ data, commissions, settings, projectValues
                                 </div>
                             </div>
                         </div>
+
+                        {/* Revenue Chart */}
+                        <RevenueChart data={data.revenueChart} />
 
                         {/* Client Performance Table */}
                         <div className="bg-[#0A0A0A] border border-[var(--border-subtle)] rounded-2xl overflow-hidden">

@@ -15,11 +15,15 @@ export default async function Home() {
   let error = null;
 
   try {
-    clients = await getClients();
-    allShoots = await getAllShoots();
-    stats = await getDashboardStats();
-    stages = await getPipelineStages();
-    tasks = await getAllDashboardTasks();
+    const results = await Promise.all([
+      getClients(),
+      getAllShoots(),
+      getDashboardStats(),
+      getPipelineStages(),
+      getAllDashboardTasks()
+    ]);
+
+    [clients, allShoots, stats, stages, tasks] = results;
   } catch (e: any) {
     console.warn('Dashboard Data Fetch Error:', e);
     error = e.message || 'Unknown database error';

@@ -4,7 +4,7 @@ import { turso as db } from '@/lib/turso';
 
 export interface SearchResult {
     id: string;
-    type: 'Page' | 'Client' | 'Project' | 'Shoot';
+    type: 'Page' | 'Client' | 'Project' | 'Shoot' | 'Action';
     label: string;
     subLabel?: string;
     url: string;

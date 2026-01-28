@@ -174,3 +174,30 @@ export interface Expense {
     category?: string;
     created_at: string;
 }
+
+export interface Payment {
+    id: number;
+    client_id: number;
+    amount: number;
+    status: string;
+    date: string;
+    description: string;
+    project_id?: number | null;
+}
+
+export interface Credential {
+    id: number;
+    client_id: number;
+    service_name: string;
+    username?: string;
+    password?: string;
+    created_at?: string;
+}
+
+export type Idea = ContentIdea;
+
+export interface ShootWithClient extends Shoot {
+    client_name: string;
+    client_company?: string;
+    project_title?: string;
+}

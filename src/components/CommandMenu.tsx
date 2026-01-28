@@ -80,6 +80,11 @@ export default function CommandMenu() {
 
                     {!loading && (
                         <>
+                            <Command.Group heading="Quick Actions" className="text-xs font-medium text-[var(--text-tertiary)] px-2 py-1.5 mb-1">
+                                <Item item={{ id: 'new-client', label: 'Create New Client', type: 'Action', url: '#' }} onSelect={() => runCommand(() => document.getElementById('create-client-input')?.focus())} />
+                                <Item item={{ id: 'go-finance', label: 'View Finance', type: 'Action', url: '/finance' }} onSelect={() => runCommand(() => router.push('/finance'))} />
+                            </Command.Group>
+
                             <Command.Group heading="Pages" className="text-xs font-medium text-[var(--text-tertiary)] px-2 py-1.5 mb-1">
                                 {pages.filter(i => i.type === 'Page').map(item => (
                                     <Item key={item.id} item={item} onSelect={() => runCommand(() => router.push(item.url))} />
@@ -116,6 +121,7 @@ function Item({ item, onSelect }: { item: SearchResult, onSelect: () => void }) 
     if (item.type === 'Client') Icon = Users;
     if (item.type === 'Project') Icon = Briefcase;
     if (item.type === 'Shoot') Icon = Video;
+    if (item.type === 'Action') Icon = Search;
 
     return (
         <Command.Item
