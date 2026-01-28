@@ -17,13 +17,22 @@ export async function createClient(formData: FormData) {
     const company = formData.get('company') as string;
     const plan = formData.get('plan') as string;
 
-    // Create Folder
+    // Create Folder (Local Dev Only - skip on Vercel)
     const safeName = (company || name).replace(/[^a-z0-9]/gi, '_').trim();
     const folderName = `${safeName}`;
-    const folderPath = path.join(process.cwd(), 'Clients', folderName);
+    let folderPath = '';
 
-    if (!fs.existsSync(folderPath)) {
-        fs.mkdirSync(folderPath, { recursive: true });
+    try {
+        // Only attempt folder creation if we are likely in a local environment
+        // or just catch the error if it fails (Vercel)
+        folderPath = path.join(process.cwd(), 'Clients', folderName);
+        if (process.env.NODE_ENV !== 'production' && !fs.existsSync(folderPath)) {
+            fs.mkdirSync(folderPath, { recursive: true });
+        }
+    } catch (err) {
+        console.warn('Could not create local folder (expected on Vercel):', err);
+        // Fallback or leave empty, but don't crash the request
+        folderPath = '';
     }
 
     await db.execute({
