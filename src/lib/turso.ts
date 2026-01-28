@@ -9,7 +9,6 @@ if (!url || !authToken) {
 }
 
 export const turso = createClient({
-    url: url || 'libsql://dummy-db.turso.io',
+    url: url || 'http://localhost:8080', // Use HTTP for dummy to avoid protocol errors with libSQL
     authToken: authToken || 'dummy-token',
-    intMode: 'number',
 });
