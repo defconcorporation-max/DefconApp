@@ -3,9 +3,6 @@
 import { turso as db } from '@/lib/turso';
 import { revalidatePath } from 'next/cache';
 import { Client, Shoot, ShootVideo, ShootVideoNote, PipelineStage, Task, SocialLink, ContentIdea, Project, Commission, TeamMember } from '@/types';
-import fs from 'fs';
-import path from 'path';
-import { exec } from 'child_process';
 
 export async function getClients(): Promise<Client[]> {
     const { rows } = await db.execute('SELECT * FROM clients ORDER BY created_at DESC');
@@ -25,6 +22,9 @@ export async function createClient(formData: FormData) {
     try {
         // Only attempt folder creation if we are likely in a local environment
         // or just catch the error if it fails (Vercel)
+        const path = require('path');
+        const fs = require('fs');
+
         folderPath = path.join(process.cwd(), 'Clients', folderName);
         if (process.env.NODE_ENV !== 'production' && !fs.existsSync(folderPath)) {
             fs.mkdirSync(folderPath, { recursive: true });
@@ -50,6 +50,7 @@ export async function openClientFolder(folderPath: string) {
     // For local dev this works. For Vercel this does nothing/errors.
     // Keeping as is for local support.
     try {
+        const { exec } = require('child_process');
         exec(`start "" "${folderPath}"`);
     } catch (e) {
         console.error('Failed to open folder:', e);
