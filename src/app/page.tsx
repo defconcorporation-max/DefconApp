@@ -58,8 +58,8 @@ export default async function Home() {
             <option value="Gold" className="bg-black">Gold</option>
             <option value="Platinum" className="bg-black">Platinum</option>
           </select>
-          <button className="pro-button text-xs py-1.5 px-3">
-            Create
+          <button className="pro-button-primary text-xs py-1.5 px-4 shadow-lg shadow-indigo-500/20">
+            Create Client
           </button>
         </form>
       </header>

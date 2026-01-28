@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import CommandMenu from "@/components/CommandMenu";
+import Sidebar from "@/components/Sidebar";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -17,9 +18,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`${inter.className} bg-[var(--bg-root)] text-[var(--text-primary)]`}>
+      <body className={`${inter.className} bg-[var(--bg-root)] text-[var(--text-primary)] flex`}>
+        <Sidebar />
         <CommandMenu />
-        {children}
+        <div className="flex-1 md:ml-64 transition-all duration-200">
+          {children}
+        </div>
       </body>
     </html>
   );
