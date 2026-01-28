@@ -4,8 +4,6 @@ import { Inter } from "next/font/google";
 export const dynamic = "force-dynamic";
 
 import "./globals.css";
-import CommandMenu from "@/components/CommandMenu";
-import Sidebar from "@/components/Sidebar";
 
 const inter = Inter({ subsets: ["latin"] });
 
