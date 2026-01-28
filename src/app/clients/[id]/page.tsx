@@ -1,14 +1,8 @@
 import { getClient, getSocials, getIdeas, getCommissions, getShoots, getShootVideos, getPayments, getCredentials, getProjects } from '@/app/actions';
-import SocialLinks from '@/components/SocialLinks';
-import IdeaBox from '@/components/IdeaBox';
-import CommissionCalculator from '@/components/CommissionCalculator';
-import ProjectManager from '@/components/ProjectManager';
-import PaymentTracker from '@/components/PaymentTracker';
-import CredentialsBox from '@/components/CredentialsBox';
 import FolderButton from '@/components/FolderButton';
 import { ClientSettingsButton } from '@/components/ClientSettingsModal';
 import Link from 'next/link';
-import { Project } from '@/types';
+import ClientTabs from '@/components/ClientTabs';
 
 export const dynamic = 'force-dynamic';
 
@@ -30,7 +24,7 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
     return (
         <main className="min-h-screen pb-20">
             {/* Header */}
-            <header className="border-b border-[var(--border-subtle)] bg-[var(--bg-root)] sticky top-0 z-50">
+            <header className="border-b border-[var(--border-subtle)] bg-[var(--bg-root)] sticky top-0 z-50 mb-8">
                 <div className="pro-container h-16 flex justify-between items-center">
                     <div className="flex items-center gap-6">
                         <Link href="/" className="text-[var(--text-tertiary)] hover:text-white transition-colors font-mono text-sm">
@@ -50,58 +44,16 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
                 </div>
             </header>
 
-            <div className="pro-container pt-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
-                {/* Left Sidebar (3Cols) */}
-                <div className="lg:col-span-3 space-y-8">
-                    {/* Client Meta */}
-                    <div className="space-y-4">
-                        <h3 className="text-xs font-mono uppercase text-[var(--text-tertiary)] ml-1">Properties</h3>
-                        <div className="space-y-0.5">
-                            <div className="flex justify-between items-center p-2 rounded hover:bg-[var(--bg-surface)] text-sm group cursor-default">
-                                <span className="text-[var(--text-secondary)]">Status</span>
-                                <div className="flex items-center gap-2">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
-                                    <span className="text-[var(--text-primary)]">{client.status}</span>
-                                </div>
-                            </div>
-                            <div className="flex justify-between items-center p-2 rounded hover:bg-[var(--bg-surface)] text-sm group cursor-default">
-                                <span className="text-[var(--text-secondary)]">Total Revenue</span>
-                                <span className="text-white font-bold">${projects.reduce((sum, p) => sum + (p.total_value || 0), 0).toLocaleString()}</span>
-                            </div>
-                            <div className="flex justify-between items-center p-2 rounded hover:bg-[var(--bg-surface)] text-sm group cursor-default">
-                                <span className="text-[var(--text-secondary)]">Contact</span>
-                                <span className="text-[var(--text-primary)]">{client.name}</span>
-                            </div>
-                            <div className="flex justify-between items-center p-2 rounded hover:bg-[var(--bg-surface)] text-sm group cursor-default">
-                                <span className="text-[var(--text-secondary)]">Joined</span>
-                                <span className="text-[var(--text-primary)] font-mono text-xs">{new Date(client.created_at).toLocaleDateString()}</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="h-px bg-[var(--border-subtle)]"></div>
-
-                    <SocialLinks clientId={client.id} socials={socials} />
-
-                    <div className="h-px bg-[var(--border-subtle)]"></div>
-
-                    <CredentialsBox clientId={client.id} credentials={credentials} />
-
-                    <div className="h-px bg-[var(--border-subtle)]"></div>
-
-                    <PaymentTracker clientId={client.id} payments={payments} />
-
-
-                </div>
-
-                {/* Main Content (9Cols) */}
-                <div className="lg:col-span-9 space-y-8">
-                    {/* Project Manager Replaces Shoot Manager */}
-                    <ProjectManager clientId={client.id} projects={projects} />
-
-                    {/* Idea Box */}
-                    <IdeaBox clientId={client.id} ideas={ideas} />
-                </div>
+            <div className="pro-container">
+                <ClientTabs
+                    client={client}
+                    projects={projects}
+                    socials={socials}
+                    ideas={ideas}
+                    commissions={commissions}
+                    payments={payments}
+                    credentials={credentials}
+                />
             </div>
         </main>
     )
