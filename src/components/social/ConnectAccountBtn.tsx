@@ -4,12 +4,12 @@ import { connectSocialAccount } from '@/app/social-actions';
 import { useState } from 'react';
 import { Database, Loader2 } from 'lucide-react';
 
-export default function ConnectAccountBtn({ platform }: { platform: string }) {
+export default function ConnectAccountBtn({ platform, clientId }: { platform: string, clientId?: number }) {
     const [loading, setLoading] = useState(false);
 
     const handleConnect = async () => {
         setLoading(true);
-        await connectSocialAccount(platform);
+        await connectSocialAccount(platform, clientId);
         setLoading(false);
     };
 

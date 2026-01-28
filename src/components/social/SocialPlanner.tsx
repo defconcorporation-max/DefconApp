@@ -1,21 +1,35 @@
 'use client';
 
-import { SocialPost, SocialAccount } from '@/types';
+import { SocialPost, SocialAccount, Client } from '@/types';
 import { useState } from 'react';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { createSocialPost, updateSocialPost } from '@/app/social-actions';
-import { Plus, Calendar as CalendarIcon, Image as ImageIcon } from 'lucide-react';
+import { Plus, Calendar as CalendarIcon, Image as ImageIcon, Briefcase, Filter } from 'lucide-react';
 
 interface PlannerProps {
     initialPosts: SocialPost[];
     accounts: SocialAccount[];
+    clients: Client[];
 }
 
-export default function SocialPlanner({ initialPosts, accounts }: PlannerProps) {
+export default function SocialPlanner({ initialPosts, accounts, clients }: PlannerProps) {
     const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
+    const [filterClientId, setFilterClientId] = useState<number | 'all'>('all');
     const [draggingPostId, setDraggingPostId] = useState<number | null>(null);
+
+    // Filter posts
+    const filteredPosts = initialPosts.filter(p => {
+        if (filterClientId === 'all') return true;
+        return p.account?.client_id === filterClientId;
+    });
+
+    // Filter accounts for the dropdown
+    const filteredAccounts = accounts.filter(a => {
+        if (filterClientId === 'all') return true;
+        return a.client_id === filterClientId;
+    });
 
     const handleDragStart = (e: React.DragEvent, postId: number) => {
         setDraggingPostId(postId);
@@ -55,7 +69,25 @@ export default function SocialPlanner({ initialPosts, accounts }: PlannerProps) 
             {/* Calendar Grid */}
             <div className="lg:col-span-3 space-y-6">
                 <div className="flex items-center justify-between">
-                    <h2 className="text-xl font-bold">Content Calendar</h2>
+                    <div className="flex items-center gap-4">
+                        <h2 className="text-xl font-bold">Content Calendar</h2>
+
+                        {/* Client Filter */}
+                        <div className="flex items-center bg-[#0A0A0A] border border-[var(--border-subtle)] rounded-lg px-2 py-1">
+                            <Filter size={14} className="text-[var(--text-tertiary)] mr-2" />
+                            <select
+                                className="bg-transparent text-sm text-white focus:outline-none"
+                                value={filterClientId}
+                                onChange={(e) => setFilterClientId(e.target.value === 'all' ? 'all' : Number(e.target.value))}
+                            >
+                                <option value="all">All Clients</option>
+                                {clients.map(c => (
+                                    <option key={c.id} value={c.id}>{c.company_name}</option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
+
                     <div className="flex gap-2">
                         <Button variant="secondary" size="sm">Week View</Button>
                         <Button variant="ghost" size="sm">Month View</Button>
@@ -65,7 +97,7 @@ export default function SocialPlanner({ initialPosts, accounts }: PlannerProps) 
                 <div className="grid grid-cols-7 gap-4 min-h-[400px]">
                     {days.map(date => {
                         const dateObj = new Date(date);
-                        const postsForDay = initialPosts.filter(p => p.scheduled_date.startsWith(date));
+                        const postsForDay = filteredPosts.filter(p => p.scheduled_date.startsWith(date));
                         const isSelected = selectedDate === date;
 
                         return (
@@ -87,18 +119,28 @@ export default function SocialPlanner({ initialPosts, accounts }: PlannerProps) 
                                     {dateObj.getDate()}
                                 </div>
 
-                                {postsForDay.map(post => (
-                                    <div
-                                        key={post.id}
-                                        draggable
-                                        onDragStart={(e) => handleDragStart(e, post.id)}
-                                        className="text-[10px] bg-white/10 p-1.5 rounded border border-white/5 truncate cursor-grab active:cursor-grabbing hover:bg-violet-600 hover:text-white transition-colors"
-                                    >
-                                        {post.account?.platform === 'instagram' && '📸 '}
-                                        {post.account?.platform === 'linkedin' && '💼 '}
-                                        {post.content}
-                                    </div>
-                                ))}
+                                {postsForDay.map(post => {
+                                    const client = clients.find(c => c.id === post.account?.client_id);
+                                    return (
+                                        <div
+                                            key={post.id}
+                                            draggable
+                                            onDragStart={(e) => handleDragStart(e, post.id)}
+                                            className="text-[10px] bg-white/10 p-1.5 rounded border border-white/5 truncate cursor-grab active:cursor-grabbing hover:bg-violet-600 hover:text-white transition-colors group relative"
+                                            title={client?.company_name}
+                                        >
+                                            <span className="opacity-50 mr-1">
+                                                {post.account?.platform === 'instagram' && '📸'}
+                                                {post.account?.platform === 'linkedin' && '💼'}
+                                                {post.account?.platform === 'facebook' && 'fb'}
+                                            </span>
+                                            {post.content}
+                                            {client && (
+                                                <div className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-blue-500 ring-1 ring-black" title={client.company_name}></div>
+                                            )}
+                                        </div>
+                                    );
+                                })}
 
                                 <div className="mt-auto pt-2 opacity-0 hover:opacity-100 transition-opacity">
                                     <div className="text-[10px] text-center text-violet-400 bg-violet-500/10 rounded py-1">+ Add</div>
@@ -125,15 +167,17 @@ export default function SocialPlanner({ initialPosts, accounts }: PlannerProps) 
                         <div>
                             <label className="text-xs uppercase text-[var(--text-tertiary)] font-bold">Account</label>
                             <div className="flex gap-2 mt-1 overflow-x-auto pb-2">
-                                {accounts.map(acc => (
+                                {filteredAccounts.map(acc => (
                                     <label key={acc.id} className="cursor-pointer">
                                         <input type="radio" name="accountId" value={acc.id} className="peer sr-only" required />
-                                        <div className="w-10 h-10 rounded-full border border-[var(--border-subtle)] peer-checked:border-violet-500 peer-checked:ring-2 peer-checked:ring-violet-500/50 grayscale peer-checked:grayscale-0 transition-all overflow-hidden">
+                                        <div className="w-10 h-10 rounded-full border border-[var(--border-subtle)] peer-checked:border-violet-500 peer-checked:ring-2 peer-checked:ring-violet-500/50 grayscale peer-checked:grayscale-0 transition-all overflow-hidden relative">
                                             <img src={acc.avatar_url} alt={acc.handle} className="w-full h-full object-cover" />
                                         </div>
                                     </label>
                                 ))}
-                                {accounts.length === 0 && <div className="text-xs text-[var(--text-tertiary)]">Connect an account first</div>}
+                                {filteredAccounts.length === 0 && <div className="text-xs text-[var(--text-tertiary)]">
+                                    {accounts.length > 0 ? "No accounts for this client" : "Connect an account first"}
+                                </div>}
                             </div>
                         </div>
 

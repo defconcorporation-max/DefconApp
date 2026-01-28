@@ -4,18 +4,37 @@ import { turso as db } from '@/lib/turso';
 import { revalidatePath } from 'next/cache';
 import { SocialAccount, SocialPost } from '@/types';
 
-export async function getSocialAccounts(): Promise<SocialAccount[]> {
-    const { rows } = await db.execute('SELECT * FROM social_accounts ORDER BY connected_at DESC');
+export async function getSocialAccounts(clientId?: number): Promise<SocialAccount[]> {
+    let query = 'SELECT * FROM social_accounts';
+    const args: any[] = [];
+
+    if (clientId) {
+        query += ' WHERE client_id = ?';
+        args.push(clientId);
+    }
+
+    query += ' ORDER BY connected_at DESC';
+
+    const { rows } = await db.execute({ sql: query, args });
     return rows as unknown as SocialAccount[];
 }
 
-export async function getSocialPosts(): Promise<SocialPost[]> {
-    const { rows } = await db.execute(`
-        SELECT p.*, a.platform, a.handle, a.avatar_url 
+export async function getSocialPosts(clientId?: number): Promise<SocialPost[]> {
+    let query = `
+        SELECT p.*, a.platform, a.handle, a.avatar_url, a.client_id
         FROM social_posts p
         JOIN social_accounts a ON p.account_id = a.id
-        ORDER BY p.scheduled_date ASC
-    `);
+    `;
+    const args: any[] = [];
+
+    if (clientId) {
+        query += ' WHERE a.client_id = ?';
+        args.push(clientId);
+    }
+
+    query += ' ORDER BY p.scheduled_date ASC';
+
+    const { rows } = await db.execute({ sql: query, args });
 
     // Map joined fields to nested account object if needed, or just return flattened
     // For now returning as is, but we might need to map manualy if we want strict typing structure
@@ -25,13 +44,14 @@ export async function getSocialPosts(): Promise<SocialPost[]> {
             id: row.account_id,
             platform: row.platform,
             handle: row.handle,
-            avatar_url: row.avatar_url
+            avatar_url: row.avatar_url,
+            client_id: row.client_id
         }
     })) as SocialPost[];
 }
 
 // Simulated Connect for Phase 1
-export async function connectSocialAccount(platform: string) {
+export async function connectSocialAccount(platform: string, clientId?: number) {
     // Simulate API delay
     await new Promise(resolve => setTimeout(resolve, 1000));
 
@@ -42,13 +62,16 @@ export async function connectSocialAccount(platform: string) {
     };
 
     const data = mockData[platform as keyof typeof mockData];
+    // If client ID is provided, append it to handle to simulate different accounts
+    const handle = clientId ? `${data.handle}_${clientId}` : data.handle;
 
     await db.execute({
-        sql: 'INSERT INTO social_accounts (platform, handle, avatar_url) VALUES (?, ?, ?)',
-        args: [platform, data.handle, data.avatar]
+        sql: 'INSERT INTO social_accounts (platform, handle, avatar_url, client_id) VALUES (?, ?, ?, ?)',
+        args: [platform, handle, data.avatar, clientId || null]
     });
 
     revalidatePath('/social');
+    if (clientId) revalidatePath(`/clients/${clientId}`);
 }
 
 export async function createSocialPost(formData: FormData) {
