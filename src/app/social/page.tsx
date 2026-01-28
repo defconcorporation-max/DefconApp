@@ -7,6 +7,8 @@ import ConnectAccountBtn from '@/components/social/ConnectAccountBtn';
 import SocialPlanner from '@/components/social/SocialPlanner';
 import { Badge } from '@/components/ui/Badge';
 
+export const dynamic = 'force-dynamic';
+
 export default async function SocialPage() {
     const accounts = await getSocialAccounts();
     const posts = await getSocialPosts();

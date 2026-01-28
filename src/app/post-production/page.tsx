@@ -4,6 +4,8 @@ import { Card } from '@/components/ui/Card';
 import Link from 'next/link';
 import { Film, ArrowUpRight } from 'lucide-react';
 
+export const dynamic = 'force-dynamic';
+
 export default async function PostProdDashboardPage() {
     const projects = await getPostProdDashboard();
 
