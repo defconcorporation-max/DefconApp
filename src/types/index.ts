@@ -222,3 +222,41 @@ export interface SocialPost {
     created_at: string;
     account?: SocialAccount; // For joined queries
 }
+
+// --- POST PRODUCTION ASSISTANT TYPES ---
+
+export interface PostProdTemplate {
+    id: number;
+    name: string;
+    default_tasks: string; // JSON string
+    tasks?: string[]; // Parsed
+}
+
+export interface PostProdProject {
+    id: number;
+    shoot_id: number;
+    template_id: number;
+    status: 'In Progress' | 'In Review' | 'Approved' | 'Completed';
+    created_at: string;
+    // Joined
+    shoot_title?: string;
+    template_name?: string;
+    progress?: number;
+}
+
+export interface PostProdTask {
+    id: number;
+    project_id: number;
+    title: string;
+    is_completed: boolean;
+    order_index: number;
+}
+
+export interface PostProdVersion {
+    id: number;
+    project_id: number;
+    version_number: number;
+    video_url: string;
+    notes?: string;
+    created_at: string;
+}

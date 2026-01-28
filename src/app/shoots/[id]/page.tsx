@@ -2,6 +2,8 @@ import { getShootById, updateShoot, deleteShoot, getClients, getShootVideos, add
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import FinishShootButton from '@/components/FinishShootButton';
+import { getPostProdTemplates } from '@/app/post-prod-actions';
+import PostProdTrigger from '@/components/post-prod/PostProdTrigger';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,6 +25,7 @@ export default async function ShootPage({ params }: { params: Promise<{ id: stri
     const videos = await getShootVideos(shootId);
     const notes = await getShootVideoNotes(shootId);
     const projects = await getProjects(shoot.client_id);
+    const templates = await getPostProdTemplates();
 
     // Helper for Time Slots
     const START_HOUR = 7;
@@ -323,26 +326,11 @@ export default async function ShootPage({ params }: { params: Promise<{ id: stri
                     </form>
 
                     {/* Finish Shoot Action */}
-                    {shoot.status !== 'Completed' && (
-                        <div className="mt-6 pt-6 border-t border-[var(--border-subtle)]">
-                            <form
-                                action={async () => {
-                                    'use server';
-                                    await finishShoot(shoot.id);
-                                }}
-                            >
-                                <button
-                                    type="submit"
-                                    className="w-full bg-violet-600 hover:bg-violet-500 text-white font-medium py-3 rounded-lg transition-all flex items-center justify-center gap-2 shadow-lg hover:shadow-violet-500/25"
-                                >
-                                    Finish Shoot & Send to Post-Prod
-                                </button>
-                            </form>
-                            <p className="text-xs text-[var(--text-tertiary)] mt-2 text-center">
-                                Moves to Post-Production workflow.
-                            </p>
-                        </div>
-                    )}
+                    <PostProdTrigger
+                        shootId={shoot.id}
+                        shootStatus={shoot.status}
+                        templates={templates}
+                    />
 
                     {/* Revert Shoot Action */}
                     {shoot.status === 'Completed' && (
