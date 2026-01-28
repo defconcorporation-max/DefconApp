@@ -21,6 +21,7 @@ export async function getGlobalSearchData(): Promise<SearchResult[]> {
         { id: 'page-settings', type: 'Page', label: 'Settings', url: '/settings' },
         { id: 'page-services', type: 'Page', label: 'Services Catalog', url: '/services' },
         { id: 'page-post', type: 'Page', label: 'Post-Production', url: '/post-production' },
+        { id: 'page-social', type: 'Page', label: 'Social Media', url: '/social' },
     ];
     results.push(...pages);
 

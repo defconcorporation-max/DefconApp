@@ -48,6 +48,7 @@ export default async function Home() {
             <Link href="/services" className="hover:text-white transition-colors">Services Catalog</Link>
             <Link href="/post-production" className="hover:text-white transition-colors">Post-Production</Link>
             <Link href="/finance" className="hover:text-white transition-colors">Finance</Link>
+            <Link href="/social" className="hover:text-white transition-colors">Social</Link>
             <Link href="/team" className="hover:text-white transition-colors">Team</Link>
             <Link href="/settings" className="hover:text-white transition-colors">Settings</Link>
           </nav>
