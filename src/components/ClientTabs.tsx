@@ -124,7 +124,7 @@ export default function ClientTabs({
                 {activeTab === 'social' && (
                     <div className="space-y-8">
                         {/* Connected Accounts Header */}
-                        <div className="flex items-center justify-between bg-[#0A0A0A] border border-[var(--border-subtle)] p-4 rounded-xl">
+                        <div className="flex flex-col md:flex-row md:items-center justify-between bg-[#0A0A0A] border border-[var(--border-subtle)] p-4 rounded-xl gap-4">
                             <div className="flex items-center gap-4">
                                 {socialAccounts.map(acc => (
                                     <div key={acc.id} className="relative w-10 h-10 rounded-full border border-[var(--border-subtle)] overflow-hidden" title={acc.handle}>
@@ -134,11 +134,18 @@ export default function ClientTabs({
                                 ))}
                                 {socialAccounts.length === 0 && <span className="text-sm text-[var(--text-tertiary)] italic">No accounts connected</span>}
                             </div>
-                            <div className="flex gap-2">
-                                <ConnectAccountBtn platform="instagram" clientId={client.id} />
-                                <ConnectAccountBtn platform="linkedin" clientId={client.id} />
+
+                            <div className="flex flex-col gap-2">
+                                <div className="text-xs text-[var(--text-tertiary)] uppercase font-bold mb-1">Add New</div>
+                                <div className="flex gap-2">
+                                    <ConnectAccountBtn platform="instagram" clientId={client.id} />
+                                    <ConnectAccountBtn platform="linkedin" clientId={client.id} />
+                                </div>
                             </div>
                         </div>
+
+                        {/* Unassigned Accounts Warnings (if any match handle/name or just generic list) */}
+                        {/* Ideally we would list accounts with client_id = NULL here and offer to "Claim" them */}
 
                         {/* Social Planner */}
                         <SocialPlanner initialPosts={socialPosts} accounts={socialAccounts} clients={[client]} />

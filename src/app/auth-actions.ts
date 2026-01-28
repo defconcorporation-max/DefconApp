@@ -1,35 +1,48 @@
 'use server';
 
-import { cookies } from 'next/headers';
-import { encrypt, SESSION_DURATION } from '@/lib/auth-utils';
-import { turso as db } from '@/lib/turso';
+import { signIn } from "@/auth";
+import { turso as db } from "@/lib/turso";
 import bcrypt from 'bcryptjs';
+import { encrypt } from "@/lib/auth-utils";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+
+export async function signInAction(platform: string, clientId?: number) {
+    const providerMap: Record<string, string> = {
+        instagram: 'facebook',
+        facebook: 'facebook',
+        linkedin: 'linkedin'
+    };
+
+    const provider = providerMap[platform] || 'facebook';
+    await signIn(provider, { redirectTo: `/clients/${clientId || ''}` });
+}
 
 export async function login(formData: FormData) {
     const email = formData.get('email') as string;
     const password = formData.get('password') as string;
 
-    // Verify User
     const { rows } = await db.execute({
         sql: 'SELECT * FROM users WHERE email = ?',
         args: [email]
     });
+
     const user = rows[0] as any;
 
-    if (!user) return { error: 'Invalid credentials' };
+    if (!user) {
+        return { error: 'Invalid credentials' };
+    }
 
-    const isValid = await bcrypt.compare(password, user.password_hash);
-    if (!isValid) return { error: 'Invalid credentials' };
+    const passwordsMatch = await bcrypt.compare(password, user.password);
+    if (!passwordsMatch) {
+        return { error: 'Invalid credentials' };
+    }
 
-    // Create Session
-    const expires = new Date(Date.now() + SESSION_DURATION * 1000);
-    const session = await encrypt({ user: { id: user.id, email: user.email, name: user.name }, expires });
+    // Create session
+    const expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 1 week
+    const session = await encrypt({ user: { id: user.id, email: user.email, name: user.name, role: user.role }, expires });
 
     (await cookies()).set('session', session, { expires, httpOnly: true });
 
     return { success: true };
-}
-
-export async function logout() {
-    (await cookies()).set('session', '', { expires: new Date(0) });
 }

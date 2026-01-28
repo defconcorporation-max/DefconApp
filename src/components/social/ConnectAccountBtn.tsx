@@ -1,32 +1,51 @@
-'use client';
 import { Button } from '@/components/ui/Button';
-import { connectSocialAccount } from '@/app/social-actions';
-import { useState } from 'react';
-import { Database, Loader2 } from 'lucide-react';
+import { Instagram, Linkedin, Facebook } from 'lucide-react';
+import { signInAction } from '@/app/auth-actions';
 
-export default function ConnectAccountBtn({ platform, clientId }: { platform: string, clientId?: number }) {
-    const [loading, setLoading] = useState(false);
+interface ConnectProps {
+    platform: 'instagram' | 'linkedin' | 'facebook';
+    clientId?: number;
+}
 
+export default function ConnectAccountBtn({ platform, clientId }: ConnectProps) {
+
+    // Wrapper to match form action signature if needed, or just call directly via bind
     const handleConnect = async () => {
-        setLoading(true);
-        await connectSocialAccount(platform, clientId);
-        setLoading(false);
+        await signInAction(platform, clientId);
     };
 
-    const colors: Record<string, string> = {
-        instagram: 'hover:bg-pink-600',
-        linkedin: 'hover:bg-blue-600',
-        facebook: 'hover:bg-blue-500'
+    const icons = {
+        instagram: <Instagram size={16} />,
+        linkedin: <Linkedin size={16} />,
+        facebook: <Facebook size={16} />
     };
 
+    const labels = {
+        instagram: 'Connect Instagram',
+        linkedin: 'Connect LinkedIn',
+        facebook: 'Connect Facebook'
+    };
+
+    const colors = {
+        instagram: 'hover:bg-pink-600 hover:text-white',
+        linkedin: 'hover:bg-blue-600 hover:text-white',
+        facebook: 'hover:bg-blue-700 hover:text-white'
+    };
+
+    // Using a form allows this to work even if JS is disabled (though NextAuth handles this)
+    // But mainly it's the standard way to trigger server actions from client components without 'use client' hooks mess
     return (
-        <Button
-            onClick={handleConnect}
-            disabled={loading}
-            className={`w-full justify-start gap-2 bg-[#1A1A1A] border border-[var(--border-subtle)] text-white ${colors[platform]}`}
-        >
-            {loading ? <Loader2 size={16} className="animate-spin" /> : <Database size={16} />}
-            Connect {platform.charAt(0).toUpperCase() + platform.slice(1)}
-        </Button>
+        <form action={signInAction.bind(null, platform, clientId)}>
+            <Button
+                variant="secondary"
+                size="sm"
+                className={`w-full justify-start gap-2 ${colors[platform]} transition-colors group`}
+            >
+                <span className="text-[var(--text-tertiary)] group-hover:text-white transition-colors">
+                    {icons[platform]}
+                </span>
+                {labels[platform]}
+            </Button>
+        </form>
     );
 }
