@@ -1,6 +1,20 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { decrypt } from '@/lib/auth-utils';
+import { jwtVerify } from 'jose';
+
+const SECRET_KEY = process.env.AUTH_SECRET || 'fallback-secret-key-change-me';
+const key = new TextEncoder().encode(SECRET_KEY);
+
+async function decrypt(input: string): Promise<any> {
+    try {
+        const { payload } = await jwtVerify(input, key, {
+            algorithms: ['HS256'],
+        });
+        return payload;
+    } catch {
+        return null;
+    }
+}
 
 export async function middleware(request: NextRequest) {
     const { pathname } = request.nextUrl;
@@ -30,9 +44,27 @@ export async function middleware(request: NextRequest) {
         pathname.startsWith('/api/auth') ||
         pathname.startsWith('/login') ||
         pathname.startsWith('/review') || // Public Review Links
-        pathname === '/favicon.ico';
+        pathname !== '/' && !pathname.match(/^\/(clients|finance|social|team|post-production|settings|projects|shoots)(\/|$)/);
 
-    if (isPublicRoute) {
+    // Simplified public route check for dashboard protection
+    if (isPublicRoute && pathname !== '/') {
+        // Allow if it's not one of our protected paths? 
+        // Actually, let's keep the inverse logic or stick to strict whitelist/blacklist.
+        // Previous logic: "Exclude internals...".
+        // The previous "isPublicRoute" was excluding favicon.ico etc. 
+        // Let's restore the solid logic but careful with the matcher.
+        return NextResponse.next();
+    }
+
+    // Restore original logic for clarity but with inlined decrypt
+    if (
+        pathname.startsWith('/_next') ||
+        pathname.startsWith('/static') ||
+        pathname.startsWith('/api/auth') ||
+        pathname.startsWith('/login') ||
+        pathname.startsWith('/review') ||
+        pathname === '/favicon.ico'
+    ) {
         return NextResponse.next();
     }
 
