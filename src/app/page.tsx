@@ -114,11 +114,23 @@ export default async function Home() {
       </section>
 
       {/* Calendar Section */}
-      <DashboardCalendar shoots={allShoots} clients={clients} />
+      <div className="overflow-x-auto pb-4 -mx-4 px-4 md:mx-0 md:px-0">
+        <div className="min-w-[800px] md:min-w-0">
+          <DashboardCalendar shoots={allShoots} clients={clients} />
+        </div>
+      </div>
 
-      <ClientKanban initialClients={clients} initialStages={stages} />
+      <div className="overflow-x-auto pb-4 -mx-4 px-4 md:mx-0 md:px-0">
+        <div className="min-w-[1000px] md:min-w-0">
+          <ClientKanban initialClients={clients} initialStages={stages} />
+        </div>
+      </div>
 
-      <TaskManager initialTasks={tasks} />
+      <div className="overflow-x-auto pb-4 -mx-4 px-4 md:mx-0 md:px-0">
+        <div className="min-w-[800px] md:min-w-0">
+          <TaskManager initialTasks={tasks} />
+        </div>
+      </div>
 
     </main>
   );
