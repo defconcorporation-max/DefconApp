@@ -4,6 +4,9 @@ import Link from 'next/link';
 import FinishShootButton from '@/components/FinishShootButton';
 import { getPostProdTemplates } from '@/app/post-prod-actions';
 import PostProdTrigger from '@/components/post-prod/PostProdTrigger';
+import { getShootAssignments } from '@/app/team-actions';
+import { getTeamMembers } from '@/app/actions';
+import AssignmentControl from '@/components/team/AssignmentControl';
 
 export const dynamic = 'force-dynamic';
 
@@ -26,6 +29,8 @@ export default async function ShootPage({ params }: { params: Promise<{ id: stri
     const notes = await getShootVideoNotes(shootId);
     const projects = await getProjects(shoot.client_id);
     const templates = await getPostProdTemplates();
+    const assignments = await getShootAssignments(shootId);
+    const allMembers = await getTeamMembers();
 
     // Helper for Time Slots
     const START_HOUR = 7;
@@ -353,6 +358,14 @@ export default async function ShootPage({ params }: { params: Promise<{ id: stri
                             </p>
                         </div>
                     )}
+                </div>
+                {/* Crew Assignments */}
+                <div className="mt-8">
+                    <AssignmentControl
+                        shootId={shoot.id}
+                        assignments={assignments}
+                        allMembers={allMembers}
+                    />
                 </div>
             </div>
         </main>

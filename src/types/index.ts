@@ -238,6 +238,7 @@ export interface PostProdProject {
     template_id: number;
     status: 'In Progress' | 'In Review' | 'Approved' | 'Completed';
     created_at: string;
+    review_token?: string;
     // Joined
     shoot_title?: string;
     template_name?: string;
@@ -259,4 +260,16 @@ export interface PostProdVersion {
     video_url: string;
     notes?: string;
     created_at: string;
+}
+
+export interface ShootAssignment {
+    id: number;
+    shoot_id: number;
+    team_member_id: number;
+    role?: string;
+    // Joined
+    member_name?: string;
+    member_avatar_color?: string; // Derived from member table
+    shoot_title?: string;
+    shoot_date?: string;
 }
