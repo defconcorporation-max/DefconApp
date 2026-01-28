@@ -28,7 +28,7 @@ export default async function Home() {
   }
 
   return (
-    <main className="min-h-screen p-8">
+    <main className="min-h-screen p-4 md:p-8 pt-20 md:pt-8">
       {error && (
         <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-4 rounded-xl mb-6">
           <strong>Warning:</strong> Connecting to database failed. ({error})
