@@ -3,7 +3,7 @@
 import { Command } from 'cmdk';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { getGlobalSearchData, SearchResult } from '@/app/actions';
+import { getGlobalSearchData, SearchResult } from '@/app/search-actions';
 import { Search, File, Users, Briefcase, Video, ArrowRight } from 'lucide-react';
 
 export default function CommandMenu() {

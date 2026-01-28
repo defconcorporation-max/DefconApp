@@ -3,21 +3,28 @@
 @tailwind utilities;
 
 :root {
-  /* The Monolith Palette */
-  --bg-root: #050505;
-  /* Pure Void */
-  --bg-surface: #0A0A0A;
-  /* Surface */
-  --bg-surface-hover: #121212;
+  /* The Monolith Palette - Refined */
+  --bg-root: #09090b;
+  /* Zinc-950 */
+  --bg-surface: #18181b;
+  /* Zinc-900 */
+  --bg-surface-hover: #27272a;
+  /* Zinc-800 */
 
-  --border-subtle: #1F1F1F;
-  --border-focus: #333333;
+  --border-subtle: #27272a;
+  /* Zinc-800 */
+  --border-focus: #3f3f46;
+  /* Zinc-700 */
 
-  --text-primary: #EEEEEE;
-  --text-secondary: #888888;
-  --text-tertiary: #444444;
+  --text-primary: #f4f4f5;
+  /* Zinc-100 */
+  --text-secondary: #a1a1aa;
+  /* Zinc-400 */
+  --text-tertiary: #52525b;
+  /* Zinc-600 */
 
-  --accent-primary: #D4D4D4;
+  --accent-primary: #e4e4e7;
+  /* Zinc-200 */
   --accent-blue: #3b82f6;
   --accent-violet: #8b5cf6;
 }
@@ -96,8 +103,34 @@ body::before {
 }
 
 .pro-button:hover {
-  background: #e5e5e5;
+  background: #e4e4e7;
   transform: translateY(-0.5px);
+}
+
+.pro-button-primary {
+  background: linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%);
+  /* Violet-600 to Indigo-600 */
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.2);
+  font-weight: 500;
+  font-size: 0.8125rem;
+  padding: 0.4rem 0.8rem;
+  border-radius: 4px;
+  letter-spacing: -0.01em;
+  transition: all 0.2s cubic-bezier(0.25, 1, 0.5, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.pro-button-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
+  filter: brightness(1.1);
+}
+
+.pro-button-primary:active {
+  transform: translateY(0);
 }
 
 .pro-badge {

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-// import CommandMenu from "@/components/CommandMenu";
+import CommandMenu from "@/components/CommandMenu";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -18,7 +18,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.className} bg-[var(--bg-root)] text-[var(--text-primary)]`}>
-        {/* <CommandMenu /> */}
+        <CommandMenu />
         {children}
       </body>
     </html>
