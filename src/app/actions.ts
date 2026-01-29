@@ -223,10 +223,16 @@ export async function getShoots(clientId: number): Promise<Shoot[]> {
 
 export async function getAllShoots(): Promise<ShootWithClient[]> {
     const { rows } = await db.execute(`
-        SELECT shoots.*, clients.name as client_name, clients.company_name as client_company, projects.title as project_title
+        SELECT shoots.*, 
+        clients.name as client_name, 
+        clients.company_name as client_company, 
+        projects.title as project_title,
+        pp.status as post_prod_status,
+        pp.id as post_prod_id
         FROM shoots 
         JOIN clients ON shoots.client_id = clients.id 
         LEFT JOIN projects ON shoots.project_id = projects.id
+        LEFT JOIN post_prod_projects pp ON shoots.id = pp.shoot_id
         ORDER BY shoot_date ASC
     `);
     return rows as unknown as ShootWithClient[];
