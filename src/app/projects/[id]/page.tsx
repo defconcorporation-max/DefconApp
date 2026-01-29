@@ -1,6 +1,5 @@
-```
-import { getProject, getProjectShoots, getProjectInvoices, updateProjectStatus, updateProjectPriority, updateProjectTitle } from '@/app/actions';
-import { Project, Shoot, Service, ProjectService, Commission, Client, ProjectTask, TaskStage } from '@/types';
+import { getProject, getProjectShoots, getProjectServices, getServices, getCommissions, getSettings, getTeamMembers, getClient, getProjectTasks, getTaskStages, getShootVideos } from '@/app/actions';
+import { Project, Shoot, Service, ProjectService, ProjectTask, TaskStage, Client } from '@/types';
 import Link from 'next/link';
 import { ArrowLeft, Calendar } from 'lucide-react';
 import ProjectTitleEditor from '@/components/ProjectTitleEditor';
@@ -44,14 +43,13 @@ export default async function ProjectDetailsPage({ params }: { params: Promise<{
 
     // Calculate Total Value
     const servicesTotal = projectServices.reduce((acc, curr) => acc + (curr.rate * curr.quantity), 0);
-    // Assuming shoots might have a value property in future, but for now just services
     const totalValue = servicesTotal;
 
     return (
         <main className="min-h-screen p-8 bg-[var(--bg-root)] text-white pb-20">
             <header className="mb-8">
                 <div className="flex items-center gap-4 mb-4">
-                    <Link href={`/ clients / ${ project.client_id } `} className="text-[var(--text-tertiary)] hover:text-white transition-colors flex items-center gap-2 text-sm font-mono">
+                    <Link href={`/clients/${project.client_id}`} className="text-[var(--text-tertiary)] hover:text-white transition-colors flex items-center gap-2 text-sm font-mono">
                         <ArrowLeft size={16} /> Back to Client
                     </Link>
                 </div>
