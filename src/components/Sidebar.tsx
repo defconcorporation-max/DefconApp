@@ -111,7 +111,12 @@ export default function Sidebar() {
 
                     {/* Beta Feedback Widget */}
                     <div className="mt-6 pt-6 border-t border-[var(--border-subtle)]">
-                        <h4 className="text-[10px] font-bold text-[var(--text-tertiary)] uppercase tracking-wider mb-2">Beta Testing</h4>
+                        <div className="flex items-center justify-between mb-2">
+                            <h4 className="text-[10px] font-bold text-[var(--text-tertiary)] uppercase tracking-wider">Beta Testing</h4>
+                            <Link href="/beta-feedback" className="text-[10px] text-violet-400 hover:text-violet-300 transition-colors">
+                                View Tickets
+                            </Link>
+                        </div>
                         <BetaFeedbackWidget />
                     </div>
                 </div>
