@@ -341,7 +341,7 @@ export default async function ShootPage({ params }: { params: Promise<{ id: stri
                     />
 
                     {/* Revert Shoot Action */}
-                    {shoot.status === 'Completed' && (
+                    {(shoot.status === 'Completed' || shoot.post_prod_id) && (
                         <div className="mt-6 pt-6 border-t border-[var(--border-subtle)]">
                             <form
                                 action={async () => {
