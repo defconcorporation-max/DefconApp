@@ -107,8 +107,9 @@ export default async function ShootsPage() {
                         Go to Dashboard
                     </Link>
                 </div>
-            )}
-        </div>
+                </div>
+    )
+}
         </main >
     );
 }

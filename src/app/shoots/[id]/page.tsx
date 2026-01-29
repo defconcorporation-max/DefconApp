@@ -9,6 +9,7 @@ export const dynamic = 'force-dynamic';
 import { getTeamMembers } from '@/app/actions';
 import AssignmentControl from '@/components/team/AssignmentControl';
 import NotesEditor from '@/components/NotesEditor';
+import VideoTitleEditor from '@/components/VideoTitleEditor';
 
 
 
@@ -167,9 +168,13 @@ export default async function ShootPage({ params }: { params: Promise<{ id: stri
 
                                         <div className="flex-1 space-y-3">
                                             <div className="flex justify-between items-start">
-                                                <h3 className={`font-medium ${video.completed ? 'text-[var(--text-tertiary)] line-through' : 'text-white'}`}>
-                                                    {video.title}
-                                                </h3>
+                                                <VideoTitleEditor
+                                                    videoId={video.id}
+                                                    initialTitle={video.title}
+                                                    clientId={shoot.client_id}
+                                                    shootId={shoot.id}
+                                                    completed={video.completed === 1}
+                                                />
                                                 <form action={handleDeleteVideo}>
                                                     <input type="hidden" name="id" value={video.id} />
                                                     <button type="submit" className="text-[var(--text-tertiary)] hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity p-1">
