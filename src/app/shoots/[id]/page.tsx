@@ -8,6 +8,7 @@ import { getShootAssignments } from '@/app/team-actions';
 export const dynamic = 'force-dynamic';
 import { getTeamMembers } from '@/app/actions';
 import AssignmentControl from '@/components/team/AssignmentControl';
+import NotesEditor from '@/components/NotesEditor';
 
 
 
@@ -181,7 +182,13 @@ export default async function ShootPage({ params }: { params: Promise<{ id: stri
                                             <div className="space-y-1">
                                                 {notes.filter(n => n.video_id === video.id).map(note => (
                                                     <div key={note.id} className="text-xs text-[var(--text-secondary)] bg-[var(--bg-root)]/50 px-2 py-1 rounded flex justify-between items-start group/note">
-                                                        <span>{note.content}</span>
+                                                        <NotesEditor
+                                                            noteId={note.id}
+                                                            initialContent={note.content}
+                                                            videoId={video.id}
+                                                            clientId={shoot.client_id}
+                                                            shootId={shoot.id}
+                                                        />
                                                         <form action={handleDeleteNote}>
                                                             <input type="hidden" name="id" value={note.id} />
                                                             <button type="submit" className="text-[var(--text-tertiary)] hover:text-red-400 opacity-0 group-hover/note:opacity-100 transition-opacity ml-2">×</button>
