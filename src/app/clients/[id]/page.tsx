@@ -6,7 +6,7 @@ import { ClientSettingsButton } from '@/components/ClientSettingsModal';
 import Link from 'next/link';
 import ClientTabs from '@/components/ClientTabs';
 
-export const dynamic = 'force-dynamic';
+
 
 export default async function ClientPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
