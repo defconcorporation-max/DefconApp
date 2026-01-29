@@ -28,8 +28,8 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.className} bg-[var(--bg-root)] text-[var(--text-primary)] flex`}>
-        {/* <Sidebar /> */}
-        {/* <CommandMenu /> */}
+        <Sidebar />
+        <CommandMenu />
         <div className="flex-1 min-w-0 md:ml-64 transition-all duration-200">
           {children}
         </div>
