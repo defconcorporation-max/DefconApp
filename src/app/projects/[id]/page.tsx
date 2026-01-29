@@ -11,7 +11,7 @@ export const dynamic = 'force-dynamic';
 export default async function ProjectDetailsPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
     const projectId = Number(id);
-    const project = await getProjectById(projectId) as Project & { client_company: string };
+    const project = await getProject(projectId) as Project & { client_company: string };
 
     if (!project) {
         return (
