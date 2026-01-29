@@ -286,15 +286,21 @@ export async function deleteShoot(formData: FormData) {
 export async function getShootById(id: number): Promise<ShootWithClient | undefined> {
     const { rows } = await db.execute({
         sql: `
-        SELECT shoots.*, clients.name as client_name, clients.company_name as client_company, projects.title as project_title
+        SELECT shoots.*, 
+        clients.name as client_name, 
+        clients.company_name as client_company, 
+        projects.title as project_title,
+        pp.status as post_prod_status,
+        pp.id as post_prod_id
         FROM shoots 
         LEFT JOIN clients ON shoots.client_id = clients.id 
         LEFT JOIN projects ON shoots.project_id = projects.id
+        LEFT JOIN post_prod_projects pp ON shoots.id = pp.shoot_id
         WHERE shoots.id = ?
         `,
         args: [id]
     });
-    return (rows[0] as unknown as ShootWithClient) || undefined;
+    return (rows[0] as unknown as ShootWithClient & { post_prod_status?: string, post_prod_id?: number }) || undefined;
 }
 
 export async function getShootVideos(shootId: number): Promise<ShootVideo[]> {

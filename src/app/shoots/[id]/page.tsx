@@ -336,6 +336,8 @@ export default async function ShootPage({ params }: { params: Promise<{ id: stri
                         shootId={shoot.id}
                         shootStatus={shoot.status}
                         templates={templates}
+                        postProdId={shoot.post_prod_id}
+                        postProdStatus={shoot.post_prod_status}
                     />
 
                     {/* Revert Shoot Action */}
