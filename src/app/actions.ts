@@ -2,7 +2,7 @@
 
 import { turso as db } from '@/lib/turso';
 import { revalidatePath } from 'next/cache';
-import { Client, Shoot, ShootVideo, ShootVideoNote, PipelineStage, Task, SocialLink, ContentIdea, Project, Commission, TeamMember, Payment, Credential, ShootWithClient } from '@/types';
+import { Client, Shoot, ShootVideo, ShootVideoNote, PipelineStage, Task, SocialLink, ContentIdea, Project, Commission, TeamMember, Payment, Credential, ShootWithClient, BetaFeedback } from '@/types';
 
 export async function getClients(): Promise<Client[]> {
     const { rows } = await db.execute('SELECT * FROM clients ORDER BY created_at DESC');
@@ -1283,4 +1283,37 @@ export async function deleteExpense(id: number) {
 export async function getExpenses() {
     const { rows } = await db.execute('SELECT * FROM expenses ORDER BY date DESC');
     return rows as unknown as any[];
+}
+
+// --- BETA FEEDBACK ACTIONS ---
+
+export async function addBetaFeedback(formData: FormData) {
+    const content = formData.get('content') as string;
+    const pageUrl = formData.get('pageUrl') as string;
+
+    await db.execute({
+        sql: 'INSERT INTO beta_feedback (content, page_url) VALUES (?, ?)',
+        args: [content, pageUrl]
+    });
+}
+
+export async function getBetaFeedback(): Promise<BetaFeedback[]> {
+    const { rows } = await db.execute('SELECT * FROM beta_feedback ORDER BY created_at DESC');
+    return rows as unknown as BetaFeedback[];
+}
+
+export async function resolveBetaFeedback(id: number) {
+    await db.execute({
+        sql: 'UPDATE beta_feedback SET is_resolved = 1 WHERE id = ?',
+        args: [id]
+    });
+    revalidatePath('/beta-feedback');
+}
+
+export async function deleteBetaFeedback(id: number) {
+    await db.execute({
+        sql: 'DELETE FROM beta_feedback WHERE id = ?',
+        args: [id]
+    });
+    revalidatePath('/beta-feedback');
 }

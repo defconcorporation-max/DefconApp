@@ -275,3 +275,11 @@ export interface ShootAssignment {
     shoot_title?: string;
     shoot_date?: string;
 }
+
+export interface BetaFeedback {
+    id: number;
+    content: string;
+    page_url: string;
+    created_at: string;
+    is_resolved: boolean;
+}

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Home, Users, Briefcase, Video, CreditCard, Settings, Command } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import BetaFeedbackWidget from './BetaFeedbackWidget';
 
 export default function Sidebar() {
     const pathname = usePathname();
@@ -54,7 +55,7 @@ export default function Sidebar() {
                         <div className="space-y-1">
                             {links.map((link) => {
                                 const Icon = link.icon;
-                                const isActive = pathname === link.href || (link.href !== '/' && pathname.startsWith(link.href));
+                                const isActive = pathname ? (pathname === link.href || (link.href !== '/' && pathname.startsWith(link.href))) : false;
 
                                 return (
                                     <Link
@@ -89,7 +90,8 @@ export default function Sidebar() {
                     <div className="space-y-1">
                         {links.map((link) => {
                             const Icon = link.icon;
-                            const isActive = pathname === link.href || (link.href !== '/' && pathname.startsWith(link.href));
+                            // Safe check for pathname
+                            const isActive = pathname ? (pathname === link.href || (link.href !== '/' && pathname.startsWith(link.href))) : false;
 
                             return (
                                 <Link
@@ -105,6 +107,12 @@ export default function Sidebar() {
                                 </Link>
                             );
                         })}
+                    </div>
+
+                    {/* Beta Feedback Widget */}
+                    <div className="mt-6 pt-6 border-t border-[var(--border-subtle)]">
+                        <h4 className="text-[10px] font-bold text-[var(--text-tertiary)] uppercase tracking-wider mb-2">Beta Testing</h4>
+                        <BetaFeedbackWidget />
                     </div>
                 </div>
 
