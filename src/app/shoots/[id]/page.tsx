@@ -5,6 +5,7 @@ import FinishShootButton from '@/components/FinishShootButton';
 import { getPostProdTemplates } from '@/app/post-prod-actions';
 import PostProdTrigger from '@/components/post-prod/PostProdTrigger';
 import { getShootAssignments } from '@/app/team-actions';
+export const dynamic = 'force-dynamic';
 import { getTeamMembers } from '@/app/actions';
 import AssignmentControl from '@/components/team/AssignmentControl';
 

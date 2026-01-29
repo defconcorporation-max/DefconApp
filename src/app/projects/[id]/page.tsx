@@ -1,5 +1,5 @@
-
-import { getProjectById, getProjectShoots, getProjectServices, getServices, addProjectService, deleteProjectService, updateProjectStatus, addShoot, getShootVideos, getCommissions, getSettings, getTeamMembers, getClient, getProjectTasks, getTaskStages } from '@/app/actions';
+```
+import { getProject, getProjectShoots, getProjectInvoices, updateProjectStatus, updateProjectPriority, updateProjectTitle } from '@/app/actions';
 import { Project, Shoot, Service, ProjectService, Commission, Client, ProjectTask, TaskStage } from '@/types';
 import Link from 'next/link';
 import { ArrowLeft, Calendar } from 'lucide-react';
@@ -51,7 +51,7 @@ export default async function ProjectDetailsPage({ params }: { params: Promise<{
         <main className="min-h-screen p-8 bg-[var(--bg-root)] text-white pb-20">
             <header className="mb-8">
                 <div className="flex items-center gap-4 mb-4">
-                    <Link href={`/clients/${project.client_id}`} className="text-[var(--text-tertiary)] hover:text-white transition-colors flex items-center gap-2 text-sm font-mono">
+                    <Link href={`/ clients / ${ project.client_id } `} className="text-[var(--text-tertiary)] hover:text-white transition-colors flex items-center gap-2 text-sm font-mono">
                         <ArrowLeft size={16} /> Back to Client
                     </Link>
                 </div>
