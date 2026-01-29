@@ -1,4 +1,4 @@
-import { getProject, getProjectShoots, getProjectServices, getServices, getCommissions, getSettings, getTeamMembers, getClient, getProjectTasks, getTaskStages, getShootVideos } from '@/app/actions';
+import { getProjectById, getProjectShoots, getProjectServices, getServices, getCommissions, getSettings, getTeamMembers, getClient, getProjectTasks, getTaskStages, getShootVideos } from '@/app/actions';
 import { Project, Shoot, Service, ProjectService, ProjectTask, TaskStage, Client } from '@/types';
 import Link from 'next/link';
 import { ArrowLeft, Calendar } from 'lucide-react';
@@ -10,7 +10,7 @@ export const dynamic = 'force-dynamic';
 export default async function ProjectDetailsPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
     const projectId = Number(id);
-    const project = await getProject(projectId) as Project & { client_company: string };
+    const project = await getProjectById(projectId) as Project & { client_company: string };
 
     if (!project) {
         return (
