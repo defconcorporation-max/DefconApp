@@ -906,8 +906,8 @@ export async function revertShoot(shootId: number) {
     console.log('--- revertShoot called ---', shootId);
     try {
         await db.batch([
-            { sql: 'UPDATE shoots SET status = NULL WHERE id = ?', args: [shootId] },
-            { sql: 'DELETE FROM post_production WHERE shoot_id = ?', args: [shootId] }
+            { sql: "UPDATE shoots SET status = 'Planned' WHERE id = ?", args: [shootId] },
+            { sql: 'DELETE FROM post_prod_projects WHERE shoot_id = ?', args: [shootId] }
         ], 'write');
         console.log('Batch transaction completed successfully');
         revalidatePath(`/shoots/${shootId}`);
