@@ -1,4 +1,4 @@
-import { getClient, getClientProjects, getClientShoots } from '@/app/actions';
+import { getClient, getProjects, getSocials, getIdeas, getCommissions, getPayments, getCredentials } from '@/app/actions';
 export const dynamic = 'force-dynamic';
 import { getSocialAccounts, getSocialPosts } from '@/app/social-actions';
 import FolderButton from '@/components/FolderButton';
