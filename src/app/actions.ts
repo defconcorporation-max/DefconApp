@@ -1287,7 +1287,20 @@ export async function getExpenses() {
 
 // --- BETA FEEDBACK ACTIONS ---
 
+async function ensureBetaTable() {
+    await db.execute(`
+        CREATE TABLE IF NOT EXISTS beta_feedback (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            content TEXT,
+            page_url TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            is_resolved BOOLEAN DEFAULT 0
+        )
+    `);
+}
+
 export async function addBetaFeedback(formData: FormData) {
+    await ensureBetaTable();
     const content = formData.get('content') as string;
     const pageUrl = formData.get('pageUrl') as string;
 
@@ -1298,6 +1311,7 @@ export async function addBetaFeedback(formData: FormData) {
 }
 
 export async function getBetaFeedback(): Promise<BetaFeedback[]> {
+    await ensureBetaTable();
     const { rows } = await db.execute('SELECT * FROM beta_feedback ORDER BY created_at DESC');
     return rows as unknown as BetaFeedback[];
 }
