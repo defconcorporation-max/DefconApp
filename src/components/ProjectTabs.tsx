@@ -134,6 +134,33 @@ export default function ProjectTabs({
                                 <div className="text-[var(--text-tertiary)] italic text-sm py-4">No upcoming shoots scheduled.</div>
                             )}
                         </div>
+
+                        {/* Post-Production Status Card */}
+                        <div className="bg-[#0A0A0A] border border-[var(--border-subtle)] p-6 rounded-2xl relative overflow-hidden">
+                            <h3 className="text-sm font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-4">Post-Production</h3>
+                            {shoots.filter(s => s.post_prod_status && s.post_prod_status !== 'Completed').length > 0 ? (
+                                <div className="space-y-3">
+                                    {shoots.filter(s => s.post_prod_status && s.post_prod_status !== 'Completed').map(shoot => (
+                                        <div key={shoot.id} className="flex justify-between items-center pb-2 border-b border-white/5 last:border-0 last:pb-0">
+                                            <div>
+                                                <div className="font-medium text-sm text-white">{shoot.title}</div>
+                                                <div className="text-xs text-[var(--text-tertiary)]">{new Date(shoot.shoot_date).toLocaleDateString()}</div>
+                                            </div>
+                                            <div className={`
+                                                px-2 py-1 rounded text-xs font-bold uppercase tracking-wider
+                                                ${shoot.post_prod_status === 'In Progress' ? 'bg-blue-500/20 text-blue-400' : ''}
+                                                ${shoot.post_prod_status === 'In Review' ? 'bg-amber-500/20 text-amber-400' : ''}
+                                                ${shoot.post_prod_status === 'Approved' ? 'bg-emerald-500/20 text-emerald-400' : ''}
+                                            `}>
+                                                {shoot.post_prod_status}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="text-[var(--text-tertiary)] italic text-sm py-4">No active post-production.</div>
+                            )}
+                        </div>
                     </div>
                 )}
 

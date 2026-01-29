@@ -803,7 +803,7 @@ export async function getProjectShoots(projectId: number) {
         (SELECT COUNT(*) FROM shoot_videos sv WHERE sv.shoot_id = s.id) as total_videos_count,
         pp.status as post_prod_status
         FROM shoots s 
-        LEFT JOIN post_production pp ON s.id = pp.shoot_id
+        LEFT JOIN post_prod_projects pp ON s.id = pp.shoot_id
         WHERE s.project_id = ? 
         ORDER BY s.shoot_date DESC
         `,
