@@ -767,6 +767,14 @@ export async function getProjects(clientId: number): Promise<Project[]> {
     return rows as unknown as Project[];
 }
 
+export async function updateShootVideoTitle(id: number, title: string, clientId: number, shootId: number) {
+    await db.execute({
+        sql: 'UPDATE shoot_videos SET title = ? WHERE id = ?',
+        args: [title, id]
+    });
+    revalidatePath(`/shoots/${shootId}`);
+}
+
 export async function createProject(formData: FormData) {
     const clientId = Number(formData.get('clientId'));
     const title = formData.get('title') as string;
