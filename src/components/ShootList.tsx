@@ -12,6 +12,7 @@ interface EnhancedShoot extends Shoot {
     label_name?: string;
     label_color?: string;
     post_prod_status?: string;
+    post_prod_id?: number;
 }
 
 interface ShootListProps {
@@ -135,8 +136,8 @@ export default function ShootList({ shoots, teamMembers, allAssignments }: Shoot
                                 key={opt.id}
                                 onClick={() => toggleSort(opt.id as SortOption)}
                                 className={`px-3 py-1 rounded text-xs font-medium transition-colors ${sortBy === opt.id
-                                        ? 'bg-violet-600 text-white'
-                                        : 'bg-white/5 text-[var(--text-secondary)] hover:bg-white/10 hover:text-white'
+                                    ? 'bg-violet-600 text-white'
+                                    : 'bg-white/5 text-[var(--text-secondary)] hover:bg-white/10 hover:text-white'
                                     }`}
                             >
                                 {opt.label}
@@ -201,7 +202,7 @@ export default function ShootList({ shoots, teamMembers, allAssignments }: Shoot
                                         </div>
                                     </div>
 
-                                    <Link href={`/shoots/${shoot.id}`} className="block">
+                                    <Link href={shoot.post_prod_id ? `/post-production/${shoot.post_prod_id}` : `/shoots/${shoot.id}`} className="block">
                                         <h3 className="text-lg font-bold text-white mb-1 hover:text-violet-400 transition-colors flex items-center gap-2">
                                             {shoot.title}
                                             <ExternalLink size={12} className="opacity-0 group-hover:opacity-100 transition-opacity translate-y-0.5" />
@@ -233,8 +234,11 @@ export default function ShootList({ shoots, teamMembers, allAssignments }: Shoot
                                                 </span>
                                             )}
                                         </div>
-                                        <Link href={`/shoots/${shoot.id}`} className="flex items-center gap-1 text-violet-400 font-medium hover:gap-2 transition-all">
-                                            View Details <ArrowRight size={12} />
+                                        <Link
+                                            href={shoot.post_prod_id ? `/post-production/${shoot.post_prod_id}` : `/shoots/${shoot.id}`}
+                                            className={`flex items-center gap-1 font-medium hover:gap-2 transition-all ${shoot.post_prod_id ? 'text-orange-400' : 'text-violet-400'}`}
+                                        >
+                                            {shoot.post_prod_id ? 'View Post-Prod' : 'View Details'} <ArrowRight size={12} />
                                         </Link>
                                     </div>
                                 </div>
