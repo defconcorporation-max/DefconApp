@@ -948,8 +948,8 @@ export async function updateProjectDetails(formData: FormData) {
     }
 
     await db.execute({
-        sql: 'UPDATE projects SET title = ?, start_date = ?, status = ?, due_date = ?, label_id = ? WHERE id = ?',
-        args: [title, startDate, status, dueDate, labelId, id]
+        sql: 'UPDATE projects SET title = ?, status = ?, due_date = ?, label_id = ? WHERE id = ?',
+        args: [title, status, dueDate, labelId, id]
     });
     revalidatePath(`/projects/${id}`);
 }
@@ -961,7 +961,7 @@ export async function updateProjectDetails(formData: FormData) {
 export async function createProject(formData: FormData) {
     const clientId = Number(formData.get('clientId'));
     const title = formData.get('title') as string;
-    const date = formData.get('date') as string;
+
     const status = formData.get('status') as string;
     const dueDate = formData.get('dueDate') as string;
     const labelId = formData.get('labelId') ? Number(formData.get('labelId')) : null;
@@ -971,8 +971,8 @@ export async function createProject(formData: FormData) {
     await ensureProjectFeatures();
 
     await db.execute({
-        sql: 'INSERT INTO projects (client_id, title, start_date, status, due_date, label_id) VALUES (?, ?, ?, ?, ?, ?)',
-        args: [clientId, title, date, status, dueDate, labelId]
+        sql: 'INSERT INTO projects (client_id, title, status, due_date, label_id) VALUES (?, ?, ?, ?, ?)',
+        args: [clientId, title, status, dueDate, labelId]
     });
     revalidatePath(`/clients/${clientId}`);
 }
