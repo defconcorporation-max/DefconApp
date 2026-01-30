@@ -1093,7 +1093,8 @@ export async function getProjectShoots(projectId: number) {
         SELECT s.*, 
         (SELECT COUNT(*) FROM shoot_videos sv WHERE sv.shoot_id = s.id AND sv.completed = 1) as completed_videos_count,
         (SELECT COUNT(*) FROM shoot_videos sv WHERE sv.shoot_id = s.id) as total_videos_count,
-        pp.status as post_prod_status
+        pp.status as post_prod_status,
+        pp.id as post_prod_id
         FROM shoots s 
         LEFT JOIN post_prod_projects pp ON s.id = pp.shoot_id
         WHERE s.project_id = ? 
@@ -1638,7 +1639,7 @@ export async function updateClient(formData: FormData) {
     const name = formData.get('name') as string;
     const company = formData.get('company') as string;
     const plan = formData.get('plan') as string;
-    
+
     // Handle Label Logic
     const rawLabelId = formData.get('labelId');
     let finalLabelId = null;
@@ -1646,7 +1647,7 @@ export async function updateClient(formData: FormData) {
     if (rawLabelId === 'NEW') {
         const newLabelName = formData.get('newLabelName') as string;
         const newLabelColor = formData.get('newLabelColor') as string;
-        
+
         if (newLabelName) {
             const labelRes = await db.execute({
                 sql: 'INSERT INTO project_labels (name, color) VALUES (?, ?)',
