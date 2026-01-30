@@ -1164,6 +1164,19 @@ export async function createService(formData: FormData) {
     revalidatePath('/services');
 }
 
+export async function updateService(formData: FormData) {
+    const id = Number(formData.get('id'));
+    const name = formData.get('name') as string;
+    const rate = Number(formData.get('rate'));
+    const type = formData.get('type') as string;
+
+    await db.execute({
+        sql: 'UPDATE services SET name = ?, default_rate = ?, rate_type = ? WHERE id = ?',
+        args: [name, rate, type, id]
+    });
+    revalidatePath('/services');
+}
+
 export async function deleteService(id: number) {
     await db.execute({
         sql: 'DELETE FROM services WHERE id = ?',

@@ -1,7 +1,8 @@
-import { getServices, createService, deleteService } from '@/app/actions';
+import { getServices, createService } from '@/app/actions';
 import { Service } from '@/types';
 import Link from 'next/link';
-import { ArrowLeft, Trash2, Plus } from 'lucide-react';
+import { ArrowLeft, Plus } from 'lucide-react';
+import ServiceList from '@/components/ServiceList';
 
 export default async function ServicesPage() {
     const services = await getServices() as Service[];
@@ -50,28 +51,8 @@ export default async function ServicesPage() {
                 </div>
 
                 {/* Services List */}
-                <div className="md:col-span-2 space-y-4">
-                    {services.length === 0 ? (
-                        <div className="text-center py-12 text-gray-500 bg-[#0A0A0A] border border-[var(--border-subtle)] rounded-xl border-dashed">
-                            No services defined yet.
-                        </div>
-                    ) : (
-                        services.map(service => (
-                            <div key={service.id} className="bg-[#0A0A0A] border border-[var(--border-subtle)] rounded-xl p-4 flex items-center justify-between group hover:border-violet-500/30 transition-colors">
-                                <div>
-                                    <h3 className="font-medium text-white text-lg">{service.name}</h3>
-                                    <p className="text-sm text-[var(--text-secondary)]">
-                                        ${service.default_rate} <span className="text-[var(--text-tertiary)]">/ {service.rate_type}</span>
-                                    </p>
-                                </div>
-                                <form action={deleteService.bind(null, service.id)}>
-                                    <button type="submit" className="p-2 text-gray-600 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors">
-                                        <Trash2 size={18} />
-                                    </button>
-                                </form>
-                            </div>
-                        ))
-                    )}
+                <div className="md:col-span-2">
+                    <ServiceList services={services} />
                 </div>
             </div>
         </main>
