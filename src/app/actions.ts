@@ -1485,7 +1485,7 @@ export async function deleteBetaFeedback(formData: FormData) {
     const id = Number(formData.get('id'));
     await db.execute({
         sql: 'DELETE FROM beta_feedback WHERE id = ?',
-```
+        args: [id]
     });
     revalidatePath('/beta-feedback');
 }
@@ -1528,7 +1528,7 @@ export async function updateClient(formData: FormData) {
         sql: 'UPDATE clients SET name = ?, company_name = ?, plan = ? WHERE id = ?',
         args: [name, company, plan, id]
     });
-    revalidatePath(`/ clients / ${ id }`);
+    revalidatePath(`/ clients / ${id}`);
     revalidatePath('/');
 }
 
