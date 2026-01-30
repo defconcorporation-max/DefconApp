@@ -66,6 +66,14 @@ async function ensureProjectFeatures() {
             FOREIGN KEY (member_id) REFERENCES team_members(id) ON DELETE CASCADE
         )
     `);
+
+    // 5. Ensure Team Member Columns (color, hourly_rate)
+    try {
+        await db.execute('ALTER TABLE team_members ADD COLUMN color TEXT');
+    } catch (e) { }
+    try {
+        await db.execute('ALTER TABLE team_members ADD COLUMN hourly_rate REAL');
+    } catch (e) { }
 }
 
 
