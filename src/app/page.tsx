@@ -1,8 +1,9 @@
-import { getClients, createClient, getAllShoots, getDashboardStats, getPipelineStages, getAllDashboardTasks, DashboardTask } from './actions';
+import { getClients, createClient, getAllShoots, getDashboardStats, getPipelineStages, getAllDashboardTasks, getProjectLabels } from './actions';
 import Link from 'next/link';
 import DashboardCalendar from '@/components/DashboardCalendar';
 import ClientKanban from '@/components/ClientKanban';
 import TaskManager from '@/components/TaskManager';
+import ClientLabelSelect from '@/components/ClientLabelSelect';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,6 +13,7 @@ export default async function Home() {
     let stats: any = null;
     let stages: any[] = [];
     let tasks: any[] = [];
+    let labels: any[] = [];
     let error = null;
 
     try {
@@ -20,10 +22,11 @@ export default async function Home() {
             getAllShoots(),
             getDashboardStats(),
             getPipelineStages(),
-            getAllDashboardTasks()
+            getAllDashboardTasks(),
+            getProjectLabels()
         ]);
 
-        [clients, allShoots, stats, stages, tasks] = results;
+        [clients, allShoots, stats, stages, tasks, labels] = results;
     } catch (e: any) {
         console.warn('Dashboard Data Fetch Error:', e);
         error = e.message || 'Unknown database error';
@@ -53,7 +56,10 @@ export default async function Home() {
 
                     <div className="hidden md:block w-px h-4 bg-[var(--border-subtle)]"></div>
 
-                    <div className="flex gap-2 w-full md:w-auto">
+                    <div className="flex gap-2 w-full md:w-auto items-center">
+                        <div className="w-full md:w-32">
+                            <ClientLabelSelect defaultValue="" labels={labels} />
+                        </div>
                         <select name="plan" className="bg-[var(--bg-root)] md:bg-transparent border border-[var(--border-subtle)] md:border-none rounded-lg md:rounded-none text-xs px-3 py-2 md:py-0 text-[var(--text-secondary)] focus:outline-none w-full md:w-24 appearance-none">
                             <option value="Standard" className="bg-black">Standard</option>
                             <option value="Gold" className="bg-black">Gold</option>

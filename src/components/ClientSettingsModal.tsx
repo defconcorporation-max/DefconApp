@@ -4,14 +4,16 @@ import { useState } from 'react';
 import { updateClient, deleteClient } from '@/app/actions';
 import { useRouter } from 'next/navigation';
 import { Settings, Trash2, X } from 'lucide-react';
+import ClientLabelSelect from './ClientLabelSelect';
 
 interface ClientSettingsModalProps {
-    client: { id: number; name: string; company_name: string; plan: string };
+    client: { id: number; name: string; company_name: string; plan: string; label_id?: number };
+    labels: { id: number; name: string; color: string }[];
     isOpen: boolean;
     onClose: () => void;
 }
 
-export default function ClientSettingsModal({ client, isOpen, onClose }: ClientSettingsModalProps) {
+export default function ClientSettingsModal({ client, labels, isOpen, onClose }: ClientSettingsModalProps) {
     const router = useRouter();
     const [isDeleting, setIsDeleting] = useState(false);
 
@@ -81,6 +83,14 @@ export default function ClientSettingsModal({ client, isOpen, onClose }: ClientS
                             </select>
                         </div>
 
+                        <div className="space-y-1">
+                            <label className="text-xs text-[var(--text-secondary)] uppercase font-mono">Label</label>
+                            <ClientLabelSelect
+                                defaultValue={client.label_id || ''}
+                                labels={labels}
+                            />
+                        </div>
+
                         <button type="submit" className="w-full pro-button py-2 justify-center">
                             Save Changes
                         </button>
@@ -102,7 +112,7 @@ export default function ClientSettingsModal({ client, isOpen, onClose }: ClientS
 }
 
 // Helper button component to trigger modal
-export function ClientSettingsButton({ client }: { client: any }) {
+export function ClientSettingsButton({ client, labels }: { client: any, labels: any[] }) {
     const [isOpen, setIsOpen] = useState(false);
     return (
         <>
@@ -113,7 +123,7 @@ export function ClientSettingsButton({ client }: { client: any }) {
             >
                 <Settings size={20} />
             </button>
-            <ClientSettingsModal client={client} isOpen={isOpen} onClose={() => setIsOpen(false)} />
+            <ClientSettingsModal client={client} labels={labels} isOpen={isOpen} onClose={() => setIsOpen(false)} />
         </>
     );
 }

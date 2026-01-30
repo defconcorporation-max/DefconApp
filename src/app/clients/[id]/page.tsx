@@ -46,7 +46,7 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
                     <div className="flex items-center gap-3">
                         <FolderButton folderPath={client.folder_path} />
                         <div className="w-px h-4 bg-[var(--border-subtle)]"></div>
-                        <ClientSettingsButton client={client} />
+                        <ClientSettingsButton client={client} labels={projectLabels} />
                     </div>
                 </div>
             </header>
