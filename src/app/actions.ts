@@ -333,12 +333,23 @@ export async function deleteShoot(formData: FormData) {
 
 export async function getAllShootAssignments() {
     await ensureProjectFeatures();
-    const { rows } = await db.execute(`
-        SELECT sa.*, tm.name as member_name, tm.role as member_role, tm.color as member_avatar_color
-        FROM shoot_assignments sa
-        JOIN team_members tm ON sa.member_id = tm.id
-    `);
-    return rows as unknown as ShootAssignment[];
+    try {
+        const { rows } = await db.execute(`
+            SELECT sa.*, tm.name as member_name, tm.role as member_role, tm.color as member_avatar_color
+            FROM shoot_assignments sa
+            JOIN team_members tm ON sa.member_id = tm.id
+        `);
+        return rows as unknown as ShootAssignment[];
+    } catch (e) {
+        // Fallback if color column missing
+        console.error("Failed to fetch assignments with color:", e);
+        const { rows } = await db.execute(`
+            SELECT sa.*, tm.name as member_name, tm.role as member_role
+            FROM shoot_assignments sa
+            JOIN team_members tm ON sa.member_id = tm.id
+        `);
+        return rows.map((r: any) => ({ ...r, member_avatar_color: 'indigo' })) as unknown as ShootAssignment[];
+    }
 }
 
 export async function getShootAssignments(shootId: number) {
