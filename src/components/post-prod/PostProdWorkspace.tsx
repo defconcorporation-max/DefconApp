@@ -118,18 +118,21 @@ export default function PostProdWorkspace({ project, tasks, versions }: Props) {
                     )}
 
                     {versions.length > 0 ? (
-                        <div className="aspect-video bg-black rounded-lg flex flex-col items-center justify-center border border-[var(--border-subtle)] relative group overflow-hidden">
-                            <a href={versions[0].video_url} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center gap-4 group-hover:scale-105 transition-transform">
-                                <div className="w-20 h-20 bg-indigo-500/20 rounded-full flex items-center justify-center border border-indigo-500/30 group-hover:bg-indigo-500/30 transition-colors">
-                                    <Download size={40} className="text-indigo-400" />
+                        <div className="bg-black rounded-lg border border-[var(--border-subtle)] overflow-hidden">
+                            <a href={versions[0].video_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-4 p-4 hover:bg-[#111] transition-colors group">
+                                <div className="w-12 h-12 bg-indigo-500/20 rounded-full flex items-center justify-center border border-indigo-500/30 group-hover:bg-indigo-500/30 transition-colors">
+                                    <Download size={24} className="text-indigo-400" />
                                 </div>
-                                <span className="text-indigo-400 font-bold text-lg">Download Files (WeTransfer)</span>
+                                <div>
+                                    <h3 className="text-indigo-400 font-bold text-lg group-hover:underline">Download Files via WeTransfer</h3>
+                                    <p className="text-xs text-[var(--text-tertiary)]">Version {versions[0].version_number}</p>
+                                </div>
                             </a>
                         </div>
                     ) : (
-                        <div className="aspect-video bg-[#111] rounded-lg flex flex-col items-center justify-center text-[var(--text-tertiary)] border border-dashed border-[var(--border-subtle)]">
-                            <Film size={48} className="mb-4 opacity-20" />
-                            <p>Waiting for first cut...</p>
+                        <div className="bg-[#111] rounded-lg flex flex-col items-center justify-center text-[var(--text-tertiary)] border border-dashed border-[var(--border-subtle)] p-8">
+                            <Film size={32} className="mb-2 opacity-20" />
+                            <p className="text-sm">Waiting for first cut...</p>
                         </div>
                     )}
                 </div>
