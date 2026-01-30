@@ -200,16 +200,16 @@ export default function ProjectList({ projects }: ProjectListProps) {
                                                 }`}>
                                                 {project.status}
                                             </span>
-                                            {project.label_name && (
+                                            {project.agency_name && (
                                                 <span
                                                     className="px-2 py-0.5 rounded-full text-[10px] uppercase font-bold tracking-wider border"
                                                     style={{
-                                                        backgroundColor: `${project.label_color}20`,
-                                                        color: project.label_color,
-                                                        borderColor: `${project.label_color}30`
+                                                        backgroundColor: `${project.agency_color}20`,
+                                                        color: project.agency_color,
+                                                        borderColor: `${project.agency_color}30`
                                                     }}
                                                 >
-                                                    {project.label_name}
+                                                    {project.agency_name}
                                                 </span>
                                             )}
                                         </div>
