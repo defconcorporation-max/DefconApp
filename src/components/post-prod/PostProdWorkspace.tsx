@@ -102,8 +102,8 @@ export default function PostProdWorkspace({ project, tasks, versions }: Props) {
                             }} className="space-y-3">
                                 <input type="hidden" name="projectId" value={project.id} />
                                 <div>
-                                    <label className="text-xs uppercase font-bold text-[var(--text-tertiary)]">Video URL (Frame.io / Vimeo)</label>
-                                    <input name="url" type="url" required placeholder="https://..." className="w-full bg-black border border-[var(--border-subtle)] rounded p-2 text-white mt-1" />
+                                    <label className="text-xs uppercase font-bold text-[var(--text-tertiary)]">WeTransfer Link</label>
+                                    <input name="url" type="url" required placeholder="https://we.tl/..." className="w-full bg-black border border-[var(--border-subtle)] rounded p-2 text-white mt-1" />
                                 </div>
                                 <div>
                                     <label className="text-xs uppercase font-bold text-[var(--text-tertiary)]">Change Notes</label>
@@ -118,18 +118,13 @@ export default function PostProdWorkspace({ project, tasks, versions }: Props) {
                     )}
 
                     {versions.length > 0 ? (
-                        <div className="aspect-video bg-black rounded-lg flex items-center justify-center border border-[var(--border-subtle)] relative group cursor-pointer overflow-hidden">
-                            {/* Placeholder for iframe or video tag using the URL */}
-                            {versions[0].video_url.includes('youtube') || versions[0].video_url.includes('vimeo') ? (
-                                <iframe src={versions[0].video_url} className="w-full h-full" allowFullScreen />
-                            ) : (
-                                <div className="flex flex-col items-center gap-4">
-                                    <Play size={48} className="text-white opacity-50 group-hover:opacity-100 transition-opacity" />
-                                    <a href={versions[0].video_url} target="_blank" className="text-indigo-400 hover:underline">
-                                        Open External Link
-                                    </a>
+                        <div className="aspect-video bg-black rounded-lg flex flex-col items-center justify-center border border-[var(--border-subtle)] relative group overflow-hidden">
+                            <a href={versions[0].video_url} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center gap-4 group-hover:scale-105 transition-transform">
+                                <div className="w-20 h-20 bg-indigo-500/20 rounded-full flex items-center justify-center border border-indigo-500/30 group-hover:bg-indigo-500/30 transition-colors">
+                                    <Download size={40} className="text-indigo-400" />
                                 </div>
-                            )}
+                                <span className="text-indigo-400 font-bold text-lg">Download Files (WeTransfer)</span>
+                            </a>
                         </div>
                     ) : (
                         <div className="aspect-video bg-[#111] rounded-lg flex flex-col items-center justify-center text-[var(--text-tertiary)] border border-dashed border-[var(--border-subtle)]">
