@@ -270,22 +270,26 @@ export async function getShoots(clientId: number): Promise<Shoot[]> {
 
 
 
-export async function getAllShoots(): Promise<ShootWithClient[]> {
+export async function getAllShoots() {
     await ensureProjectFeatures();
     const { rows } = await db.execute(`
         SELECT shoots.*, 
         clients.name as client_name, 
         clients.company_name as client_company, 
+        clients.id as client_id,
         projects.title as project_title,
         pp.status as post_prod_status,
-        pp.id as post_prod_id
+        pp.id as post_prod_id,
+        pl.name as label_name,
+        pl.color as label_color
         FROM shoots 
         JOIN clients ON shoots.client_id = clients.id 
         LEFT JOIN projects ON shoots.project_id = projects.id
         LEFT JOIN post_prod_projects pp ON shoots.id = pp.shoot_id
+        LEFT JOIN project_labels pl ON clients.label_id = pl.id
         ORDER BY shoot_date ASC
     `);
-    return rows as unknown as ShootWithClient[];
+    return rows as unknown as (Shoot & { client_name: string, client_id: number, label_name?: string, label_color?: string, post_prod_status?: string })[];
 }
 
 export async function addShoot(formData: FormData) {
@@ -880,6 +884,7 @@ export async function deleteTask(id: number) {
 }
 
 // --- PROJECTS ACTIONS ---
+// --- PROJECTS ACTIONS ---
 export async function getProjects(clientId: number): Promise<Project[]> {
     const { rows } = await db.execute({
         sql: `
@@ -890,9 +895,10 @@ export async function getProjects(clientId: number): Promise<Project[]> {
         (SELECT COUNT(*) FROM project_services ps WHERE ps.project_id = p.id) as service_count,
         (SELECT COALESCE(SUM(rate * quantity), 0) FROM project_services ps WHERE ps.project_id = p.id) as total_value
         FROM projects p 
-        LEFT JOIN project_labels pl ON p.label_id = pl.id
-        WHERE client_id = ? 
-        ORDER BY created_at DESC
+        JOIN clients c ON p.client_id = c.id
+        LEFT JOIN project_labels pl ON c.label_id = pl.id
+        WHERE p.client_id = ? 
+        ORDER BY p.created_at DESC
         `,
         args: [clientId]
     });
