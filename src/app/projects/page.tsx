@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { turso as db } from '@/lib/turso';
 import { Project } from '@/types';
-import { Folder, DollarSign } from 'lucide-react';
+import { Folder, DollarSign, AlertCircle } from 'lucide-react';
 import ProjectList from '@/components/ProjectList';
 
 async function getAllProjectsFull() {
@@ -32,6 +32,21 @@ export const dynamic = 'force-dynamic';
 export default async function ProjectsPage() {
     const projects = await getAllProjectsFull();
 
+    // Calculate Overdue Projects
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Start of day for fair comparison
+
+    const overdueProjects = projects.filter(p => {
+        if (!p.due_date) return false;
+        if (p.status === 'Completed' || p.status === 'Archived') return false;
+
+        const dueDate = new Date(p.due_date);
+        // Compare: if due date is strictly before today (yesterday or earlier)
+        // Adjust logic if "due today" counts as overdue or not. Usually strict < today means overdue.
+        // Let's use strict comparison for "Overdue" (past the deadline).
+        return dueDate < today;
+    });
+
     return (
         <main className="min-h-screen p-8 bg-[var(--bg-root)] text-white">
             {/* Header */}
@@ -46,8 +61,8 @@ export default async function ProjectsPage() {
             </header>
 
             {/* Stats Overview */}
-            <div className="mb-8 flex gap-4">
-                <div className="bg-[#0A0A0A] border border-[var(--border-subtle)] px-4 py-3 rounded-lg flex items-center gap-3">
+            <div className="mb-8 flex flex-wrap gap-4">
+                <div className="bg-[#0A0A0A] border border-[var(--border-subtle)] px-4 py-3 rounded-lg flex items-center gap-3 min-w-[200px]">
                     <div className="p-2 bg-indigo-500/10 text-indigo-400 rounded-md">
                         <Folder size={18} />
                     </div>
@@ -56,7 +71,18 @@ export default async function ProjectsPage() {
                         <div className="text-xs text-[var(--text-secondary)] uppercase">Total Projects</div>
                     </div>
                 </div>
-                <div className="bg-[#0A0A0A] border border-[var(--border-subtle)] px-4 py-3 rounded-lg flex items-center gap-3">
+
+                <div className="bg-[#0A0A0A] border border-[var(--border-subtle)] px-4 py-3 rounded-lg flex items-center gap-3 min-w-[200px]">
+                    <div className="p-2 bg-red-500/10 text-red-400 rounded-md">
+                        <AlertCircle size={18} />
+                    </div>
+                    <div>
+                        <div className="text-xl font-bold">{overdueProjects.length}</div>
+                        <div className="text-xs text-[var(--text-secondary)] uppercase">Overdue</div>
+                    </div>
+                </div>
+
+                <div className="bg-[#0A0A0A] border border-[var(--border-subtle)] px-4 py-3 rounded-lg flex items-center gap-3 min-w-[200px]">
                     <div className="p-2 bg-emerald-500/10 text-emerald-400 rounded-md">
                         <DollarSign size={18} />
                     </div>
