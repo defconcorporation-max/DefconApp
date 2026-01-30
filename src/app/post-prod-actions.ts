@@ -14,6 +14,30 @@ export async function getPostProdTemplates(): Promise<PostProdTemplate[]> {
     })) as PostProdTemplate[];
 }
 
+export async function createPostProdTemplate(name: string, tasks: string[]) {
+    await db.execute({
+        sql: 'INSERT INTO post_prod_templates (name, default_tasks) VALUES (?, ?)',
+        args: [name, JSON.stringify(tasks)]
+    });
+    revalidatePath('/settings');
+}
+
+export async function updatePostProdTemplate(id: number, name: string, tasks: string[]) {
+    await db.execute({
+        sql: 'UPDATE post_prod_templates SET name = ?, default_tasks = ? WHERE id = ?',
+        args: [name, JSON.stringify(tasks), id]
+    });
+    revalidatePath('/settings');
+}
+
+export async function deletePostProdTemplate(id: number) {
+    await db.execute({
+        sql: 'DELETE FROM post_prod_templates WHERE id = ?',
+        args: [id]
+    });
+    revalidatePath('/settings');
+}
+
 // --- WORKFLOW MANAGEMENT ---
 
 export async function startPostProduction(shootId: number, templateId: number) {

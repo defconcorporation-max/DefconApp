@@ -1,6 +1,8 @@
 import { getSettings, getTaskStages } from '@/app/actions';
+import { getPostProdTemplates } from '@/app/post-prod-actions';
 import SettingsForm from '@/components/SettingsForm';
 import TaskStageManager from '@/components/TaskStageManager';
+import WorkflowManager from '@/components/settings/WorkflowManager';
 import Link from 'next/link';
 
 
@@ -9,6 +11,7 @@ export const dynamic = 'force-dynamic';
 export default async function Page() {
     const settings = await getSettings();
     const stages = await getTaskStages();
+    const templates = await getPostProdTemplates();
 
     return (
         <div className="flex">
@@ -20,6 +23,7 @@ export default async function Page() {
                     </Link>
                 </header>
                 <div className="p-8 max-w-4xl mx-auto space-y-8">
+                    <WorkflowManager templates={templates} />
                     <TaskStageManager stages={stages} />
                     <SettingsForm settings={settings || { tax_tps_rate: 5.0, tax_tvq_rate: 9.975 }} />
                 </div>
