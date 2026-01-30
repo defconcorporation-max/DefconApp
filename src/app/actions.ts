@@ -48,6 +48,10 @@ async function ensureProjectFeatures() {
     try {
         await db.execute('ALTER TABLE projects ADD COLUMN label_id INTEGER');
     } catch (e) { }
+    try {
+        // Safety patch for ghost code accessing description
+        await db.execute('ALTER TABLE projects ADD COLUMN description TEXT');
+    } catch (e) { }
 
     // 3. Add column to shoots
     try {
