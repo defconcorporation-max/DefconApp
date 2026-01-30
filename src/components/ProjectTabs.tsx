@@ -48,7 +48,6 @@ export default function ProjectTabs({
     const tabs = [
         { id: 'overview', label: 'Overview', icon: <LayoutDashboard size={16} /> },
         { id: 'tasks', label: 'Tasks', icon: <CheckSquare size={16} /> },
-        { id: 'schedule', label: 'Schedule', icon: <Video size={16} /> },
         { id: 'financials', label: 'Financials', icon: <DollarSign size={16} /> },
     ];
 
@@ -56,8 +55,6 @@ export default function ProjectTabs({
     const totalTasks = tasks.length;
     const completedTasks = tasks.filter(t => t.is_completed).length;
     const taskProgress = totalTasks === 0 ? 0 : Math.round((completedTasks / totalTasks) * 100);
-
-    const nextShoot = shoots.filter(s => new Date(s.shoot_date) >= new Date()).sort((a, b) => new Date(a.shoot_date).getTime() - new Date(b.shoot_date).getTime())[0];
 
     return (
         <div>
@@ -84,163 +81,127 @@ export default function ProjectTabs({
 
                 {/* --- OVERVIEW TAB --- */}
                 {activeTab === 'overview' && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {/* Status Card */}
-                        <div className="bg-[#0A0A0A] border border-[var(--border-subtle)] p-6 rounded-2xl relative group">
-                            <div className="flex justify-between items-center mb-4">
-                                <h3 className="text-sm font-bold text-[var(--text-secondary)] uppercase tracking-wider">Project Status</h3>
+                    <div className="space-y-8">
+                        {/* Highlights Grid */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {/* Status Card */}
+                            <div className="bg-[#0A0A0A] border border-[var(--border-subtle)] p-6 rounded-2xl relative group">
+                                <div className="flex justify-between items-center mb-4">
+                                    <h3 className="text-sm font-bold text-[var(--text-secondary)] uppercase tracking-wider">Project Status</h3>
+                                    <button
+                                        onClick={() => setIsEditingDetails(!isEditingDetails)}
+                                        className="text-xs text-violet-400 hover:text-white transition-colors opacity-0 group-hover:opacity-100"
+                                    >
+                                        {isEditingDetails ? 'Cancel' : 'Edit Details'}
+                                    </button>
+                                </div>
+
+                                <div className="mb-6">
+                                    <StatusSelector projectId={project.id} currentStatus={project.status} />
+                                </div>
+
+                                {isEditingDetails ? (
+                                    <form action={async (formData) => {
+                                        await updateProjectDetails(formData);
+                                        setIsEditingDetails(false);
+                                    }} className="space-y-4 border-t border-[var(--border-subtle)] pt-4 mb-4">
+                                        <input type="hidden" name="projectId" value={project.id} />
+
+                                        <div>
+                                            <label className="block text-xs text-[var(--text-secondary)] mb-1">Due Date</label>
+                                            <input
+                                                type="date"
+                                                name="dueDate"
+                                                defaultValue={project.due_date ? new Date(project.due_date).toISOString().split('T')[0] : ''}
+                                                className="w-full bg-black border border-[var(--border-subtle)] rounded px-2 py-1.5 text-xs text-white focus:border-violet-500 outline-none color-scheme-dark"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-xs text-[var(--text-secondary)] mb-1">Label</label>
+                                            <ClientLabelSelect
+                                                defaultValue={project.label_id || ''}
+                                                labels={projectLabels}
+                                            />
+                                        </div>
+
+                                        <button className="w-full bg-violet-600 hover:bg-violet-700 text-white text-xs font-bold py-2 rounded transition-colors">
+                                            Save Changes
+                                        </button>
+                                    </form>
+                                ) : (
+                                    <div className="space-y-2 mb-4 border-t border-[var(--border-subtle)] pt-4">
+                                        {project.due_date && (
+                                            <div className="flex justify-between items-center text-sm">
+                                                <span className="text-[var(--text-tertiary)]">Due Date</span>
+                                                <span className="text-red-400 font-medium">{new Date(project.due_date).toLocaleDateString()}</span>
+                                            </div>
+                                        )}
+                                        {project.label_name && (
+                                            <div className="flex justify-between items-center text-sm">
+                                                <span className="text-[var(--text-tertiary)]">Label</span>
+                                                <span
+                                                    className="px-2 py-0.5 rounded-full text-xs font-medium border"
+                                                    style={{
+                                                        backgroundColor: `${project.label_color}20`,
+                                                        color: project.label_color,
+                                                        borderColor: `${project.label_color}30`
+                                                    }}
+                                                >
+                                                    {project.label_name}
+                                                </span>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
+                                <div className="flex justify-between items-center text-sm border-t border-[var(--border-subtle)] pt-4">
+                                    <span className="text-[var(--text-tertiary)]">Created</span>
+                                    <span className="font-mono">{new Date(project.created_at).toLocaleDateString()}</span>
+                                </div>
+                            </div>
+
+                            {/* Progress Card */}
+                            <div className="bg-[#0A0A0A] border border-[var(--border-subtle)] p-6 rounded-2xl">
+                                <h3 className="text-sm font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-4">Deliverables Progress</h3>
+                                <div className="text-4xl font-bold mb-2 font-mono flex items-end gap-2">
+                                    {taskProgress}%
+                                    <span className="text-sm font-normal text-[var(--text-tertiary)] mb-1.5">completed</span>
+                                </div>
+                                <div className="w-full bg-white/10 h-2 rounded-full overflow-hidden">
+                                    <div className="bg-emerald-500 h-full transition-all duration-500" style={{ width: `${taskProgress}%` }}></div>
+                                </div>
+                                <div className="mt-4 text-xs text-[var(--text-tertiary)] flex justify-between">
+                                    <span>{completedTasks} done</span>
+                                    <span>{totalTasks - completedTasks} remaining</span>
+                                </div>
+                            </div>
+
+                            {/* Financial Summary (Moved from Financials tab to be visible here? No, keep focused. Maybe a mini stat?) */}
+                            <div className="bg-[#0A0A0A] border border-[var(--border-subtle)] p-6 rounded-2xl flex flex-col justify-between">
+                                <div>
+                                    <h3 className="text-sm font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-4">Financial Overview</h3>
+                                    <div className="text-3xl font-bold text-white mb-1 font-mono">${totalValue.toLocaleString()}</div>
+                                    <div className="text-xs text-[var(--text-tertiary)]">Total Project Value</div>
+                                </div>
                                 <button
-                                    onClick={() => setIsEditingDetails(!isEditingDetails)}
-                                    className="text-xs text-violet-400 hover:text-white transition-colors opacity-0 group-hover:opacity-100"
+                                    onClick={() => setActiveTab('financials')}
+                                    className="w-full mt-4 py-2 rounded bg-white/5 hover:bg-white/10 text-xs font-medium transition-colors text-[var(--text-secondary)]"
                                 >
-                                    {isEditingDetails ? 'Cancel' : 'Edit Details'}
+                                    View Details
                                 </button>
                             </div>
-
-                            <div className="mb-6">
-                                <StatusSelector projectId={project.id} currentStatus={project.status} />
-                            </div>
-
-                            {isEditingDetails ? (
-                                <form action={async (formData) => {
-                                    await updateProjectDetails(formData);
-                                    setIsEditingDetails(false);
-                                }} className="space-y-4 border-t border-[var(--border-subtle)] pt-4 mb-4">
-                                    <input type="hidden" name="projectId" value={project.id} />
-
-                                    <div>
-                                        <label className="block text-xs text-[var(--text-secondary)] mb-1">Due Date</label>
-                                        <input
-                                            type="date"
-                                            name="dueDate"
-                                            defaultValue={project.due_date ? new Date(project.due_date).toISOString().split('T')[0] : ''}
-                                            className="w-full bg-black border border-[var(--border-subtle)] rounded px-2 py-1.5 text-xs text-white focus:border-violet-500 outline-none color-scheme-dark"
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-xs text-[var(--text-secondary)] mb-1">Label</label>
-                                        <ClientLabelSelect
-                                            defaultValue={project.label_id || ''}
-                                            labels={projectLabels}
-                                        />
-                                    </div>
-
-                                    <button className="w-full bg-violet-600 hover:bg-violet-700 text-white text-xs font-bold py-2 rounded transition-colors">
-                                        Save Changes
-                                    </button>
-                                </form>
-                            ) : (
-                                <div className="space-y-2 mb-4 border-t border-[var(--border-subtle)] pt-4">
-                                    {project.due_date && (
-                                        <div className="flex justify-between items-center text-sm">
-                                            <span className="text-[var(--text-tertiary)]">Due Date</span>
-                                            <span className="text-red-400 font-medium">{new Date(project.due_date).toLocaleDateString()}</span>
-                                        </div>
-                                    )}
-                                    {project.label_name && (
-                                        <div className="flex justify-between items-center text-sm">
-                                            <span className="text-[var(--text-tertiary)]">Label</span>
-                                            <span
-                                                className="px-2 py-0.5 rounded-full text-xs font-medium border"
-                                                style={{
-                                                    backgroundColor: `${project.label_color}20`,
-                                                    color: project.label_color,
-                                                    borderColor: `${project.label_color}30`
-                                                }}
-                                            >
-                                                {project.label_name}
-                                            </span>
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-
-                            <div className="flex justify-between items-center text-sm border-t border-[var(--border-subtle)] pt-4">
-                                <span className="text-[var(--text-tertiary)]">Created</span>
-                                <span className="font-mono">{new Date(project.created_at).toLocaleDateString()}</span>
-                            </div>
                         </div>
 
-                        {/* Progress Card */}
-                        <div className="bg-[#0A0A0A] border border-[var(--border-subtle)] p-6 rounded-2xl">
-                            <h3 className="text-sm font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-4">Deliverables Progress</h3>
-                            <div className="text-4xl font-bold mb-2 font-mono flex items-end gap-2">
-                                {taskProgress}%
-                                <span className="text-sm font-normal text-[var(--text-tertiary)] mb-1.5">completed</span>
-                            </div>
-                            <div className="w-full bg-white/10 h-2 rounded-full overflow-hidden">
-                                <div className="bg-emerald-500 h-full transition-all duration-500" style={{ width: `${taskProgress}%` }}></div>
-                            </div>
-                            <div className="mt-4 text-xs text-[var(--text-tertiary)] flex justify-between">
-                                <span>{completedTasks} done</span>
-                                <span>{totalTasks - completedTasks} remaining</span>
-                            </div>
-                        </div>
-
-                        {/* Next Shoot Card */}
-                        <div className="bg-[#0A0A0A] border border-[var(--border-subtle)] p-6 rounded-2xl relative overflow-hidden">
-                            <h3 className="text-sm font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-4">Next Shoot</h3>
-                            {nextShoot ? (
-                                <div>
-                                    <div className="flex items-center gap-3 mb-2">
-                                        <div className="bg-violet-500/20 text-violet-400 p-2 rounded-lg">
-                                            <Calendar size={20} />
-                                        </div>
-                                        <div>
-                                            <div className="font-bold text-lg">{new Date(nextShoot.shoot_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</div>
-                                            <div className="text-xs text-[var(--text-tertiary)]">{nextShoot.title}</div>
-                                        </div>
-                                    </div>
-                                    {nextShoot.start_time && (
-                                        <div className="inline-flex items-center gap-1 text-xs bg-white/5 px-2 py-1 rounded text-[var(--text-secondary)] mt-2">
-                                            <Clock size={12} />
-                                            {nextShoot.start_time} - {nextShoot.end_time}
-                                        </div>
-                                    )}
-                                </div>
-                            ) : (
-                                <div className="text-[var(--text-tertiary)] italic text-sm py-4">No upcoming shoots scheduled.</div>
-                            )}
-                        </div>
-
-                        {/* Post-Production Status Card */}
-                        <div className="bg-[#0A0A0A] border border-[var(--border-subtle)] p-6 rounded-2xl relative overflow-hidden">
-                            <h3 className="text-sm font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-4">Post-Production</h3>
-                            {shoots.filter(s => s.post_prod_status && s.post_prod_status !== 'Completed').length > 0 ? (
-                                <div className="space-y-3">
-                                    {shoots.filter(s => s.post_prod_status && s.post_prod_status !== 'Completed').map(shoot => (
-                                        <div key={shoot.id} className="flex justify-between items-center pb-2 border-b border-white/5 last:border-0 last:pb-0">
-                                            <div>
-                                                <div className="font-medium text-sm text-white">{shoot.title}</div>
-                                                <div className="text-xs text-[var(--text-tertiary)]">{new Date(shoot.shoot_date).toLocaleDateString()}</div>
-                                            </div>
-                                            <div className={`
-                                                px-2 py-1 rounded text-xs font-bold uppercase tracking-wider
-                                                ${shoot.post_prod_status === 'In Progress' ? 'bg-blue-500/20 text-blue-400' : ''}
-                                                ${shoot.post_prod_status === 'In Review' ? 'bg-amber-500/20 text-amber-400' : ''}
-                                                ${shoot.post_prod_status === 'Approved' ? 'bg-emerald-500/20 text-emerald-400' : ''}
-                                            `}>
-                                                {shoot.post_prod_status}
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            ) : (
-                                <div className="text-[var(--text-tertiary)] italic text-sm py-4">No active post-production.</div>
-                            )}
+                        {/* Merged Schedule Section */}
+                        <div className="border-t border-[var(--border-subtle)] pt-8">
+                            <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
+                                <Video className="text-violet-500" />
+                                Shoot Schedule
+                            </h2>
+                            <ShootManager clientId={project.client_id} shoots={shoots} videosMap={videosMap} projectId={project.id} />
                         </div>
                     </div>
-                )}
-
-                {/* --- TASKS TAB --- */}
-                {activeTab === 'tasks' && (
-                    <ProjectTaskManager projectId={project.id} tasks={tasks} stages={stages} teamMembers={teamMembers} />
-                )}
-
-                {/* --- SCHEDULE TAB --- */}
-                {activeTab === 'schedule' && (
-                    <ShootManager clientId={project.client_id} shoots={shoots} videosMap={videosMap} projectId={project.id} />
                 )}
 
                 {/* --- FINANCIALS TAB --- */}
