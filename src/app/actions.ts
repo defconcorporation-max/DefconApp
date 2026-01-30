@@ -584,51 +584,62 @@ export async function addPayment(formData: FormData) {
 }
 
 export async function getDashboardStats() {
-    // 1. Settings
-    const settingsRes = await db.execute('SELECT * FROM settings WHERE id = 1');
-    const settings = (settingsRes.rows[0] as unknown as { tax_tps_rate: any, tax_tvq_rate: any }) || { tax_tps_rate: 5, tax_tvq_rate: 9.975 };
+    try {
+        // 1. Settings
+        const settingsRes = await db.execute('SELECT * FROM settings WHERE id = 1');
+        const settings = (settingsRes.rows[0] as unknown as { tax_tps_rate: any, tax_tvq_rate: any }) || { tax_tps_rate: 5, tax_tvq_rate: 9.975 };
 
-    // Safety check for Infinity/NaN
-    const tps = Number(settings.tax_tps_rate);
-    const tvq = Number(settings.tax_tvq_rate);
-    const safeTps = Number.isFinite(tps) ? tps : 5;
-    const safeTvq = Number.isFinite(tvq) ? tvq : 9.975;
-    const taxMultiplier = 1 + (safeTps + safeTvq) / 100;
+        // Safety check for Infinity/NaN
+        const tps = Number(settings.tax_tps_rate);
+        const tvq = Number(settings.tax_tvq_rate);
+        const safeTps = Number.isFinite(tps) ? tps : 5;
+        const safeTvq = Number.isFinite(tvq) ? tvq : 9.975;
+        const taxMultiplier = 1 + (safeTps + safeTvq) / 100;
 
-    // 2. Total Collected Revenue
-    const totalCollectedRes = await db.execute(`
-        SELECT COALESCE(SUM(amount), 0) as total 
-        FROM payments
-    `);
-    const totalCollectedRevenue = (totalCollectedRes.rows[0] as unknown as { total: number });
+        // 2. Total Collected Revenue
+        const totalCollectedRes = await db.execute(`
+            SELECT COALESCE(SUM(amount), 0) as total 
+            FROM payments
+        `);
+        const totalCollectedRevenue = (totalCollectedRes.rows[0] as unknown as { total: number });
 
-    // 3. Total Project Value
-    const totalProjectValueRes = await db.execute(`
-        SELECT COALESCE(SUM(ps.rate * ps.quantity), 0) as total
-        FROM project_services ps
-        JOIN projects p ON ps.project_id = p.id
-        WHERE p.status != 'Archived'
-    `);
-    const totalProjectValue = (totalProjectValueRes.rows[0] as unknown as { total: number });
+        // 3. Total Project Value
+        const totalProjectValueRes = await db.execute(`
+            SELECT COALESCE(SUM(ps.rate * ps.quantity), 0) as total
+            FROM project_services ps
+            JOIN projects p ON ps.project_id = p.id
+            WHERE p.status != 'Archived'
+        `);
+        const totalProjectValue = (totalProjectValueRes.rows[0] as unknown as { total: number });
 
-    const totalProjectValueIncTax = (totalProjectValue?.total || 0) * taxMultiplier;
-    const pendingRevenue = Math.max(0, totalProjectValueIncTax - totalCollectedRevenue.total);
+        const totalProjectValueIncTax = (totalProjectValue?.total || 0) * taxMultiplier;
+        const pendingRevenue = Math.max(0, totalProjectValueIncTax - totalCollectedRevenue.total);
 
-    const activeClientsRes = await db.execute("SELECT COUNT(*) as count FROM clients WHERE status = 'Active'");
-    const totalClientsRes = await db.execute("SELECT COUNT(*) as count FROM clients");
-    const upcomingShootsRes = await db.execute("SELECT COUNT(*) as count FROM shoots WHERE shoot_date >= date('now')");
+        const activeClientsRes = await db.execute("SELECT COUNT(*) as count FROM clients WHERE status = 'Active'");
+        const totalClientsRes = await db.execute("SELECT COUNT(*) as count FROM clients");
+        const upcomingShootsRes = await db.execute("SELECT COUNT(*) as count FROM shoots WHERE shoot_date >= date('now')");
 
-    const activeClients = activeClientsRes.rows[0] as unknown as { count: number };
-    const totalClients = totalClientsRes.rows[0] as unknown as { count: number };
-    const upcomingShoots = upcomingShootsRes.rows[0] as unknown as { count: number };
+        const activeClients = activeClientsRes.rows[0] as unknown as { count: number };
+        const totalClients = totalClientsRes.rows[0] as unknown as { count: number };
+        const upcomingShoots = upcomingShootsRes.rows[0] as unknown as { count: number };
 
-    return {
-        totalRevenue: Number.isFinite(totalCollectedRevenue.total) ? totalCollectedRevenue.total : 0,
-        pendingRevenue: Number.isFinite(pendingRevenue) ? pendingRevenue : 0,
-        activeClients: activeClients?.count || 0,
-        totalClients: totalClients?.count || 0,
-        upcomingShoots: upcomingShoots?.count || 0
-    };
+        return {
+            totalRevenue: Number.isFinite(totalCollectedRevenue.total) ? totalCollectedRevenue.total : 0,
+            pendingRevenue: Number.isFinite(pendingRevenue) ? pendingRevenue : 0,
+            activeClients: activeClients?.count || 0,
+            totalClients: totalClients?.count || 0,
+            upcomingShoots: upcomingShoots?.count || 0
+        };
+    } catch (e) {
+        console.error("DASHBOARD STATS CRASHED:", e);
+        return {
+            totalRevenue: 0,
+            pendingRevenue: 0,
+            activeClients: 0,
+            totalClients: 0,
+            upcomingShoots: 0
+        };
+    }
 }
 
 export async function getFinanceData() {
