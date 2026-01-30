@@ -52,6 +52,10 @@ async function ensureProjectFeatures() {
         // Safety patch for ghost code accessing description
         await db.execute('ALTER TABLE projects ADD COLUMN description TEXT');
     } catch (e) { }
+    try {
+        // Safety patch for ghost code accessing start_date
+        await db.execute('ALTER TABLE projects ADD COLUMN start_date TEXT');
+    } catch (e) { }
 
     // 3. Add column to shoots
     try {
