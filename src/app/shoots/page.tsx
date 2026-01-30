@@ -97,10 +97,17 @@ export default async function ShootsPage() {
                                     />
 
                                     <div className="pt-4 mt-4 border-t border-[var(--border-subtle)] flex items-center justify-between text-xs">
-                                        <span className="text-[var(--text-tertiary)] flex items-center gap-1">
-                                            <Calendar size={12} />
-                                            {new Date(shoot.shoot_date).toLocaleDateString()}
-                                        </span>
+                                        <div className="flex flex-col gap-1">
+                                            <span className="text-[var(--text-tertiary)] flex items-center gap-1">
+                                                <Calendar size={12} />
+                                                {new Date(shoot.shoot_date).toLocaleDateString()}
+                                            </span>
+                                            {shoot.due_date && (
+                                                <span className="text-red-400 flex items-center gap-1 font-medium">
+                                                    Due: {new Date(shoot.due_date).toLocaleDateString()}
+                                                </span>
+                                            )}
+                                        </div>
                                         <Link href={`/shoots/${shoot.id}`} className="flex items-center gap-1 text-violet-400 font-medium hover:gap-2 transition-all">
                                             View Details <ArrowRight size={12} />
                                         </Link>

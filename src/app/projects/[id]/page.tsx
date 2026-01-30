@@ -59,6 +59,23 @@ export default async function ProjectDetailsPage({ params }: { params: Promise<{
                         <ProjectTitleEditor projectId={project.id} initialTitle={project.title} />
                         <div className="flex items-center gap-4 text-sm text-[var(--text-secondary)]">
                             <span className="flex items-center gap-1"><Calendar size={14} /> {new Date(project.created_at).toLocaleDateString()}</span>
+                            {project.due_date && (
+                                <span className="flex items-center gap-1 text-red-400 font-medium">
+                                    Due: {new Date(project.due_date).toLocaleDateString()}
+                                </span>
+                            )}
+                            {project.label_name && (
+                                <span
+                                    className="px-2 py-0.5 rounded-full text-xs font-medium border uppercase tracking-wider"
+                                    style={{
+                                        backgroundColor: `${project.label_color}20`,
+                                        color: project.label_color,
+                                        borderColor: `${project.label_color}30`
+                                    }}
+                                >
+                                    {project.label_name}
+                                </span>
+                            )}
                         </div>
                     </div>
                 </div>

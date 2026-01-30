@@ -867,10 +867,13 @@ export async function getProjects(clientId: number): Promise<Project[]> {
     const { rows } = await db.execute({
         sql: `
         SELECT p.*, 
+        pl.name as label_name,
+        pl.color as label_color,
         (SELECT COUNT(*) FROM shoots s WHERE s.project_id = p.id) as shoot_count,
         (SELECT COUNT(*) FROM project_services ps WHERE ps.project_id = p.id) as service_count,
         (SELECT COALESCE(SUM(rate * quantity), 0) FROM project_services ps WHERE ps.project_id = p.id) as total_value
         FROM projects p 
+        LEFT JOIN project_labels pl ON p.label_id = pl.id
         WHERE client_id = ? 
         ORDER BY created_at DESC
         `,
@@ -954,7 +957,13 @@ export async function createProject(formData: FormData) {
 
 export async function getProjectById(id: number) {
     const { rows } = await db.execute({
-        sql: 'SELECT p.*, c.company_name as client_company FROM projects p JOIN clients c ON p.client_id = c.id WHERE p.id = ?',
+        sql: `
+            SELECT p.*, c.company_name as client_company, pl.name as label_name, pl.color as label_color
+            FROM projects p 
+            JOIN clients c ON p.client_id = c.id 
+            LEFT JOIN project_labels pl ON p.label_id = pl.id
+            WHERE p.id = ?
+        `,
         args: [id]
     });
     return rows[0] as unknown as any;
