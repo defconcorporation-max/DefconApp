@@ -915,9 +915,9 @@ export async function updateProjectTitle(formData: FormData) {
 }
 
 export async function updateProjectDetails(formData: FormData) {
-    const id = Number(formData.get('id'));
+    const id = Number(formData.get('projectId'));
     const title = formData.get('title') as string;
-    const description = formData.get('description') as string;
+
     const startDate = formData.get('startDate') as string;
     const status = formData.get('status') as string;
     const dueDate = formData.get('dueDate') as string;
