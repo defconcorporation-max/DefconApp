@@ -13,7 +13,6 @@ export async function createClient(formData: FormData) {
     const name = formData.get('name') as string;
     const company = formData.get('company') as string;
     const plan = formData.get('plan') as string;
-    const plan = formData.get('plan') as string;
 
     // Scan and clean labelId
     const rawLabelId = formData.get('labelId');
