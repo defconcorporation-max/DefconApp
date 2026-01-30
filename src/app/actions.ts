@@ -587,7 +587,13 @@ export async function getDashboardStats() {
     // 1. Settings
     const settingsRes = await db.execute('SELECT * FROM settings WHERE id = 1');
     const settings = (settingsRes.rows[0] as unknown as { tax_tps_rate: any, tax_tvq_rate: any }) || { tax_tps_rate: 5, tax_tvq_rate: 9.975 };
-    const taxMultiplier = 1 + ((Number(settings.tax_tps_rate) || 5) + (Number(settings.tax_tvq_rate) || 9.975)) / 100;
+
+    // Safety check for Infinity/NaN
+    const tps = Number(settings.tax_tps_rate);
+    const tvq = Number(settings.tax_tvq_rate);
+    const safeTps = Number.isFinite(tps) ? tps : 5;
+    const safeTvq = Number.isFinite(tvq) ? tvq : 9.975;
+    const taxMultiplier = 1 + (safeTps + safeTvq) / 100;
 
     // 2. Total Collected Revenue
     const totalCollectedRes = await db.execute(`
@@ -617,8 +623,8 @@ export async function getDashboardStats() {
     const upcomingShoots = upcomingShootsRes.rows[0] as unknown as { count: number };
 
     return {
-        totalRevenue: totalCollectedRevenue.total,
-        pendingRevenue: pendingRevenue,
+        totalRevenue: Number.isFinite(totalCollectedRevenue.total) ? totalCollectedRevenue.total : 0,
+        pendingRevenue: Number.isFinite(pendingRevenue) ? pendingRevenue : 0,
         activeClients: activeClients?.count || 0,
         totalClients: totalClients?.count || 0,
         upcomingShoots: upcomingShoots?.count || 0
@@ -629,7 +635,12 @@ export async function getFinanceData() {
     // Fetch tax rates
     const settingsRes = await db.execute('SELECT * FROM settings WHERE id = 1');
     const settings = (settingsRes.rows[0] as unknown as { tax_tps_rate: any, tax_tvq_rate: any }) || { tax_tps_rate: 5, tax_tvq_rate: 9.975 };
-    const taxMultiplier = 1 + ((Number(settings.tax_tps_rate) || 5) + (Number(settings.tax_tvq_rate) || 9.975)) / 100;
+
+    const tps = Number(settings.tax_tps_rate);
+    const tvq = Number(settings.tax_tvq_rate);
+    const safeTps = Number.isFinite(tps) ? tps : 5;
+    const safeTvq = Number.isFinite(tvq) ? tvq : 9.975;
+    const taxMultiplier = 1 + (safeTps + safeTvq) / 100;
 
     // 1. Total Collected
     const totalCollectedRes = await db.execute(`
