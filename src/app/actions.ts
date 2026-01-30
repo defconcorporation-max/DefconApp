@@ -951,9 +951,43 @@ export async function updateProjectDetails(formData: FormData) {
         labelId = labelId && labelId !== 'NEW' ? Number(labelId) : null;
     }
 
+    // Dynamic SQL construction for partial updates
+    const fields: string[] = [];
+    const args: any[] = [];
+
+    if (formData.has('title')) {
+        fields.push('title = ?');
+        args.push(title);
+    }
+
+    if (formData.has('status')) {
+        fields.push('status = ?');
+        args.push(status);
+    }
+
+    // Always process dueDate if present (can be empty string for clear?) 
+    // Actually, if it's in formData it should be updated.
+    if (formData.has('dueDate')) {
+        fields.push('due_date = ?');
+        args.push(dueDate);
+    }
+
+    // Process labelId
+    // If new label created, we must update label_id
+    // If just passed in formData, we update it
+    if (newLabelName || formData.has('labelId')) {
+        fields.push('label_id = ?');
+        args.push(labelId);
+    }
+
+    if (fields.length === 0) return;
+
+    // Join fields and append ID
+    args.push(id);
+
     await db.execute({
-        sql: 'UPDATE projects SET title = ?, status = ?, due_date = ?, label_id = ? WHERE id = ?',
-        args: [title, status, dueDate, labelId, id]
+        sql: `UPDATE projects SET ${fields.join(', ')} WHERE id = ?`,
+        args: args
     });
     revalidatePath(`/projects/${id}`);
 }
