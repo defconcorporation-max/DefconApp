@@ -915,6 +915,7 @@ export async function updateProjectTitle(formData: FormData) {
 }
 
 export async function updateProjectDetails(formData: FormData) {
+    console.log('updateProjectDetails called with fields:', [...formData.keys()]);
     const id = Number(formData.get('projectId'));
     const title = formData.get('title') as string;
 
