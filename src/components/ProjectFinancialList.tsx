@@ -52,13 +52,32 @@ export default function ProjectFinancialList({ projects }: { projects: any[] }) 
                                         <div className="text-xs text-[var(--text-secondary)]">{project.client_company}</div>
                                     </td>
                                     <td className="px-6 py-4">
-                                        <span className={`text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full border ${isPaidOff ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' :
+                                        <div className="flex flex-wrap gap-2">
+                                            <span className={`text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full border ${isPaidOff ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' :
                                                 project.status === 'Completed' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' :
                                                     project.status === 'Archived' ? 'bg-gray-500/10 border-gray-500/20 text-gray-400' :
                                                         'bg-violet-500/10 border-violet-500/20 text-violet-400'
-                                            }`}>
-                                            {isPaidOff ? 'Paid Off' : (project.status || 'Active')}
-                                        </span>
+                                                }`}>
+                                                {isPaidOff ? 'Paid Off' : (project.status || 'Active')}
+                                            </span>
+                                            {project.label_name && (
+                                                <span
+                                                    className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full border"
+                                                    style={{
+                                                        backgroundColor: `${project.label_color}20`,
+                                                        color: project.label_color,
+                                                        borderColor: `${project.label_color}30`
+                                                    }}
+                                                >
+                                                    {project.label_name}
+                                                </span>
+                                            )}
+                                            {project.due_date && (
+                                                <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full border border-red-500/20 bg-red-500/10 text-red-400">
+                                                    Due: {new Date(project.due_date).toLocaleDateString()}
+                                                </span>
+                                            )}
+                                        </div>
                                     </td>
                                     <td className="px-6 py-4 text-right font-mono text-white">
                                         ${total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
