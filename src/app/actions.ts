@@ -647,10 +647,13 @@ export async function getFinanceData() {
     // 4. Project List
     const projectsRawRes = await db.execute(`
         SELECT p.*, c.company_name as client_company,
+        pl.name as label_name,
+        pl.color as label_color,
         (SELECT COALESCE(SUM(rate * quantity), 0) FROM project_services ps WHERE ps.project_id = p.id) as total_value_pre_tax,
         (SELECT COALESCE(SUM(amount), 0) FROM payments pay WHERE pay.project_id = p.id) as paid_amount
         FROM projects p
         JOIN clients c ON p.client_id = c.id
+        LEFT JOIN project_labels pl ON p.label_id = pl.id
         ORDER BY p.created_at DESC
     `);
     const projectsRaw = projectsRawRes.rows as any[];
