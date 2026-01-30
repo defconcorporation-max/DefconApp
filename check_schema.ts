@@ -1,10 +1,5 @@
 
-const { createClient } = require('@libsql/client');
-
-const turso = createClient({
-  url: process.env.TURSO_DATABASE_URL || 'file:local.db',
-  authToken: process.env.TURSO_AUTH_TOKEN,
-});
+import { turso } from './src/lib/turso';
 
 async function checkSchema() {
     try {
