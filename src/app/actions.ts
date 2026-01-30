@@ -14,10 +14,25 @@ export async function createClient(formData: FormData) {
     const company = formData.get('company') as string;
     const plan = formData.get('plan') as string;
 
-    // Scan and clean labelId
+    // Handle Label Logic
     const rawLabelId = formData.get('labelId');
-    const parsedLabelId = rawLabelId ? Number(rawLabelId) : null;
-    const safeLabelId = Number.isFinite(parsedLabelId) ? parsedLabelId : null;
+    let finalLabelId = null;
+
+    if (rawLabelId === 'NEW') {
+        const newLabelName = formData.get('newLabelName') as string;
+        const newLabelColor = formData.get('newLabelColor') as string;
+
+        if (newLabelName) {
+            const labelRes = await db.execute({
+                sql: 'INSERT INTO project_labels (name, color) VALUES (?, ?)',
+                args: [newLabelName, newLabelColor || '#8b5cf6']
+            });
+            finalLabelId = Number(labelRes.lastInsertRowid);
+        }
+    } else {
+        const parsedLabelId = rawLabelId ? Number(rawLabelId) : null;
+        finalLabelId = Number.isFinite(parsedLabelId) ? parsedLabelId : null;
+    }
 
     // Create Folder (Local Dev Only - skip on Vercel)
     const safeName = (company || name).replace(/[^a-z0-9]/gi, '_').trim();
@@ -29,7 +44,7 @@ export async function createClient(formData: FormData) {
 
     await db.execute({
         sql: 'INSERT INTO clients (name, company_name, plan, folder_path, label_id) VALUES (?, ?, ?, ?, ?)',
-        args: [name, company, plan, folderPath, safeLabelId]
+        args: [name, company, plan, folderPath, finalLabelId]
     });
 
     revalidatePath('/');
