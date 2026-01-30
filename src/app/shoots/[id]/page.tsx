@@ -140,6 +140,14 @@ export default async function ShootPage({ params }: { params: Promise<{ id: stri
                         </div>
                     </header>
 
+                    <div className="mb-6">
+                        <AssignmentControl
+                            shootId={shoot.id}
+                            assignments={assignments}
+                            allMembers={allMembers}
+                        />
+                    </div>
+
                     <section>
                         <div className="flex justify-between items-center mb-4">
                             <h2 className="text-lg font-medium text-white">Shot List</h2>
@@ -374,14 +382,7 @@ export default async function ShootPage({ params }: { params: Promise<{ id: stri
                         </div>
                     )}
                 </div>
-                {/* Crew Assignments */}
-                <div className="mt-8">
-                    <AssignmentControl
-                        shootId={shoot.id}
-                        assignments={assignments}
-                        allMembers={allMembers}
-                    />
-                </div>
+
             </div>
         </main>
     );

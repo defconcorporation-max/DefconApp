@@ -44,14 +44,6 @@ export default async function Home() {
                         <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]"></div>
                         Defcon Console
                     </h1>
-                    <nav className="flex gap-4 text-xs font-medium text-[var(--text-tertiary)]">
-                        <Link href="/services" className="hover:text-white transition-colors">Services Catalog</Link>
-                        <Link href="/post-production" className="hover:text-white transition-colors">Post-Production</Link>
-                        <Link href="/finance" className="hover:text-white transition-colors">Finance</Link>
-                        <Link href="/social" className="hover:text-white transition-colors">Social</Link>
-                        <Link href="/team" className="hover:text-white transition-colors">Team</Link>
-                        <Link href="/settings" className="hover:text-white transition-colors">Settings</Link>
-                    </nav>
                 </div>
                 <form action={createClient} className="flex flex-wrap md:flex-nowrap gap-2 items-center bg-[var(--bg-surface)] p-2 rounded-xl border border-[var(--border-subtle)] w-full md:w-auto">
                     <div className="flex gap-2 w-full md:w-auto">
