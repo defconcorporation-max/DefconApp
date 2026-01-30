@@ -14,7 +14,7 @@ async function getAllProjectsFull() {
         (SELECT COALESCE(SUM(rate * quantity), 0) FROM project_services ps WHERE ps.project_id = p.id) as total_value
         FROM projects p
         JOIN clients c ON p.client_id = c.id
-        LEFT JOIN project_labels pl ON p.label_id = pl.id
+        LEFT JOIN project_labels pl ON c.label_id = pl.id
         ORDER BY p.created_at DESC
     `);
 

@@ -13,6 +13,7 @@ export async function createClient(formData: FormData) {
     const name = formData.get('name') as string;
     const company = formData.get('company') as string;
     const plan = formData.get('plan') as string;
+    const labelId = formData.get('labelId') ? Number(formData.get('labelId')) : null;
 
     // Create Folder (Local Dev Only - skip on Vercel)
     const safeName = (company || name).replace(/[^a-z0-9]/gi, '_').trim();
@@ -23,8 +24,8 @@ export async function createClient(formData: FormData) {
     // Use cloud storage or manual folder management in production
 
     await db.execute({
-        sql: 'INSERT INTO clients (name, company_name, plan, folder_path) VALUES (?, ?, ?, ?)',
-        args: [name, company, plan, folderPath]
+        sql: 'INSERT INTO clients (name, company_name, plan, folder_path, label_id) VALUES (?, ?, ?, ?, ?)',
+        args: [name, company, plan, folderPath, labelId]
     });
 
     revalidatePath('/');
@@ -62,7 +63,12 @@ async function ensureProjectFeatures() {
         await db.execute('ALTER TABLE shoots ADD COLUMN due_date TEXT');
     } catch (e) { }
 
-    // 4. Shoot Assignments Table
+    // 4. Client Labels (New)
+    try {
+        await db.execute('ALTER TABLE clients ADD COLUMN label_id INTEGER');
+    } catch (e) { }
+
+    // 5. Shoot Assignments Table
     await db.execute(`
         CREATE TABLE IF NOT EXISTS shoot_assignments (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -1023,7 +1029,7 @@ export async function getProjectById(id: number) {
             SELECT p.*, c.company_name as client_company, pl.name as label_name, pl.color as label_color
             FROM projects p 
             JOIN clients c ON p.client_id = c.id 
-            LEFT JOIN project_labels pl ON p.label_id = pl.id
+            LEFT JOIN project_labels pl ON c.label_id = pl.id
             WHERE p.id = ?
         `,
         args: [id]
@@ -1582,12 +1588,13 @@ export async function updateClient(formData: FormData) {
     const name = formData.get('name') as string;
     const company = formData.get('company') as string;
     const plan = formData.get('plan') as string;
+    const labelId = formData.get('labelId') ? Number(formData.get('labelId')) : null;
 
     await db.execute({
-        sql: 'UPDATE clients SET name = ?, company_name = ?, plan = ? WHERE id = ?',
-        args: [name, company, plan, id]
+        sql: 'UPDATE clients SET name = ?, company_name = ?, plan = ?, label_id = ? WHERE id = ?',
+        args: [name, company, plan, labelId, id]
     });
-    revalidatePath(`/ clients / ${id}`);
+    revalidatePath(`/clients/${id}`);
     revalidatePath('/');
 }
 
