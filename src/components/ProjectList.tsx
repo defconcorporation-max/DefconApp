@@ -223,16 +223,39 @@ export default function ProjectList({ projects }: ProjectListProps) {
                                         )}
                                         {!project.due_date && <div className="mb-3 h-4"></div>} {/* Spacer */}
 
-                                        <div className="mt-auto pt-4 border-t border-[var(--border-subtle)] flex items-center justify-between">
+                                        <div className="mt-auto pt-4 border-t border-[var(--border-subtle)] flex items-end justify-between gap-4">
                                             <div className="flex flex-col">
                                                 <span className="text-xs font-bold text-white">{project.client_name}</span>
                                                 <span className="text-[10px] text-[var(--text-tertiary)] uppercase tracking-wider">Client</span>
                                             </div>
-                                            <div className="text-right">
+                                            <div className="flex flex-col items-end gap-1.5 flex-1 max-w-[140px]">
                                                 <div className="font-mono text-sm font-bold text-[var(--text-secondary)]">
                                                     ${project.total_value.toLocaleString()}
                                                 </div>
-                                                <span className="text-[10px] text-[var(--text-tertiary)] uppercase tracking-wider">{project.shoot_count} Shoots</span>
+
+                                                {/* Shoot Progress Bar */}
+                                                {project.shoot_count > 0 ? (
+                                                    <div className="w-full flex flex-col gap-1">
+                                                        <div className="flex h-1.5 w-full rounded-full overflow-hidden bg-white/10">
+                                                            {project.shoots_done > 0 && (
+                                                                <div style={{ width: `${(project.shoots_done / project.shoot_count) * 100}%` }} className="bg-emerald-500" />
+                                                            )}
+                                                            {project.shoots_in_post_prod > 0 && (
+                                                                <div style={{ width: `${(project.shoots_in_post_prod / project.shoot_count) * 100}%` }} className="bg-indigo-500" />
+                                                            )}
+                                                            {project.shoots_scheduled > 0 && (
+                                                                <div style={{ width: `${(project.shoots_scheduled / project.shoot_count) * 100}%` }} className="bg-white/30" />
+                                                            )}
+                                                        </div>
+                                                        <div className="flex justify-end gap-2 text-[9px] text-[var(--text-tertiary)] font-mono">
+                                                            {project.shoots_scheduled > 0 && <span>{project.shoots_scheduled} Sched</span>}
+                                                            {project.shoots_in_post_prod > 0 && <span className="text-indigo-400">{project.shoots_in_post_prod} Post</span>}
+                                                            {project.shoots_done > 0 && <span className="text-emerald-400">{project.shoots_done} Done</span>}
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    <span className="text-[10px] text-[var(--text-tertiary)] uppercase tracking-wider">0 Shoots</span>
+                                                )}
                                             </div>
                                         </div>
                                     </Link>
