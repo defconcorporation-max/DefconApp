@@ -903,7 +903,6 @@ export async function getProjects(clientId: number): Promise<Project[]> {
         `,
         args: [clientId]
     });
-    console.log('getProjects DEBUG:', rows.length > 0 ? rows[0] : 'No rows');
     return rows as unknown as Project[];
 }
 
@@ -1597,7 +1596,6 @@ export async function updateClient(formData: FormData) {
     const company = formData.get('company') as string;
     const plan = formData.get('plan') as string;
     const labelId = formData.get('labelId') ? Number(formData.get('labelId')) : null;
-    console.log('updateClient DEBUG: id=', id, 'labelId=', labelId);
 
     await db.execute({
         sql: 'UPDATE clients SET name = ?, company_name = ?, plan = ?, label_id = ? WHERE id = ?',

@@ -17,7 +17,6 @@ async function getAllProjectsFull() {
         LEFT JOIN project_labels pl ON c.label_id = pl.id
         ORDER BY p.created_at DESC
     `);
-
     return rows as unknown as (Project & {
         client_name: string,
         client_contact: string,
