@@ -758,22 +758,24 @@ export async function getFinanceData() {
         amount: r.total
     }));
 
+    const toSafeNumber = (num: number) => Number.isFinite(num) ? num : 0;
+
     return {
         stats: {
-            totalRevenue: revenuePreTax,
-            revenueWithTax: revenueWithTax,
-            pendingRevenueWithTax: pendingRevenueIncTax,
+            totalRevenue: toSafeNumber(revenuePreTax),
+            revenueWithTax: toSafeNumber(revenueWithTax),
+            pendingRevenueWithTax: toSafeNumber(pendingRevenueIncTax),
             taxes: {
-                tps: tpsCollected,
-                tvq: tvqCollected
+                tps: toSafeNumber(tpsCollected),
+                tvq: toSafeNumber(tvqCollected)
             },
             taxesOwed: {
-                tps: tpsOwed,
-                tvq: tvqOwed
+                tps: toSafeNumber(tpsOwed),
+                tvq: toSafeNumber(tvqOwed)
             },
-            expenses: totalCommissionsPaid,
-            businessExpenses: totalExpensesPreTax,
-            netProfit: netProfit
+            expenses: toSafeNumber(totalCommissionsPaid),
+            businessExpenses: toSafeNumber(totalExpensesPreTax),
+            netProfit: toSafeNumber(netProfit)
         },
         revenueChart: revenueChartData,
 
