@@ -7,7 +7,7 @@ import { useState, useTransition } from 'react';
 import { ArrowRight } from 'lucide-react';
 
 // Sub-component for individual shoot card
-function ShootCard({ shoot, videos, clientId }: { shoot: Shoot, videos: ShootVideo[], clientId: number }) {
+function ShootCard({ shoot, videos, clientId }: { shoot: Shoot & { post_prod_status?: string, post_prod_id?: number }, videos: ShootVideo[], clientId: number }) {
     const [isExpanded, setIsExpanded] = useState(false);
 
     // Calculate progress
@@ -31,7 +31,7 @@ function ShootCard({ shoot, videos, clientId }: { shoot: Shoot, videos: ShootVid
                             </a>
                             {/* Status Badge */}
                             {shoot.post_prod_status ? (
-                                <a href="/post-production" onClick={(e) => e.stopPropagation()} className="hover:opacity-80 transition-opacity">
+                                <a href={`/post-production/${shoot.post_prod_id}`} onClick={(e) => e.stopPropagation()} className="hover:opacity-80 transition-opacity">
                                     <span className="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider bg-orange-500/20 text-orange-400 border border-orange-500/30">
                                         Post-Prod: {shoot.post_prod_status}
                                     </span>
@@ -46,8 +46,12 @@ function ShootCard({ shoot, videos, clientId }: { shoot: Shoot, videos: ShootVid
                             )}
                         </div>
                         <div className="flex items-center gap-3 mt-1 mb-1">
-                            <a href={`/shoots/${shoot.id}`} onClick={(e) => e.stopPropagation()} className="text-[10px] font-bold text-indigo-400 hover:text-indigo-300 flex items-center gap-1">
-                                View Shoot <ArrowRight size={12} />
+                            <a
+                                href={shoot.post_prod_id ? `/post-production/${shoot.post_prod_id}` : `/shoots/${shoot.id}`}
+                                onClick={(e) => e.stopPropagation()}
+                                className={`text-[10px] font-bold flex items-center gap-1 ${shoot.post_prod_id ? 'text-orange-400 hover:text-orange-300' : 'text-indigo-400 hover:text-indigo-300'}`}
+                            >
+                                {shoot.post_prod_id ? 'View Post-Prod' : 'View Shoot'} <ArrowRight size={12} />
                             </a>
                             {shoot.project_id && (
                                 <a href={`/projects/${shoot.project_id}`} onClick={(e) => e.stopPropagation()} className="text-[10px] font-bold text-[var(--text-tertiary)] hover:text-white flex items-center gap-1">
@@ -95,7 +99,7 @@ function ShootCard({ shoot, videos, clientId }: { shoot: Shoot, videos: ShootVid
     );
 }
 
-export default function ShootManager({ clientId, shoots, videosMap, projectId }: { clientId: number, shoots: Shoot[], videosMap: Record<number, ShootVideo[]>, projectId?: number }) {
+export default function ShootManager({ clientId, shoots, videosMap, projectId }: { clientId: number, shoots: (Shoot & { post_prod_status?: string, post_prod_id?: number })[], videosMap: Record<number, ShootVideo[]>, projectId?: number }) {
 
     return (
         <div className="glass-panel p-6 rounded-2xl">
