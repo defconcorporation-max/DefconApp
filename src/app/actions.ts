@@ -1638,14 +1638,30 @@ export async function updateClient(formData: FormData) {
     const name = formData.get('name') as string;
     const company = formData.get('company') as string;
     const plan = formData.get('plan') as string;
-
+    
+    // Handle Label Logic
     const rawLabelId = formData.get('labelId');
-    const parsedLabelId = rawLabelId ? Number(rawLabelId) : null;
-    const safeLabelId = Number.isFinite(parsedLabelId) ? parsedLabelId : null;
+    let finalLabelId = null;
+
+    if (rawLabelId === 'NEW') {
+        const newLabelName = formData.get('newLabelName') as string;
+        const newLabelColor = formData.get('newLabelColor') as string;
+        
+        if (newLabelName) {
+            const labelRes = await db.execute({
+                sql: 'INSERT INTO project_labels (name, color) VALUES (?, ?)',
+                args: [newLabelName, newLabelColor || '#8b5cf6']
+            });
+            finalLabelId = Number(labelRes.lastInsertRowid);
+        }
+    } else {
+        const parsedLabelId = rawLabelId ? Number(rawLabelId) : null;
+        finalLabelId = Number.isFinite(parsedLabelId) ? parsedLabelId : null;
+    }
 
     await db.execute({
         sql: 'UPDATE clients SET name = ?, company_name = ?, plan = ?, label_id = ? WHERE id = ?',
-        args: [name, company, plan, safeLabelId, id]
+        args: [name, company, plan, finalLabelId, id]
     });
     revalidatePath(`/clients/${id}`);
     revalidatePath('/');
