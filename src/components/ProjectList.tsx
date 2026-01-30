@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { Project } from '@/types';
-import { Clock, Hash, DollarSign, ArrowUpDown, Filter } from 'lucide-react';
+import { Clock, Hash, DollarSign, ArrowUpDown, Filter, ChevronDown, ChevronRight } from 'lucide-react';
 
 interface EnhancedProject extends Project {
     client_name: string;
@@ -75,6 +75,8 @@ export default function ProjectList({ projects }: ProjectListProps) {
         return result;
     }, [projects, sortBy, sortOrder, filterStatus]);
 
+    const [collapsedMonths, setCollapsedMonths] = useState<Record<string, boolean>>({});
+
     const toggleSort = (option: SortOption) => {
         if (sortBy === option) {
             setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
@@ -82,6 +84,29 @@ export default function ProjectList({ projects }: ProjectListProps) {
             setSortBy(option);
             setSortOrder('desc'); // Default to desc for most things
         }
+    };
+
+    const groupedProjects = useMemo(() => {
+        const groups: Record<string, EnhancedProject[]> = {};
+        filteredAndSortedProjects.forEach(project => {
+            const date = new Date(project.created_at);
+            const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+            if (!groups[key]) groups[key] = [];
+            groups[key].push(project);
+        });
+        return groups;
+    }, [filteredAndSortedProjects]);
+
+    const sortedMonthKeys = Object.keys(groupedProjects).sort().reverse();
+
+    const toggleMonth = (key: string) => {
+        setCollapsedMonths(prev => ({ ...prev, [key]: !prev[key] }));
+    };
+
+    const formatMonthHeader = (key: string) => {
+        const [year, month] = key.split('-');
+        const date = new Date(parseInt(year), parseInt(month) - 1);
+        return date.toLocaleString('default', { month: 'long', year: 'numeric' });
     };
 
     return (
@@ -120,8 +145,8 @@ export default function ProjectList({ projects }: ProjectListProps) {
                                 key={opt.id}
                                 onClick={() => toggleSort(opt.id as SortOption)}
                                 className={`px-3 py-1 rounded text-xs font-medium transition-colors ${sortBy === opt.id
-                                        ? 'bg-violet-600 text-white'
-                                        : 'bg-white/5 text-[var(--text-secondary)] hover:bg-white/10 hover:text-white'
+                                    ? 'bg-violet-600 text-white'
+                                    : 'bg-white/5 text-[var(--text-secondary)] hover:bg-white/10 hover:text-white'
                                     }`}
                             >
                                 {opt.label}
@@ -134,61 +159,87 @@ export default function ProjectList({ projects }: ProjectListProps) {
                 </div>
             </div>
 
-            {/* Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {filteredAndSortedProjects.map(project => (
-                    <Link
-                        key={project.id}
-                        href={`/projects/${project.id}`}
-                        className="bg-[#0A0A0A] border border-[var(--border-subtle)] rounded-xl p-5 hover:border-violet-500/50 hover:bg-violet-500/5 transition-all group relative flex flex-col"
-                    >
-                        {/* Header */}
-                        <div className="flex justify-between items-start mb-2">
-                            <span className={`px-2 py-0.5 rounded text-[10px] font-mono uppercase tracking-wider mb-2 inline-block ${project.status === 'Active' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' :
-                                    project.status === 'Completed' ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20' :
-                                        'bg-white/5 text-[var(--text-secondary)] border border-white/10'
-                                }`}>
-                                {project.status}
+            {/* Grouped Month Sections */}
+            <div className="space-y-8">
+                {sortedMonthKeys.map(monthKey => (
+                    <div key={monthKey} className="animate-in fade-in duration-500">
+                        {/* Section Header */}
+                        <button
+                            onClick={() => toggleMonth(monthKey)}
+                            className="flex items-center gap-3 w-full text-left mb-4 group"
+                        >
+                            <div className={`p-1 rounded text-[var(--text-secondary)] group-hover:bg-white/10 group-hover:text-white transition-colors`}>
+                                {collapsedMonths[monthKey] ? <ChevronRight size={18} /> : <ChevronDown size={18} />}
+                            </div>
+                            <h2 className="text-xl font-bold text-white group-hover:text-violet-400 transition-colors">
+                                {formatMonthHeader(monthKey)}
+                            </h2>
+                            <span className="text-xs font-mono text-[var(--text-tertiary)] bg-white/5 px-2 py-0.5 rounded-full">
+                                {groupedProjects[monthKey].length}
                             </span>
-                            {project.label_name && (
-                                <span
-                                    className="px-2 py-0.5 rounded-full text-[10px] uppercase font-bold tracking-wider border"
-                                    style={{
-                                        backgroundColor: `${project.label_color}20`,
-                                        color: project.label_color,
-                                        borderColor: `${project.label_color}30`
-                                    }}
-                                >
-                                    {project.label_name}
-                                </span>
-                            )}
-                        </div>
+                            <div className="h-px bg-[var(--border-subtle)] flex-1 ml-4 group-hover:bg-violet-500/30 transition-colors"></div>
+                        </button>
 
-                        <h3 className="font-bold text-lg text-white mb-1 group-hover:text-violet-400 transition-colors truncate pr-2">
-                            {project.title}
-                        </h3>
+                        {/* Projects Grid */}
+                        {!collapsedMonths[monthKey] && (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pl-2 border-l border-[var(--border-subtle)] ml-2.5">
+                                {groupedProjects[monthKey].map(project => (
+                                    <Link
+                                        key={project.id}
+                                        href={`/projects/${project.id}`}
+                                        className="bg-[#0A0A0A] border border-[var(--border-subtle)] rounded-xl p-5 hover:border-violet-500/50 hover:bg-violet-500/5 transition-all group relative flex flex-col"
+                                    >
+                                        {/* Header */}
+                                        <div className="flex justify-between items-start mb-2">
+                                            <span className={`px-2 py-0.5 rounded text-[10px] font-mono uppercase tracking-wider mb-2 inline-block ${project.status === 'Active' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' :
+                                                project.status === 'Completed' ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20' :
+                                                    'bg-white/5 text-[var(--text-secondary)] border border-white/10'
+                                                }`}>
+                                                {project.status}
+                                            </span>
+                                            {project.label_name && (
+                                                <span
+                                                    className="px-2 py-0.5 rounded-full text-[10px] uppercase font-bold tracking-wider border"
+                                                    style={{
+                                                        backgroundColor: `${project.label_color}20`,
+                                                        color: project.label_color,
+                                                        borderColor: `${project.label_color}30`
+                                                    }}
+                                                >
+                                                    {project.label_name}
+                                                </span>
+                                            )}
+                                        </div>
 
-                        {project.due_date && (
-                            <div className="text-xs text-red-400 mb-3 flex items-center gap-1.5 font-medium">
-                                <Clock size={12} />
-                                Due: {new Date(project.due_date).toLocaleDateString()}
+                                        <h3 className="font-bold text-lg text-white mb-1 group-hover:text-violet-400 transition-colors truncate pr-2">
+                                            {project.title}
+                                        </h3>
+
+                                        {project.due_date && (
+                                            <div className="text-xs text-red-400 mb-3 flex items-center gap-1.5 font-medium">
+                                                <Clock size={12} />
+                                                Due: {new Date(project.due_date).toLocaleDateString()}
+                                            </div>
+                                        )}
+                                        {!project.due_date && <div className="mb-3 h-4"></div>} {/* Spacer */}
+
+                                        <div className="mt-auto pt-4 border-t border-[var(--border-subtle)] flex items-center justify-between">
+                                            <div className="flex flex-col">
+                                                <span className="text-xs font-bold text-white">{project.client_name}</span>
+                                                <span className="text-[10px] text-[var(--text-tertiary)] uppercase tracking-wider">Client</span>
+                                            </div>
+                                            <div className="text-right">
+                                                <div className="font-mono text-sm font-bold text-[var(--text-secondary)]">
+                                                    ${project.total_value.toLocaleString()}
+                                                </div>
+                                                <span className="text-[10px] text-[var(--text-tertiary)] uppercase tracking-wider">{project.shoot_count} Shoots</span>
+                                            </div>
+                                        </div>
+                                    </Link>
+                                ))}
                             </div>
                         )}
-                        {!project.due_date && <div className="mb-3 h-4"></div>} {/* Spacer */}
-
-                        <div className="mt-auto pt-4 border-t border-[var(--border-subtle)] flex items-center justify-between">
-                            <div className="flex flex-col">
-                                <span className="text-xs font-bold text-white">{project.client_name}</span>
-                                <span className="text-[10px] text-[var(--text-tertiary)] uppercase tracking-wider">Client</span>
-                            </div>
-                            <div className="text-right">
-                                <div className="font-mono text-sm font-bold text-[var(--text-secondary)]">
-                                    ${project.total_value.toLocaleString()}
-                                </div>
-                                <span className="text-[10px] text-[var(--text-tertiary)] uppercase tracking-wider">{project.shoot_count} Shoots</span>
-                            </div>
-                        </div>
-                    </Link>
+                    </div>
                 ))}
             </div>
 
