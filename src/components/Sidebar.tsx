@@ -16,9 +16,7 @@ export default function Sidebar() {
         document.dispatchEvent(event);
     };
 
-    import { Home, Users, Briefcase, Video, CreditCard, Settings, Command, Layers, Share2, UserPlus, BookOpen } from 'lucide-react';
 
-    // ...
 
     const links = [
         { href: '/', label: 'Dashboard', icon: Home },
