@@ -59,11 +59,11 @@ async function ensureProjectFeatures() {
         CREATE TABLE IF NOT EXISTS shoot_assignments (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             shoot_id INTEGER NOT NULL,
-            member_id INTEGER NOT NULL,
+            team_member_id INTEGER NOT NULL,
             role TEXT,
             assigned_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (shoot_id) REFERENCES shoots(id) ON DELETE CASCADE,
-            FOREIGN KEY (member_id) REFERENCES team_members(id) ON DELETE CASCADE
+            FOREIGN KEY (team_member_id) REFERENCES team_members(id) ON DELETE CASCADE
         )
     `);
 
@@ -335,18 +335,18 @@ export async function getAllShootAssignments() {
     await ensureProjectFeatures();
     try {
         const { rows } = await db.execute(`
-            SELECT sa.*, tm.name as member_name, tm.role as member_role, tm.color as member_avatar_color
+            SELECT sa.*, sa.team_member_id as member_id, tm.name as member_name, tm.role as member_role, tm.color as member_avatar_color
             FROM shoot_assignments sa
-            JOIN team_members tm ON sa.member_id = tm.id
+            JOIN team_members tm ON sa.team_member_id = tm.id
         `);
         return rows as unknown as ShootAssignment[];
     } catch (e) {
         // Fallback if color column missing
         console.error("Failed to fetch assignments with color:", e);
         const { rows } = await db.execute(`
-            SELECT sa.*, tm.name as member_name, tm.role as member_role
+            SELECT sa.*, sa.team_member_id as member_id, tm.name as member_name, tm.role as member_role
             FROM shoot_assignments sa
-            JOIN team_members tm ON sa.member_id = tm.id
+            JOIN team_members tm ON sa.team_member_id = tm.id
         `);
         return rows.map((r: any) => ({ ...r, member_avatar_color: 'indigo' })) as unknown as ShootAssignment[];
     }
@@ -356,9 +356,9 @@ export async function getShootAssignments(shootId: number) {
     await ensureProjectFeatures();
     const { rows } = await db.execute({
         sql: `
-        SELECT sa.*, tm.name as member_name, tm.role as member_role, tm.email as member_email
+        SELECT sa.*, sa.team_member_id as member_id, tm.name as member_name, tm.role as member_role, tm.email as member_email
         FROM shoot_assignments sa
-        JOIN team_members tm ON sa.member_id = tm.id
+        JOIN team_members tm ON sa.team_member_id = tm.id
         WHERE sa.shoot_id = ?
         `,
         args: [shootId]
@@ -374,13 +374,13 @@ export async function createShootAssignment(formData: FormData) {
     await ensureProjectFeatures();
     // Check if already assigned
     const exists = await db.execute({
-        sql: 'SELECT id FROM shoot_assignments WHERE shoot_id = ? AND member_id = ?',
+        sql: 'SELECT id FROM shoot_assignments WHERE shoot_id = ? AND team_member_id = ?',
         args: [shootId, memberId]
     });
     if (exists.rows.length > 0) return;
 
     await db.execute({
-        sql: 'INSERT INTO shoot_assignments (shoot_id, member_id, role) VALUES (?, ?, ?)',
+        sql: 'INSERT INTO shoot_assignments (shoot_id, team_member_id, role) VALUES (?, ?, ?)',
         args: [shootId, memberId, role]
     });
     revalidatePath(`/shoots/${shootId}`);
