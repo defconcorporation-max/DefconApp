@@ -12,8 +12,8 @@ async function getAllProjectsFull() {
         pl.name as label_name, pl.color as label_color,
         (SELECT COUNT(*) FROM shoots s WHERE s.project_id = p.id) as shoot_count,
         (SELECT COUNT(*) FROM shoots s WHERE s.project_id = p.id AND s.status = 'Scheduled') as shoots_scheduled,
-        (SELECT COUNT(*) FROM shoots s WHERE s.project_id = p.id AND s.status = 'Completed' AND s.post_prod_status IS NOT NULL AND s.post_prod_status != 'Completed') as shoots_in_post_prod,
-        (SELECT COUNT(*) FROM shoots s WHERE s.project_id = p.id AND s.status = 'Completed' AND (s.post_prod_status IS NULL OR s.post_prod_status = 'Completed')) as shoots_done,
+        (SELECT COUNT(*) FROM shoots s LEFT JOIN post_prod_projects ppp ON s.id = ppp.shoot_id WHERE s.project_id = p.id AND s.status = 'Completed' AND (ppp.status IS NULL OR ppp.status != 'Completed')) as shoots_in_post_prod,
+        (SELECT COUNT(*) FROM shoots s LEFT JOIN post_prod_projects ppp ON s.id = ppp.shoot_id WHERE s.project_id = p.id AND s.status = 'Completed' AND ppp.status = 'Completed') as shoots_done,
         (SELECT COALESCE(SUM(rate * quantity), 0) FROM project_services ps WHERE ps.project_id = p.id) as total_value
         FROM projects p
         JOIN clients c ON p.client_id = c.id
