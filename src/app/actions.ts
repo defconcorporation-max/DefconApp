@@ -921,9 +921,26 @@ export async function updateProjectDetails(formData: FormData) {
     const startDate = formData.get('startDate') as string;
     const status = formData.get('status') as string;
     const dueDate = formData.get('dueDate') as string;
-    const labelId = formData.get('labelId') ? Number(formData.get('labelId')) : null;
+    let labelId = formData.get('labelId') as string | number;
+
+    // Handle New Label Creation
+    const newLabelName = formData.get('newLabelName') as string;
+    const newLabelColor = formData.get('newLabelColor') as string;
 
     await ensureProjectFeatures();
+
+    if (newLabelName) {
+        // Create the new label
+        const result = await db.execute({
+            sql: 'INSERT INTO project_labels (name, color) VALUES (?, ?) RETURNING id',
+            args: [newLabelName, newLabelColor || '#6366f1']
+        });
+        if (result.rows.length > 0) {
+            labelId = Number(result.rows[0].id);
+        }
+    } else {
+        labelId = labelId && labelId !== 'NEW' ? Number(labelId) : null;
+    }
 
     await db.execute({
         sql: 'UPDATE projects SET title = ?, description = ?, start_date = ?, status = ?, due_date = ?, label_id = ? WHERE id = ?',

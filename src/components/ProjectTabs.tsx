@@ -9,6 +9,7 @@ import { DynamicInvoiceButton as InvoiceButton } from '@/components/InvoiceHelpe
 import CommissionCalculator from '@/components/CommissionCalculator';
 import StatusSelector from '@/components/ProjectStatusSelect';
 import { addProjectService, deleteProjectService, updateProjectDetails } from '@/app/actions';
+import ClientLabelSelect from './ClientLabelSelect';
 
 interface ProjectTabsProps {
     project: Project;
@@ -119,16 +120,10 @@ export default function ProjectTabs({
 
                                     <div>
                                         <label className="block text-xs text-[var(--text-secondary)] mb-1">Label</label>
-                                        <select
-                                            name="labelId"
+                                        <ClientLabelSelect
                                             defaultValue={project.label_id || ''}
-                                            className="w-full bg-black border border-[var(--border-subtle)] rounded px-2 py-1.5 text-xs text-white focus:border-violet-500 outline-none"
-                                        >
-                                            <option value="">No Label</option>
-                                            {projectLabels.map(label => (
-                                                <option key={label.id} value={label.id}>{label.name}</option>
-                                            ))}
-                                        </select>
+                                            labels={projectLabels}
+                                        />
                                     </div>
 
                                     <button className="w-full bg-violet-600 hover:bg-violet-700 text-white text-xs font-bold py-2 rounded transition-colors">
