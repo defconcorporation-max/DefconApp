@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { ShootAssignment, TeamMember } from '@/types';
 import { Button } from '@/components/ui/Button';
 import { Plus, X, User } from 'lucide-react';
-import { assignMemberToShoot, removeAssignment } from '@/app/team-actions';
+import { createShootAssignment, deleteShootAssignment } from '@/app/actions';
 
 interface Props {
     shootId: number;
@@ -16,7 +16,7 @@ export default function AssignmentControl({ shootId, assignments, allMembers }: 
     const [isAdding, setIsAdding] = useState(false);
 
     // Filter out already assigned members
-    const assignedIds = new Set(assignments.map(a => a.team_member_id));
+    const assignedIds = new Set(assignments.map(a => a.member_id));
     const availableMembers = allMembers.filter(m => !assignedIds.has(m.id));
 
     return (
@@ -32,7 +32,7 @@ export default function AssignmentControl({ shootId, assignments, allMembers }: 
             {isAdding && (
                 <div className="mb-4 p-4 bg-[#151515] rounded-lg border border-[var(--border-subtle)] animate-in fade-in slide-in-from-top-2">
                     <form action={async (formData) => {
-                        await assignMemberToShoot(formData);
+                        await createShootAssignment(formData);
                         setIsAdding(false);
                     }} className="flex gap-2">
                         <input type="hidden" name="shootId" value={shootId} />
@@ -60,8 +60,8 @@ export default function AssignmentControl({ shootId, assignments, allMembers }: 
                                 <p className="text-xs text-[var(--text-tertiary)]">{a.role}</p>
                             </div>
                         </div>
-                        <form action={removeAssignment}>
-                            <input type="hidden" name="assignmentId" value={a.id} />
+                        <form action={deleteShootAssignment}>
+                            <input type="hidden" name="id" value={a.id} />
                             <input type="hidden" name="shootId" value={shootId} />
                             <button className="text-[var(--text-tertiary)] hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity p-1">
                                 <X size={16} />

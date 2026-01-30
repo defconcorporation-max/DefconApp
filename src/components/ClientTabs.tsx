@@ -21,6 +21,7 @@ interface ClientTabsProps {
     credentials: Credential[];
     socialAccounts: SocialAccount[];
     socialPosts: SocialPost[];
+    projectLabels: { id: number; name: string; color: string }[];
 }
 
 export default function ClientTabs({
@@ -32,7 +33,8 @@ export default function ClientTabs({
     payments,
     credentials,
     socialAccounts,
-    socialPosts
+    socialPosts,
+    projectLabels
 }: ClientTabsProps) {
     const [activeTab, setActiveTab] = useState('overview');
 
@@ -117,7 +119,7 @@ export default function ClientTabs({
 
                 {/* --- PROJECTS TAB --- */}
                 {activeTab === 'projects' && (
-                    <ProjectManager clientId={client.id} projects={projects} />
+                    <ProjectManager clientId={client.id} projects={projects} projectLabels={projectLabels} />
                 )}
 
                 {/* --- SOCIAL MEDIA TAB (NEW) --- */}

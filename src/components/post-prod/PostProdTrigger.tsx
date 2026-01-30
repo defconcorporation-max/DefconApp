@@ -9,6 +9,7 @@ import { Settings, Video } from 'lucide-react';
 interface Props {
     shootId: number;
     templates: PostProdTemplate[];
+    shootStatus: string;
     postProdId?: number;
     postProdStatus?: string;
 }

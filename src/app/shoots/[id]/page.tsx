@@ -4,7 +4,7 @@ import Link from 'next/link';
 import FinishShootButton from '@/components/FinishShootButton';
 import { getPostProdTemplates } from '@/app/post-prod-actions';
 import PostProdTrigger from '@/components/post-prod/PostProdTrigger';
-import { getShootAssignments } from '@/app/team-actions';
+import { getShootAssignments } from '@/app/actions';
 export const dynamic = 'force-dynamic';
 import { getTeamMembers } from '@/app/actions';
 import AssignmentControl from '@/components/team/AssignmentControl';
@@ -303,6 +303,11 @@ export default async function ShootPage({ params }: { params: Promise<{ id: stri
                             <div className="space-y-1.5">
                                 <label className="text-[10px] font-medium text-[var(--text-tertiary)] uppercase tracking-wider">Date</label>
                                 <input name="date" type="date" defaultValue={shoot.shoot_date} className="w-full bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded px-3 py-2 text-sm text-white focus:border-[var(--text-secondary)] outline-none" />
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <label className="text-[10px] font-medium text-[var(--text-tertiary)] uppercase tracking-wider">Due Date</label>
+                                <input name="dueDate" type="date" defaultValue={shoot.due_date || ''} className="w-full bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded px-3 py-2 text-sm text-white focus:border-[var(--text-secondary)] outline-none" />
                             </div>
 
                             <div className="grid grid-cols-2 gap-3">

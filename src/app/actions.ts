@@ -2,7 +2,7 @@
 
 import { turso as db } from '@/lib/turso';
 import { revalidatePath } from 'next/cache';
-import { Client, Shoot, ShootVideo, ShootVideoNote, PipelineStage, Task, SocialLink, ContentIdea, Project, Commission, TeamMember, Payment, Credential, ShootWithClient, BetaFeedback } from '@/types';
+import { Client, Shoot, ShootVideo, ShootVideoNote, PipelineStage, Task, SocialLink, ContentIdea, Project, Commission, TeamMember, Payment, Credential, ShootWithClient, BetaFeedback, ShootAssignment } from '@/types';
 
 export async function getClients(): Promise<Client[]> {
     const { rows } = await db.execute('SELECT * FROM clients ORDER BY created_at DESC');
@@ -53,6 +53,19 @@ async function ensureProjectFeatures() {
     try {
         await db.execute('ALTER TABLE shoots ADD COLUMN due_date TEXT');
     } catch (e) { }
+
+    // 4. Shoot Assignments Table
+    await db.execute(`
+        CREATE TABLE IF NOT EXISTS shoot_assignments (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            shoot_id INTEGER NOT NULL,
+            member_id INTEGER NOT NULL,
+            role TEXT,
+            assigned_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (shoot_id) REFERENCES shoots(id) ON DELETE CASCADE,
+            FOREIGN KEY (member_id) REFERENCES team_members(id) ON DELETE CASCADE
+        )
+    `);
 }
 
 
@@ -74,20 +87,7 @@ export async function getClient(id: number): Promise<Client | undefined> {
     return (rows[0] as unknown as Client) || undefined;
 }
 
-export async function updateClient(formData: FormData) {
-    const id = Number(formData.get('id'));
-    const name = formData.get('name') as string;
-    const company = formData.get('company') as string;
-    const plan = formData.get('plan') as string;
 
-    await db.execute({
-        sql: 'UPDATE clients SET name = ?, company_name = ?, plan = ? WHERE id = ?',
-        args: [name, company, plan, id]
-    });
-
-    revalidatePath(`/clients/${id}`);
-    revalidatePath('/');
-}
 
 export async function deleteClient(formData: FormData) {
     const id = Number(formData.get('id'));
@@ -274,10 +274,13 @@ export async function addShoot(formData: FormData) {
     const endTime = formData.get('endTime') as string;
     const color = formData.get('color') as string || 'indigo';
     const projectId = formData.get('projectId') ? Number(formData.get('projectId')) : null;
+    const dueDate = formData.get('dueDate') as string;
+
+    await ensureProjectFeatures();
 
     await db.execute({
-        sql: 'INSERT INTO shoots (client_id, project_id, title, shoot_date, start_time, end_time, color) VALUES (?, ?, ?, ?, ?, ?, ?)',
-        args: [clientId, projectId, title, date, startTime, endTime, color]
+        sql: 'INSERT INTO shoots (client_id, project_id, title, shoot_date, start_time, end_time, color, due_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+        args: [clientId, projectId, title, date, startTime, endTime, color, dueDate]
     });
 
     revalidatePath(`/clients/${clientId}`);
@@ -296,10 +299,13 @@ export async function updateShoot(formData: FormData) {
     const endTime = formData.get('endTime') as string;
     const color = formData.get('color') as string || 'indigo';
     const projectId = formData.get('projectId') ? Number(formData.get('projectId')) : null;
+    const dueDate = formData.get('dueDate') as string;
+
+    await ensureProjectFeatures();
 
     await db.execute({
-        sql: 'UPDATE shoots SET client_id = ?, project_id = ?, title = ?, shoot_date = ?, start_time = ?, end_time = ?, color = ? WHERE id = ?',
-        args: [clientId, projectId, title, date, startTime, endTime, color, id]
+        sql: 'UPDATE shoots SET client_id = ?, project_id = ?, title = ?, shoot_date = ?, start_time = ?, end_time = ?, color = ?, due_date = ? WHERE id = ?',
+        args: [clientId, projectId, title, date, startTime, endTime, color, dueDate, id]
     });
 
     revalidatePath(`/clients/${clientId}`);
@@ -316,6 +322,62 @@ export async function deleteShoot(formData: FormData) {
     });
     revalidatePath('/');
 }
+
+export async function getAllShootAssignments() {
+    await ensureProjectFeatures();
+    const { rows } = await db.execute(`
+        SELECT sa.*, tm.name as member_name, tm.role as member_role, tm.color as member_avatar_color
+        FROM shoot_assignments sa
+        JOIN team_members tm ON sa.member_id = tm.id
+    `);
+    return rows as unknown as ShootAssignment[];
+}
+
+export async function getShootAssignments(shootId: number) {
+    await ensureProjectFeatures();
+    const { rows } = await db.execute({
+        sql: `
+        SELECT sa.*, tm.name as member_name, tm.role as member_role, tm.email as member_email
+        FROM shoot_assignments sa
+        JOIN team_members tm ON sa.member_id = tm.id
+        WHERE sa.shoot_id = ?
+        `,
+        args: [shootId]
+    });
+    return rows as unknown as any[];
+}
+
+export async function createShootAssignment(formData: FormData) {
+    const shootId = Number(formData.get('shootId'));
+    const memberId = Number(formData.get('memberId'));
+    const role = formData.get('role') as string;
+
+    await ensureProjectFeatures();
+    // Check if already assigned
+    const exists = await db.execute({
+        sql: 'SELECT id FROM shoot_assignments WHERE shoot_id = ? AND member_id = ?',
+        args: [shootId, memberId]
+    });
+    if (exists.rows.length > 0) return;
+
+    await db.execute({
+        sql: 'INSERT INTO shoot_assignments (shoot_id, member_id, role) VALUES (?, ?, ?)',
+        args: [shootId, memberId, role]
+    });
+    revalidatePath(`/shoots/${shootId}`);
+}
+
+export async function deleteShootAssignment(formData: FormData) {
+    const id = Number(formData.get('id')); // shoot_assignment id
+    const shootId = Number(formData.get('shootId'));
+
+    await db.execute({
+        sql: 'DELETE FROM shoot_assignments WHERE id = ?',
+        args: [id]
+    });
+    revalidatePath(`/shoots/${shootId}`);
+}
+
 
 export async function getShootById(id: number): Promise<ShootWithClient | undefined> {
     const { rows } = await db.execute({
@@ -462,6 +524,9 @@ export async function addCredential(formData: FormData) {
     });
     revalidatePath(`/clients/${clientId}`);
 }
+
+// --- PROJECTS ACTIONS ---
+
 
 export async function addPayment(formData: FormData) {
     const clientId = Number(formData.get('clientId'));
@@ -795,6 +860,16 @@ export async function getProjects(clientId: number): Promise<Project[]> {
     return rows as unknown as Project[];
 }
 
+
+
+
+
+
+
+// --- PROJECT HELPERS ---
+
+
+
 export async function updateShootVideoTitle(id: number, title: string, clientId: number, shootId: number) {
     await db.execute({
         sql: 'UPDATE shoot_videos SET title = ? WHERE id = ?',
@@ -803,18 +878,7 @@ export async function updateShootVideoTitle(id: number, title: string, clientId:
     revalidatePath(`/shoots/${shootId}`);
 }
 
-export async function createProject(formData: FormData) {
-    const clientId = Number(formData.get('clientId'));
-    const title = formData.get('title') as string;
-    const status = 'Active';
-    await db.execute({
-        sql: 'INSERT INTO projects (client_id, title, status) VALUES (?, ?, ?)',
-        args: [clientId, title, status]
-    });
-    revalidatePath(`/clients/${clientId}`);
-}
-
-export async function updateProject(formData: FormData) {
+export async function updateProjectTitle(formData: FormData) {
     const id = Number(formData.get('id'));
     const title = formData.get('title') as string;
 
@@ -822,18 +886,52 @@ export async function updateProject(formData: FormData) {
         sql: 'UPDATE projects SET title = ? WHERE id = ?',
         args: [title, id]
     });
-
-    const projectRes = await db.execute({
-        sql: 'SELECT client_id FROM projects WHERE id = ?',
-        args: [id]
-    });
-    const project = projectRes.rows[0] as unknown as { client_id: number };
-
     revalidatePath(`/projects/${id}`);
-    if (project) {
-        revalidatePath(`/clients/${project.client_id}`);
-    }
 }
+
+export async function updateProjectDetails(formData: FormData) {
+    const id = Number(formData.get('id'));
+    const title = formData.get('title') as string;
+    const description = formData.get('description') as string;
+    const startDate = formData.get('startDate') as string;
+    const status = formData.get('status') as string;
+    const dueDate = formData.get('dueDate') as string;
+    const labelId = formData.get('labelId') ? Number(formData.get('labelId')) : null;
+
+    await ensureProjectFeatures();
+
+    await db.execute({
+        sql: 'UPDATE projects SET title = ?, description = ?, start_date = ?, status = ?, due_date = ?, label_id = ? WHERE id = ?',
+        args: [title, description, startDate, status, dueDate, labelId, id]
+    });
+    revalidatePath(`/projects/${id}`);
+}
+
+// --- PROJECT HELPERS ---
+
+// --- PROJECT HELPERS ---
+
+export async function createProject(formData: FormData) {
+    const clientId = Number(formData.get('clientId'));
+    const title = formData.get('title') as string;
+    const description = formData.get('description') as string;
+    const date = formData.get('date') as string;
+    const status = formData.get('status') as string;
+    const dueDate = formData.get('dueDate') as string;
+    const labelId = formData.get('labelId') ? Number(formData.get('labelId')) : null;
+
+    if (!clientId || !title) return;
+
+    await ensureProjectFeatures();
+
+    await db.execute({
+        sql: 'INSERT INTO projects (client_id, title, description, start_date, status, due_date, label_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        args: [clientId, title, description, date, status, dueDate, labelId]
+    });
+    revalidatePath(`/clients/${clientId}`);
+}
+
+
 
 export async function getProjectById(id: number) {
     const { rows } = await db.execute({
@@ -1352,10 +1450,39 @@ export async function resolveBetaFeedback(id: number) {
     revalidatePath('/beta-feedback');
 }
 
-export async function deleteBetaFeedback(id: number) {
+export async function deleteBetaFeedback(formData: FormData) {
+    const id = Number(formData.get('id'));
     await db.execute({
         sql: 'DELETE FROM beta_feedback WHERE id = ?',
         args: [id]
     });
     revalidatePath('/beta-feedback');
 }
+
+// --- PROJECT LABELS ACTIONS ---
+export async function getProjectLabels() {
+    await ensureProjectFeatures();
+    const { rows } = await db.execute('SELECT * FROM project_labels ORDER BY name ASC');
+    return rows as unknown as { id: number, name: string, color: string }[];
+}
+
+export async function createProjectLabel(formData: FormData) {
+    const name = formData.get('name') as string;
+    const color = formData.get('color') as string;
+    await db.execute({
+        sql: 'INSERT INTO project_labels (name, color) VALUES (?, ?)',
+        args: [name, color]
+    });
+    revalidatePath('/projects');
+}
+
+export async function deleteProjectLabel(formData: FormData) {
+    const id = Number(formData.get('id'));
+    await db.execute({
+        sql: 'DELETE FROM project_labels WHERE id = ?',
+        args: [id]
+    });
+    revalidatePath('/projects');
+}
+
+

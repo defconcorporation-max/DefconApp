@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { updateProject } from '@/app/actions';
+import { updateProjectTitle } from '@/app/actions';
 import { Pencil, Check, X } from 'lucide-react';
 
 interface ProjectTitleEditorProps {
@@ -17,7 +17,7 @@ export default function ProjectTitleEditor({ projectId, initialTitle }: ProjectT
         const formData = new FormData();
         formData.append('id', projectId.toString());
         formData.append('title', title);
-        await updateProject(formData);
+        await updateProjectTitle(formData);
         setIsEditing(false);
     };
 

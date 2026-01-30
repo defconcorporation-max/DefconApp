@@ -215,6 +215,8 @@ export interface ShootWithClient extends Shoot {
     client_name: string;
     client_company?: string;
     project_title?: string;
+    post_prod_id?: number;
+    post_prod_status?: string;
 }
 
 export interface SocialAccount {
@@ -279,7 +281,7 @@ export interface PostProdVersion {
 export interface ShootAssignment {
     id: number;
     shoot_id: number;
-    team_member_id: number;
+    member_id: number;
     role?: string;
     // Joined
     member_name?: string;

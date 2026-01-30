@@ -1,11 +1,14 @@
-import { getAllShoots } from '@/app/actions';
+import { getAllShoots, getTeamMembers, getAllShootAssignments } from '@/app/actions';
 import Link from 'next/link';
 import { Video, Calendar, ArrowRight, ExternalLink } from 'lucide-react';
+import ShootAssignmentWidget from '@/components/ShootAssignmentWidget';
 
 export const dynamic = 'force-dynamic';
 
 export default async function ShootsPage() {
     const shoots = await getAllShoots();
+    const teamMembers = await getTeamMembers();
+    const allAssignments = await getAllShootAssignments();
 
     // Group by Month
     const shootsByMonth: Record<string, typeof shoots> = {};
@@ -48,9 +51,11 @@ export default async function ShootsPage() {
                         {month}
                     </h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {monthShoots.map(shoot => (
-                            <Link href={`/shoots/${shoot.id}`} key={shoot.id} className="group">
-                                <div className={`pro-card p-6 h-full transition-all duration-300 ${shoot.post_prod_status ? 'border-orange-500/30 hover:border-orange-500/50 bg-orange-500/5' : 'hover:border-violet-500/30'}`}>
+                        {monthShoots.map(shoot => {
+                            const assignments = allAssignments.filter(a => a.shoot_id === shoot.id);
+
+                            return (
+                                <div key={shoot.id} className={`pro-card p-6 h-full transition-all duration-300 relative group ${shoot.post_prod_status ? 'border-orange-500/30 bg-orange-500/5' : 'hover:border-violet-500/30'}`}>
                                     <div className="flex justify-between items-start mb-4">
                                         <div className="flex flex-col items-center bg-white/5 px-3 py-1 rounded border border-white/5 min-w-[60px] group-hover:bg-violet-500/10 group-hover:border-violet-500/20 group-hover:text-violet-400 transition-colors">
                                             <span className="text-xs text-gray-500 uppercase group-hover:text-violet-400/70">{new Date(shoot.shoot_date).toLocaleString('default', { month: 'short' })}</span>
@@ -74,26 +79,35 @@ export default async function ShootsPage() {
                                         </div>
                                     </div>
 
-                                    <h3 className="text-lg font-bold text-white mb-1 group-hover:text-violet-400 transition-colors flex items-center gap-2">
-                                        {shoot.title}
-                                        <ExternalLink size={12} className="opacity-0 group-hover:opacity-100 transition-opacity translate-y-0.5" />
-                                    </h3>
-                                    <p className="text-sm text-[var(--text-tertiary)] mb-6 flex items-center gap-2">
-                                        For: <span className="text-[var(--text-secondary)]">{shoot.client_name}</span>
+                                    <Link href={`/shoots/${shoot.id}`} className="block">
+                                        <h3 className="text-lg font-bold text-white mb-1 hover:text-violet-400 transition-colors flex items-center gap-2">
+                                            {shoot.title}
+                                            <ExternalLink size={12} className="opacity-0 group-hover:opacity-100 transition-opacity translate-y-0.5" />
+                                        </h3>
+                                    </Link>
+                                    <p className="text-sm text-[var(--text-tertiary)] mb-4 flex items-center gap-2">
+                                        For: <Link href={`/clients/${shoot.client_id}`} className="text-[var(--text-secondary)] hover:text-white transition-colors">{shoot.client_name}</Link>
                                     </p>
 
-                                    <div className="pt-4 border-t border-[var(--border-subtle)] flex items-center justify-between text-xs">
+                                    {/* Crew Widget */}
+                                    <ShootAssignmentWidget
+                                        shootId={shoot.id}
+                                        assignments={assignments}
+                                        teamMembers={teamMembers}
+                                    />
+
+                                    <div className="pt-4 mt-4 border-t border-[var(--border-subtle)] flex items-center justify-between text-xs">
                                         <span className="text-[var(--text-tertiary)] flex items-center gap-1">
                                             <Calendar size={12} />
                                             {new Date(shoot.shoot_date).toLocaleDateString()}
                                         </span>
-                                        <span className="flex items-center gap-1 text-violet-400 font-medium group-hover:gap-2 transition-all">
+                                        <Link href={`/shoots/${shoot.id}`} className="flex items-center gap-1 text-violet-400 font-medium hover:gap-2 transition-all">
                                             View Details <ArrowRight size={12} />
-                                        </span>
+                                        </Link>
                                     </div>
                                 </div>
-                            </Link>
-                        ))}
+                            );
+                        })}
                     </div>
                 </div>
             ))}
