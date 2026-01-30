@@ -13,7 +13,12 @@ export async function createClient(formData: FormData) {
     const name = formData.get('name') as string;
     const company = formData.get('company') as string;
     const plan = formData.get('plan') as string;
-    const labelId = formData.get('labelId') ? Number(formData.get('labelId')) : null;
+    const plan = formData.get('plan') as string;
+
+    // Scan and clean labelId
+    const rawLabelId = formData.get('labelId');
+    const parsedLabelId = rawLabelId ? Number(rawLabelId) : null;
+    const safeLabelId = Number.isFinite(parsedLabelId) ? parsedLabelId : null;
 
     // Create Folder (Local Dev Only - skip on Vercel)
     const safeName = (company || name).replace(/[^a-z0-9]/gi, '_').trim();
@@ -25,7 +30,7 @@ export async function createClient(formData: FormData) {
 
     await db.execute({
         sql: 'INSERT INTO clients (name, company_name, plan, folder_path, label_id) VALUES (?, ?, ?, ?, ?)',
-        args: [name, company, plan, folderPath, labelId]
+        args: [name, company, plan, folderPath, safeLabelId]
     });
 
     revalidatePath('/');
@@ -1619,11 +1624,14 @@ export async function updateClient(formData: FormData) {
     const name = formData.get('name') as string;
     const company = formData.get('company') as string;
     const plan = formData.get('plan') as string;
-    const labelId = formData.get('labelId') ? Number(formData.get('labelId')) : null;
+
+    const rawLabelId = formData.get('labelId');
+    const parsedLabelId = rawLabelId ? Number(rawLabelId) : null;
+    const safeLabelId = Number.isFinite(parsedLabelId) ? parsedLabelId : null;
 
     await db.execute({
         sql: 'UPDATE clients SET name = ?, company_name = ?, plan = ?, label_id = ? WHERE id = ?',
-        args: [name, company, plan, labelId, id]
+        args: [name, company, plan, safeLabelId, id]
     });
     revalidatePath(`/clients/${id}`);
     revalidatePath('/');
