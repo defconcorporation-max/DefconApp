@@ -1,3 +1,7 @@
+import Link from 'next/link';
+import { turso as db } from '@/lib/turso';
+import { Project } from '@/types';
+import { Folder, DollarSign } from 'lucide-react';
 import ProjectList from '@/components/ProjectList';
 
 async function getAllProjectsFull() {
