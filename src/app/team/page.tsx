@@ -1,5 +1,4 @@
-import { getTeamMembers } from '@/app/actions';
-import { getTeamSchedule } from '@/app/team-actions';
+import { getTeamMembers, getTeamSchedule } from '@/app/actions';
 import Link from 'next/link';
 import { UserPlus, Users, Phone, Mail, LayoutGrid, Calendar as CalendarIcon } from 'lucide-react';
 import { TeamMember } from '@/types';

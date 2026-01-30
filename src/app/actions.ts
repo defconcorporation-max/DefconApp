@@ -1485,4 +1485,32 @@ export async function deleteProjectLabel(formData: FormData) {
     revalidatePath('/projects');
 }
 
+export async function updateClient(formData: FormData) {
+    const id = Number(formData.get('id'));
+    const name = formData.get('name') as string;
+    const company = formData.get('company') as string;
+    const plan = formData.get('plan') as string;
+
+    await db.execute({
+        sql: 'UPDATE clients SET name = ?, company_name = ?, plan = ? WHERE id = ?',
+        args: [name, company, plan, id]
+    });
+    revalidatePath(`/clients/${id}`);
+    revalidatePath('/');
+}
+
+export async function getTeamSchedule() {
+    // Fetch all future assignments for the calendar
+    const { rows } = await db.execute(`
+        SELECT sa.*, s.title as shoot_title, s.shoot_date, tm.name as member_name, tm.color as member_avatar_color
+        FROM shoot_assignments sa
+        JOIN shoots s ON sa.shoot_id = s.id
+        JOIN team_members tm ON sa.member_id = tm.id
+        WHERE s.shoot_date >= date('now', '-1 month')
+        ORDER BY s.shoot_date ASC
+    `);
+
+    return rows as unknown as ShootAssignment[];
+}
+
 
