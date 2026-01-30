@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { PostProdProject, PostProdTask, PostProdVersion } from '@/types';
 import { Button } from '@/components/ui/Button';
-import { CheckCircle2, Circle, Clock, Upload, Play, FileText, Check, Film } from 'lucide-react';
+import { CheckCircle2, Circle, Clock, Upload, Play, FileText, Check, Film, Download } from 'lucide-react';
 import { togglePostProdTask, uploadVersion, completeProject } from '@/app/post-prod-actions';
 
 interface Props {
@@ -75,12 +75,19 @@ export default function PostProdWorkspace({ project, tasks, versions }: Props) {
                 {/* LATEST VERSION PLAYER */}
                 <div className="bg-[#0A0A0A] border border-[var(--border-subtle)] rounded-xl p-6 flex flex-col gap-4">
                     <div className="flex justify-between items-center">
-                        <div>
-                            <h2 className="font-bold text-xl">Latest Cut</h2>
-                            <p className="text-sm text-[var(--text-secondary)]">
-                                {versions.length > 0 ? `Version ${versions[0].version_number}` : 'No versions uploaded'}
-                            </p>
-                        </div>
+                        {versions.length > 0 ? (
+                            <a href={versions[0].video_url} target="_blank" rel="noopener noreferrer">
+                                <Button variant="outline" size="sm" className="border-indigo-500/30 text-indigo-400 hover:bg-indigo-500/10">
+                                    <Download size={16} className="mr-2" />
+                                    Download v{versions[0].version_number}
+                                </Button>
+                            </a>
+                        ) : (
+                            <div>
+                                <h2 className="font-bold text-xl">Latest Cut</h2>
+                                <p className="text-sm text-[var(--text-secondary)]">No versions uploaded</p>
+                            </div>
+                        )}
                         <Button variant="secondary" size="sm" onClick={() => setUploadMode(!uploadMode)}>
                             <Upload size={16} className="mr-2" />
                             Upload New Version
