@@ -9,8 +9,8 @@ import ShootAssignmentWidget from '@/components/ShootAssignmentWidget';
 interface EnhancedShoot extends Shoot {
     client_name: string;
     client_id: number;
-    label_name?: string;
-    label_color?: string;
+    agency_name?: string;
+    agency_color?: string;
     post_prod_status?: string;
     post_prod_id?: number;
 }
@@ -21,7 +21,7 @@ interface ShootListProps {
     allAssignments: ShootAssignment[];
 }
 
-type SortOption = 'date' | 'dueDate' | 'label' | 'status' | 'client';
+type SortOption = 'date' | 'dueDate' | 'agency' | 'status' | 'client';
 type SortOrder = 'asc' | 'desc';
 
 export default function ShootList({ shoots, teamMembers, allAssignments }: ShootListProps) {
@@ -51,9 +51,14 @@ export default function ShootList({ shoots, teamMembers, allAssignments }: Shoot
                     valA = a.due_date ? new Date(a.due_date).getTime() : (sortOrder === 'asc' ? 9999999999999 : 0);
                     valB = b.due_date ? new Date(b.due_date).getTime() : (sortOrder === 'asc' ? 9999999999999 : 0);
                     break;
-                case 'label':
-                    valA = a.label_name || '';
-                    valB = b.label_name || '';
+                case 'agency':
+                    valA = a.label_name || ''; // Kept as label_name for compat or updated? 
+                    // Let's assume we update the property to agency_name.
+                    // But wait, if I update interface EnhancedShoot, I need to update it everywhere.
+                    // The interface is defined in lines 9-16 locally? Yes.
+                    // I'll update the interface too.
+                    valA = a.agency_name || '';
+                    valB = b.agency_name || '';
                     break;
                 case 'status':
                     valA = a.status;
@@ -128,7 +133,7 @@ export default function ShootList({ shoots, teamMembers, allAssignments }: Shoot
                         {[
                             { id: 'date', label: 'Date' },
                             { id: 'dueDate', label: 'Due Date' },
-                            { id: 'label', label: 'Label' },
+                            { id: 'agency', label: 'Agency' },
                             { id: 'client', label: 'Client' },
                             { id: 'status', label: 'Status' }
                         ].map((opt) => (
@@ -171,17 +176,17 @@ export default function ShootList({ shoots, teamMembers, allAssignments }: Shoot
                                             <span className="text-xl font-bold">{new Date(shoot.shoot_date).getDate()}</span>
                                         </div>
                                         <div className="flex flex-col items-end gap-1">
-                                            {/* Label Badge */}
-                                            {shoot.label_name && (
+                                            {/* Agency Badge */}
+                                            {shoot.agency_name && (
                                                 <span
                                                     className="px-2 py-0.5 rounded-full text-[10px] uppercase font-bold tracking-wider border mb-1"
                                                     style={{
-                                                        backgroundColor: `${shoot.label_color}20`,
-                                                        color: shoot.label_color,
-                                                        borderColor: `${shoot.label_color}30`
+                                                        backgroundColor: `${shoot.agency_color}20`,
+                                                        color: shoot.agency_color,
+                                                        borderColor: `${shoot.agency_color}30`
                                                     }}
                                                 >
-                                                    {shoot.label_name}
+                                                    {shoot.agency_name}
                                                 </span>
                                             )}
 

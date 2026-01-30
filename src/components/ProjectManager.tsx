@@ -3,14 +3,17 @@
 import { createProject } from '@/app/actions';
 import { Project } from '@/types';
 import Link from 'next/link';
-import ProjectLabelManager from './ProjectLabelManager';
+import { Building } from 'lucide-react';
 
-export default function ProjectManager({ clientId, projects, projectLabels = [] }: { clientId: number, projects: any[], projectLabels?: { id: number, name: string, color: string }[] }) {
+export default function ProjectManager({ clientId, projects, agencies = [] }: { clientId: number, projects: any[], agencies?: { id: number, name: string, color: string }[] }) {
     return (
         <div className="glass-panel p-6 rounded-2xl">
             <div className="flex justify-between items-center mb-6 relative">
                 <h3 className="text-xl font-bold neo-gradient-text">Active Projects</h3>
-                <ProjectLabelManager labels={projectLabels} />
+                <Link href="/agencies" className="text-xs flex items-center gap-1 text-[var(--text-tertiary)] hover:text-white transition-colors">
+                    <Building size={12} />
+                    Manage Agencies
+                </Link>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
@@ -26,12 +29,16 @@ export default function ProjectManager({ clientId, projects, projectLabels = [] 
                                             }`}>
                                             {project.status || 'Active'}
                                         </span>
-                                        {project.label_name && (
+                                        {(project.agency_name || project.label_name) && (
                                             <span
                                                 className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full border border-white/10"
-                                                style={{ backgroundColor: `${project.label_color}20`, color: project.label_color, borderColor: `${project.label_color}30` }}
+                                                style={{
+                                                    backgroundColor: `${project.agency_color || project.label_color}20`,
+                                                    color: project.agency_color || project.label_color,
+                                                    borderColor: `${project.agency_color || project.label_color}30`
+                                                }}
                                             >
-                                                {project.label_name}
+                                                {project.agency_name || project.label_name}
                                             </span>
                                         )}
                                     </div>

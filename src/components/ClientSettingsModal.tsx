@@ -4,16 +4,16 @@ import { useState } from 'react';
 import { updateClient, deleteClient } from '@/app/actions';
 import { useRouter } from 'next/navigation';
 import { Settings, Trash2, X } from 'lucide-react';
-import ClientLabelSelect from './ClientLabelSelect';
+import ClientAgencySelect from './ClientAgencySelect';
 
 interface ClientSettingsModalProps {
-    client: { id: number; name: string; company_name: string; plan: string; label_id?: number };
-    labels: { id: number; name: string; color: string }[];
+    client: { id: number; name: string; company_name: string; plan: string; agency_id?: number };
+    agencies: { id: number; name: string; color: string }[];
     isOpen: boolean;
     onClose: () => void;
 }
 
-export default function ClientSettingsModal({ client, labels, isOpen, onClose }: ClientSettingsModalProps) {
+export default function ClientSettingsModal({ client, agencies, isOpen, onClose }: ClientSettingsModalProps) {
     const router = useRouter();
     const [isDeleting, setIsDeleting] = useState(false);
 
@@ -84,10 +84,10 @@ export default function ClientSettingsModal({ client, labels, isOpen, onClose }:
                         </div>
 
                         <div className="space-y-1">
-                            <label className="text-xs text-[var(--text-secondary)] uppercase font-mono">Label</label>
-                            <ClientLabelSelect
-                                defaultValue={client.label_id || ''}
-                                labels={labels}
+                            <label className="text-xs text-[var(--text-secondary)] uppercase font-mono">Agency</label>
+                            <ClientAgencySelect
+                                defaultValue={client.agency_id || ''}
+                                agencies={agencies}
                             />
                         </div>
 
@@ -112,7 +112,7 @@ export default function ClientSettingsModal({ client, labels, isOpen, onClose }:
 }
 
 // Helper button component to trigger modal
-export function ClientSettingsButton({ client, labels }: { client: any, labels: any[] }) {
+export function ClientSettingsButton({ client, agencies }: { client: any, agencies: any[] }) {
     const [isOpen, setIsOpen] = useState(false);
     return (
         <>
@@ -123,7 +123,7 @@ export function ClientSettingsButton({ client, labels }: { client: any, labels: 
             >
                 <Settings size={20} />
             </button>
-            <ClientSettingsModal client={client} labels={labels} isOpen={isOpen} onClose={() => setIsOpen(false)} />
+            <ClientSettingsModal client={client} agencies={agencies} isOpen={isOpen} onClose={() => setIsOpen(false)} />
         </>
     );
 }

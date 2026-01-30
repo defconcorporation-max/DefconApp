@@ -11,6 +11,7 @@ export interface Client {
     created_at: string;
     password_hash?: string;
     portal_enabled?: boolean;
+    agency_id?: number;
 }
 
 export interface SocialLink {
@@ -90,6 +91,9 @@ export interface Project {
     // Joined
     label_name?: string;
     label_color?: string;
+    agency_id?: number;
+    agency_name?: string;
+    agency_color?: string;
 }
 
 export interface Service {
@@ -172,7 +176,7 @@ export interface TaskStage {
     is_default: boolean;
 }
 
-export interface ProjectLabel {
+export interface Agency {
     id: number;
     name: string;
     color: string;

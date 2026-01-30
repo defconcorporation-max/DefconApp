@@ -279,10 +279,29 @@ export async function revertCommissionPayment(id: number) {
     revalidatePath('/finance');
 }
 
-export async function getShoots(clientId: number): Promise<Shoot[]> {
+export async function getShoots(clientId?: number): Promise<Shoot[]> {
+    let sql = `
+        SELECT s.*, 
+        c.company_name as client_name,
+        ag.name as agency_name,
+        ag.color as agency_color,
+        (SELECT status FROM post_production pp WHERE pp.shoot_id = s.id LIMIT 1) as post_prod_status,
+        (SELECT id FROM post_production pp WHERE pp.shoot_id = s.id LIMIT 1) as post_prod_id
+        FROM shoots s
+        JOIN clients c ON s.client_id = c.id
+        LEFT JOIN agencies ag ON c.agency_id = ag.id
+    `;
+
+    // If clientId is provided, filter by it
+    if (clientId) {
+        sql += ' WHERE s.client_id = ?';
+    }
+
+    sql += ' ORDER BY s.shoot_date ASC';
+
     const { rows } = await db.execute({
-        sql: 'SELECT * FROM shoots WHERE client_id = ? ORDER BY shoot_date ASC',
-        args: [clientId]
+        sql,
+        args: clientId ? [clientId] : []
     });
     return rows as unknown as Shoot[];
 }
@@ -707,20 +726,23 @@ export async function getFinanceData() {
     // 4. Project List
     const projectsRawRes = await db.execute(`
         SELECT p.*, c.company_name as client_company,
-        pl.name as label_name,
-        pl.color as label_color,
+        ag.name as agency_name,
+        ag.color as agency_color,
         (SELECT COALESCE(SUM(rate * quantity), 0) FROM project_services ps WHERE ps.project_id = p.id) as total_value_pre_tax,
         (SELECT COALESCE(SUM(amount), 0) FROM payments pay WHERE pay.project_id = p.id) as paid_amount
         FROM projects p
         JOIN clients c ON p.client_id = c.id
-        LEFT JOIN project_labels pl ON p.label_id = pl.id
+        LEFT JOIN agencies ag ON c.agency_id = ag.id
         ORDER BY p.created_at DESC
     `);
     const projectsRaw = projectsRawRes.rows as any[];
 
     const projectsWithValue = projectsRaw.map(p => ({
         ...p,
-        total_value: p.total_value_pre_tax * taxMultiplier
+        total_value: p.total_value_pre_tax * taxMultiplier,
+        // map agency props to legacy label props if needed by older components, or just update components
+        label_name: p.agency_name,
+        label_color: p.agency_color
     }));
 
     // 5. Commission Expenses
@@ -933,20 +955,24 @@ export async function getProjects(clientId: number): Promise<Project[]> {
     const { rows } = await db.execute({
         sql: `
         SELECT p.*, 
-        pl.name as label_name,
-        pl.color as label_color,
+        ag.name as agency_name,
+        ag.color as agency_color,
         (SELECT COUNT(*) FROM shoots s WHERE s.project_id = p.id) as shoot_count,
         (SELECT COUNT(*) FROM project_services ps WHERE ps.project_id = p.id) as service_count,
         (SELECT COALESCE(SUM(rate * quantity), 0) FROM project_services ps WHERE ps.project_id = p.id) as total_value
         FROM projects p 
         JOIN clients c ON p.client_id = c.id
-        LEFT JOIN project_labels pl ON c.label_id = pl.id
+        LEFT JOIN agencies ag ON c.agency_id = ag.id
         WHERE p.client_id = ? 
         ORDER BY p.created_at DESC
         `,
         args: [clientId]
     });
-    return rows as unknown as Project[];
+    return rows.map((r: any) => ({
+        ...r,
+        label_name: r.agency_name,
+        label_color: r.agency_color
+    })) as unknown as Project[];
 }
 
 
@@ -1619,33 +1645,58 @@ export async function deleteBetaFeedback(formData: FormData) {
     revalidatePath('/beta-feedback');
 }
 
-// --- PROJECT LABELS ---
+// --- AGENCIES (Formerly Project Labels) ---
 
-export async function getProjectLabels(clientId?: number) {
-    // Currently labels are global, but keeping argument for future use/compatibility
-    await ensureProjectFeatures();
-    const { rows } = await db.execute('SELECT * FROM project_labels ORDER BY name ASC');
+export async function getAgencies() {
+    // Ensure agencies table exists (auto-migration/check)
+    // For now assuming migration ran or table exists
+    const { rows } = await db.execute('SELECT * FROM agencies ORDER BY name ASC');
     return rows as unknown as { id: number, name: string, color: string }[];
 }
 
-export async function createProjectLabel(formData: FormData) {
+export async function createAgency(formData: FormData) {
     const name = formData.get('name') as string;
     const color = formData.get('color') as string;
     await db.execute({
-        sql: 'INSERT INTO project_labels (name, color) VALUES (?, ?)',
+        sql: 'INSERT INTO agencies (name, color) VALUES (?, ?)',
         args: [name, color]
     });
+    revalidatePath('/agencies'); // New page
     revalidatePath('/projects');
 }
 
-export async function deleteProjectLabel(formData: FormData) {
+export async function deleteAgency(formData: FormData) {
     const id = Number(formData.get('id'));
     await db.execute({
-        sql: 'DELETE FROM project_labels WHERE id = ?',
+        sql: 'DELETE FROM agencies WHERE id = ?',
         args: [id]
     });
+    revalidatePath('/agencies');
     revalidatePath('/projects');
 }
+
+export async function getAgencyStats() {
+    // Calculate total revenue per agency derived from Clients -> Payments (or Project Value if prefered, user said "revenue per agency")
+    // Usually Revenue = Payments Collected.
+
+    // We get all agencies
+    // Join with clients
+    // Join with payments (sum amount)
+
+    const { rows } = await db.execute(`
+        SELECT a.id, a.name, a.color,
+               COUNT(DISTINCT c.id) as client_count,
+               COALESCE(SUM(p.amount), 0) as total_revenue
+        FROM agencies a
+        LEFT JOIN clients c ON c.agency_id = a.id
+        LEFT JOIN payments p ON p.client_id = c.id
+        GROUP BY a.id
+        ORDER BY total_revenue DESC
+    `);
+
+    return rows as unknown as { id: number, name: string, color: string, client_count: number, total_revenue: number }[];
+}
+
 
 export async function updateClient(formData: FormData) {
     const id = Number(formData.get('id'));
@@ -1653,29 +1704,29 @@ export async function updateClient(formData: FormData) {
     const company = formData.get('company') as string;
     const plan = formData.get('plan') as string;
 
-    // Handle Label Logic
-    const rawLabelId = formData.get('labelId');
-    let finalLabelId = null;
+    // Handle Agency Logic
+    const rawAgencyId = formData.get('agencyId');
+    let finalAgencyId = null;
 
-    if (rawLabelId === 'NEW') {
-        const newLabelName = formData.get('newLabelName') as string;
-        const newLabelColor = formData.get('newLabelColor') as string;
+    if (rawAgencyId === 'NEW') {
+        const newAgencyName = formData.get('newAgencyName') as string;
+        const newAgencyColor = formData.get('newAgencyColor') as string;
 
-        if (newLabelName) {
-            const labelRes = await db.execute({
-                sql: 'INSERT INTO project_labels (name, color) VALUES (?, ?)',
-                args: [newLabelName, newLabelColor || '#8b5cf6']
+        if (newAgencyName) {
+            const agencyRes = await db.execute({
+                sql: 'INSERT INTO agencies (name, color) VALUES (?, ?)',
+                args: [newAgencyName, newAgencyColor || '#8b5cf6']
             });
-            finalLabelId = Number(labelRes.lastInsertRowid);
+            finalAgencyId = Number(agencyRes.lastInsertRowid);
         }
     } else {
-        const parsedLabelId = rawLabelId ? Number(rawLabelId) : null;
-        finalLabelId = Number.isFinite(parsedLabelId) ? parsedLabelId : null;
+        const parsedAgencyId = rawAgencyId ? Number(rawAgencyId) : null;
+        finalAgencyId = Number.isFinite(parsedAgencyId) ? parsedAgencyId : null;
     }
 
     await db.execute({
-        sql: 'UPDATE clients SET name = ?, company_name = ?, plan = ?, label_id = ? WHERE id = ?',
-        args: [name, company, plan, finalLabelId, id]
+        sql: 'UPDATE clients SET name = ?, company_name = ?, plan = ?, agency_id = ? WHERE id = ?',
+        args: [name, company, plan, finalAgencyId, id]
     });
     revalidatePath(`/clients/${id}`);
     revalidatePath('/');
