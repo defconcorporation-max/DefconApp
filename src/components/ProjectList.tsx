@@ -9,6 +9,9 @@ interface EnhancedProject extends Project {
     client_name: string;
     client_contact: string;
     shoot_count: number;
+    shoots_scheduled: number;
+    shoots_in_post_prod: number;
+    shoots_done: number;
     total_value: number;
     label_name?: string;
     label_color?: string;
