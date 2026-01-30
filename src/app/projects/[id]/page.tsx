@@ -1,4 +1,4 @@
-import { getProjectById, getProjectShoots, getProjectServices, getServices, getCommissions, getSettings, getTeamMembers, getClient, getProjectTasks, getTaskStages, getShootVideos, getProjectLabels } from '@/app/actions';
+import { getProjectById, getProjectShoots, getProjectServices, getServices, getCommissions, getSettings, getTeamMembers, getClient, getProjectTasks, getTaskStages, getShootVideos, getAgencies } from '@/app/actions';
 import { Project, Shoot, Service, ProjectService, ProjectTask, TaskStage, Client } from '@/types';
 import Link from 'next/link';
 import { ArrowLeft, Calendar } from 'lucide-react';
@@ -35,7 +35,7 @@ export default async function ProjectDetailsPage({ params }: { params: Promise<{
     const tasks = await getProjectTasks(projectId) as ProjectTask[];
     const stages = await getTaskStages() as TaskStage[];
 
-    const projectLabels = await getProjectLabels(project.client_id);
+    const agencies = await getAgencies();
 
     // Fetch videos for ShootManager
     const videosMap: Record<number, any[]> = {};
@@ -66,16 +66,16 @@ export default async function ProjectDetailsPage({ params }: { params: Promise<{
                                     Due: {new Date(project.due_date).toLocaleDateString()}
                                 </span>
                             )}
-                            {project.label_name && (
+                            {project.agency_name && (
                                 <span
                                     className="px-2 py-0.5 rounded-full text-xs font-medium border uppercase tracking-wider"
                                     style={{
-                                        backgroundColor: `${project.label_color}20`,
-                                        color: project.label_color,
-                                        borderColor: `${project.label_color}30`
+                                        backgroundColor: `${project.agency_color}20`,
+                                        color: project.agency_color,
+                                        borderColor: `${project.agency_color}30`
                                     }}
                                 >
-                                    {project.label_name}
+                                    {project.agency_name}
                                 </span>
                             )}
                         </div>
@@ -96,7 +96,7 @@ export default async function ProjectDetailsPage({ params }: { params: Promise<{
                 stages={stages}
                 videosMap={videosMap}
                 totalValue={totalValue}
-                projectLabels={projectLabels}
+                agencies={agencies}
             />
         </main>
     );

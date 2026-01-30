@@ -1006,72 +1006,75 @@ export async function updateProjectTitle(formData: FormData) {
 
 export async function updateProjectDetails(formData: FormData) {
     console.log('updateProjectDetails called with fields:', [...formData.keys()]);
-    const id = Number(formData.get('projectId'));
-    const title = formData.get('title') as string;
+    const projectId = Number(formData.get('projectId'));
+    if (!projectId) return;
 
-    const startDate = formData.get('startDate') as string;
-    const status = formData.get('status') as string;
-    const dueDate = formData.get('dueDate') as string;
-    let labelId = formData.get('labelId') as string | number;
-
-    // Handle New Label Creation
-    const newLabelName = formData.get('newLabelName') as string;
-    const newLabelColor = formData.get('newLabelColor') as string;
-
-    await ensureProjectFeatures();
-
-    if (newLabelName) {
-        // Create the new label
-        const result = await db.execute({
-            sql: 'INSERT INTO project_labels (name, color) VALUES (?, ?) RETURNING id',
-            args: [newLabelName, newLabelColor || '#6366f1']
+    // 1. Handle Agency Update (Update Client's Agency)
+    const rawAgencyId = formData.get('agencyId');
+    if (rawAgencyId !== null) {
+        // We need to get the client_id for this project to update the client
+        const { rows } = await db.execute({
+            sql: 'SELECT client_id FROM projects WHERE id = ?',
+            args: [projectId]
         });
-        if (result.rows.length > 0) {
-            labelId = Number(result.rows[0].id);
+
+        if (rows.length > 0) {
+            const clientId = rows[0].client_id;
+            let finalAgencyId = null;
+
+            if (rawAgencyId === 'NEW') {
+                const newAgencyName = formData.get('newAgencyName') as string;
+                const newAgencyColor = formData.get('newAgencyColor') as string;
+
+                if (newAgencyName) {
+                    const agencyRes = await db.execute({
+                        sql: 'INSERT INTO agencies (name, color) VALUES (?, ?)',
+                        args: [newAgencyName, newAgencyColor || '#8b5cf6']
+                    });
+                    finalAgencyId = Number(agencyRes.lastInsertRowid);
+                }
+            } else {
+                const parsed = Number(rawAgencyId);
+                finalAgencyId = Number.isFinite(parsed) ? parsed : null;
+            }
+
+            // Update Client
+            await db.execute({
+                sql: 'UPDATE clients SET agency_id = ? WHERE id = ?',
+                args: [finalAgencyId, clientId]
+            });
         }
-    } else {
-        labelId = labelId && labelId !== 'NEW' ? Number(labelId) : null;
     }
 
-    // Dynamic SQL construction for partial updates
+    // 2. Update Project Details (Dates, etc.)
     const fields: string[] = [];
     const args: any[] = [];
 
     if (formData.has('title')) {
         fields.push('title = ?');
-        args.push(title);
+        args.push(formData.get('title'));
     }
 
-    if (formData.has('status')) {
-        fields.push('status = ?');
-        args.push(status);
-    }
-
-    // Always process dueDate if present (can be empty string for clear?) 
-    // Actually, if it's in formData it should be updated.
     if (formData.has('dueDate')) {
+        const date = formData.get('dueDate') as string;
         fields.push('due_date = ?');
-        args.push(dueDate);
+        args.push(date || null);
     }
 
-    // Process labelId
-    // If new label created, we must update label_id
-    // If just passed in formData, we update it
-    if (newLabelName || formData.has('labelId')) {
-        fields.push('label_id = ?');
-        args.push(labelId);
+    // Status update logic if needed, but usually handled by specific actions?
+    // ProjectTabs uses separate StatusSelector.
+    // Checking previous code, it had due_date and label logic.
+
+    if (fields.length > 0) {
+        args.push(projectId);
+        await db.execute({
+            sql: `UPDATE projects SET ${fields.join(', ')} WHERE id = ?`,
+            args
+        });
     }
 
-    if (fields.length === 0) return;
-
-    // Join fields and append ID
-    args.push(id);
-
-    await db.execute({
-        sql: `UPDATE projects SET ${fields.join(', ')} WHERE id = ?`,
-        args: args
-    });
-    revalidatePath(`/projects/${id}`);
+    revalidatePath(`/projects/${projectId}`);
+    revalidatePath('/');
 }
 
 // --- PROJECT HELPERS ---
@@ -1102,10 +1105,11 @@ export async function createProject(formData: FormData) {
 export async function getProjectById(id: number) {
     const { rows } = await db.execute({
         sql: `
-            SELECT p.*, c.company_name as client_company, pl.name as label_name, pl.color as label_color
+            SELECT p.*, c.company_name as client_company, 
+            ag.name as agency_name, ag.color as agency_color
             FROM projects p 
             JOIN clients c ON p.client_id = c.id 
-            LEFT JOIN project_labels pl ON c.label_id = pl.id
+            LEFT JOIN agencies ag ON c.agency_id = ag.id
             WHERE p.id = ?
         `,
         args: [id]

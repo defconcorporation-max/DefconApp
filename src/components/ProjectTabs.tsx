@@ -9,7 +9,7 @@ import { DynamicInvoiceButton as InvoiceButton } from '@/components/InvoiceHelpe
 import CommissionCalculator from '@/components/CommissionCalculator';
 import StatusSelector from '@/components/ProjectStatusSelect';
 import { addProjectService, deleteProjectService, updateProjectDetails } from '@/app/actions';
-import ClientLabelSelect from './ClientLabelSelect';
+import ClientAgencySelect from './ClientAgencySelect';
 
 interface ProjectTabsProps {
     project: Project;
@@ -24,7 +24,7 @@ interface ProjectTabsProps {
     stages: TaskStage[];
     videosMap: Record<number, any[]>;
     totalValue: number;
-    projectLabels: { id: number, name: string, color: string }[];
+    agencies: { id: number; name: string; color: string }[];
 }
 
 export default function ProjectTabs({
@@ -40,7 +40,7 @@ export default function ProjectTabs({
     stages,
     videosMap,
     totalValue,
-    projectLabels
+    agencies
 }: ProjectTabsProps) {
     const [activeTab, setActiveTab] = useState('overview');
     const [isEditingDetails, setIsEditingDetails] = useState(false);
@@ -118,10 +118,10 @@ export default function ProjectTabs({
                                         </div>
 
                                         <div>
-                                            <label className="block text-xs text-[var(--text-secondary)] mb-1">Label</label>
-                                            <ClientLabelSelect
-                                                defaultValue={project.label_id || ''}
-                                                labels={projectLabels}
+                                            <label className="block text-xs text-[var(--text-secondary)] mb-1">Agency</label>
+                                            <ClientAgencySelect
+                                                defaultValue={project.agency_id || ''}
+                                                agencies={agencies}
                                             />
                                         </div>
 
@@ -137,18 +137,18 @@ export default function ProjectTabs({
                                                 <span className="text-red-400 font-medium">{new Date(project.due_date).toLocaleDateString()}</span>
                                             </div>
                                         )}
-                                        {project.label_name && (
+                                        {project.agency_name && (
                                             <div className="flex justify-between items-center text-sm">
-                                                <span className="text-[var(--text-tertiary)]">Label</span>
+                                                <span className="text-[var(--text-tertiary)]">Agency</span>
                                                 <span
                                                     className="px-2 py-0.5 rounded-full text-xs font-medium border"
                                                     style={{
-                                                        backgroundColor: `${project.label_color}20`,
-                                                        color: project.label_color,
-                                                        borderColor: `${project.label_color}30`
+                                                        backgroundColor: `${project.agency_color}20`,
+                                                        color: project.agency_color,
+                                                        borderColor: `${project.agency_color}30`
                                                     }}
                                                 >
-                                                    {project.label_name}
+                                                    {project.agency_name}
                                                 </span>
                                             </div>
                                         )}
