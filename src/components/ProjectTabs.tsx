@@ -8,7 +8,7 @@ import ProjectTaskManager from '@/components/ProjectTaskManager';
 import { DynamicInvoiceButton as InvoiceButton } from '@/components/InvoiceHelpers';
 import CommissionCalculator from '@/components/CommissionCalculator';
 import StatusSelector from '@/components/ProjectStatusSelect';
-import { addProjectService, deleteProjectService } from '@/app/actions';
+import { addProjectService, deleteProjectService, updateProjectDetails } from '@/app/actions';
 
 interface ProjectTabsProps {
     project: Project;
@@ -23,6 +23,7 @@ interface ProjectTabsProps {
     stages: TaskStage[];
     videosMap: Record<number, any[]>;
     totalValue: number;
+    projectLabels: { id: number, name: string, color: string }[];
 }
 
 export default function ProjectTabs({
@@ -37,9 +38,11 @@ export default function ProjectTabs({
     tasks,
     stages,
     videosMap,
-    totalValue
+    totalValue,
+    projectLabels
 }: ProjectTabsProps) {
     const [activeTab, setActiveTab] = useState('overview');
+    const [isEditingDetails, setIsEditingDetails] = useState(false);
 
     const tabs = [
         { id: 'overview', label: 'Overview', icon: <LayoutDashboard size={16} /> },
@@ -82,11 +85,82 @@ export default function ProjectTabs({
                 {activeTab === 'overview' && (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {/* Status Card */}
-                        <div className="bg-[#0A0A0A] border border-[var(--border-subtle)] p-6 rounded-2xl">
-                            <h3 className="text-sm font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-4">Project Status</h3>
+                        <div className="bg-[#0A0A0A] border border-[var(--border-subtle)] p-6 rounded-2xl relative group">
+                            <div className="flex justify-between items-center mb-4">
+                                <h3 className="text-sm font-bold text-[var(--text-secondary)] uppercase tracking-wider">Project Status</h3>
+                                <button
+                                    onClick={() => setIsEditingDetails(!isEditingDetails)}
+                                    className="text-xs text-violet-400 hover:text-white transition-colors opacity-0 group-hover:opacity-100"
+                                >
+                                    {isEditingDetails ? 'Cancel' : 'Edit Details'}
+                                </button>
+                            </div>
+
                             <div className="mb-6">
                                 <StatusSelector projectId={project.id} currentStatus={project.status} />
                             </div>
+
+                            {isEditingDetails ? (
+                                <form action={async (formData) => {
+                                    await updateProjectDetails(formData);
+                                    setIsEditingDetails(false);
+                                }} className="space-y-4 border-t border-[var(--border-subtle)] pt-4 mb-4">
+                                    <input type="hidden" name="projectId" value={project.id} />
+
+                                    <div>
+                                        <label className="block text-xs text-[var(--text-secondary)] mb-1">Due Date</label>
+                                        <input
+                                            type="date"
+                                            name="dueDate"
+                                            defaultValue={project.due_date ? new Date(project.due_date).toISOString().split('T')[0] : ''}
+                                            className="w-full bg-black border border-[var(--border-subtle)] rounded px-2 py-1.5 text-xs text-white focus:border-violet-500 outline-none color-scheme-dark"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-xs text-[var(--text-secondary)] mb-1">Label</label>
+                                        <select
+                                            name="labelId"
+                                            defaultValue={project.label_id || ''}
+                                            className="w-full bg-black border border-[var(--border-subtle)] rounded px-2 py-1.5 text-xs text-white focus:border-violet-500 outline-none"
+                                        >
+                                            <option value="">No Label</option>
+                                            {projectLabels.map(label => (
+                                                <option key={label.id} value={label.id}>{label.name}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    <button className="w-full bg-violet-600 hover:bg-violet-700 text-white text-xs font-bold py-2 rounded transition-colors">
+                                        Save Changes
+                                    </button>
+                                </form>
+                            ) : (
+                                <div className="space-y-2 mb-4 border-t border-[var(--border-subtle)] pt-4">
+                                    {project.due_date && (
+                                        <div className="flex justify-between items-center text-sm">
+                                            <span className="text-[var(--text-tertiary)]">Due Date</span>
+                                            <span className="text-red-400 font-medium">{new Date(project.due_date).toLocaleDateString()}</span>
+                                        </div>
+                                    )}
+                                    {project.label_name && (
+                                        <div className="flex justify-between items-center text-sm">
+                                            <span className="text-[var(--text-tertiary)]">Label</span>
+                                            <span
+                                                className="px-2 py-0.5 rounded-full text-xs font-medium border"
+                                                style={{
+                                                    backgroundColor: `${project.label_color}20`,
+                                                    color: project.label_color,
+                                                    borderColor: `${project.label_color}30`
+                                                }}
+                                            >
+                                                {project.label_name}
+                                            </span>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
                             <div className="flex justify-between items-center text-sm border-t border-[var(--border-subtle)] pt-4">
                                 <span className="text-[var(--text-tertiary)]">Created</span>
                                 <span className="font-mono">{new Date(project.created_at).toLocaleDateString()}</span>

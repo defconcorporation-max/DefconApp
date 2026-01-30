@@ -1,4 +1,4 @@
-import { getProjectById, getProjectShoots, getProjectServices, getServices, getCommissions, getSettings, getTeamMembers, getClient, getProjectTasks, getTaskStages, getShootVideos } from '@/app/actions';
+import { getProjectById, getProjectShoots, getProjectServices, getServices, getCommissions, getSettings, getTeamMembers, getClient, getProjectTasks, getTaskStages, getShootVideos, getProjectLabels } from '@/app/actions';
 import { Project, Shoot, Service, ProjectService, ProjectTask, TaskStage, Client } from '@/types';
 import Link from 'next/link';
 import { ArrowLeft, Calendar } from 'lucide-react';
@@ -34,6 +34,8 @@ export default async function ProjectDetailsPage({ params }: { params: Promise<{
     const client = await getClient(project.client_id) as Client;
     const tasks = await getProjectTasks(projectId) as ProjectTask[];
     const stages = await getTaskStages() as TaskStage[];
+
+    const projectLabels = await getProjectLabels(project.client_id);
 
     // Fetch videos for ShootManager
     const videosMap: Record<number, any[]> = {};
@@ -94,6 +96,7 @@ export default async function ProjectDetailsPage({ params }: { params: Promise<{
                 stages={stages}
                 videosMap={videosMap}
                 totalValue={totalValue}
+                projectLabels={projectLabels}
             />
         </main>
     );

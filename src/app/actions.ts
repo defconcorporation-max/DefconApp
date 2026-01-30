@@ -1485,13 +1485,15 @@ export async function deleteBetaFeedback(formData: FormData) {
     const id = Number(formData.get('id'));
     await db.execute({
         sql: 'DELETE FROM beta_feedback WHERE id = ?',
-        args: [id]
+```
     });
     revalidatePath('/beta-feedback');
 }
 
-// --- PROJECT LABELS ACTIONS ---
-export async function getProjectLabels() {
+// --- PROJECT LABELS ---
+
+export async function getProjectLabels(clientId?: number) {
+    // Currently labels are global, but keeping argument for future use/compatibility
     await ensureProjectFeatures();
     const { rows } = await db.execute('SELECT * FROM project_labels ORDER BY name ASC');
     return rows as unknown as { id: number, name: string, color: string }[];
@@ -1526,7 +1528,7 @@ export async function updateClient(formData: FormData) {
         sql: 'UPDATE clients SET name = ?, company_name = ?, plan = ? WHERE id = ?',
         args: [name, company, plan, id]
     });
-    revalidatePath(`/clients/${id}`);
+    revalidatePath(`/ clients / ${ id }`);
     revalidatePath('/');
 }
 
@@ -1539,7 +1541,7 @@ export async function getTeamSchedule() {
         JOIN team_members tm ON sa.member_id = tm.id
         WHERE s.shoot_date >= date('now', '-1 month')
         ORDER BY s.shoot_date ASC
-    `);
+        `);
 
     return rows as unknown as ShootAssignment[];
 }
