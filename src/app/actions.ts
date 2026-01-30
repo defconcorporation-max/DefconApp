@@ -30,6 +30,33 @@ export async function createClient(formData: FormData) {
     revalidatePath('/');
 }
 
+// --- SCHEMA MIGRATION HELPERS (Lazy Run) ---
+async function ensureProjectFeatures() {
+    // 1. Project Labels Table
+    await db.execute(`
+        CREATE TABLE IF NOT EXISTS project_labels (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            color TEXT NOT NULL
+        )
+    `);
+
+    // 2. Add columns to projects if not exist (SQLite doesn't support IF NOT EXISTS for columns easily, so we try/catch)
+    try {
+        await db.execute('ALTER TABLE projects ADD COLUMN due_date TEXT');
+    } catch (e) { }
+    try {
+        await db.execute('ALTER TABLE projects ADD COLUMN label_id INTEGER');
+    } catch (e) { }
+
+    // 3. Add column to shoots
+    try {
+        await db.execute('ALTER TABLE shoots ADD COLUMN due_date TEXT');
+    } catch (e) { }
+}
+
+
+
 export async function openClientFolder(folderPath: string) {
     if (!folderPath) return;
     // Open in Explorer (Server Side? This only works if running locally)
@@ -222,6 +249,7 @@ export async function getShoots(clientId: number): Promise<Shoot[]> {
 
 
 export async function getAllShoots(): Promise<ShootWithClient[]> {
+    await ensureProjectFeatures();
     const { rows } = await db.execute(`
         SELECT shoots.*, 
         clients.name as client_name, 

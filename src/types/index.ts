@@ -41,6 +41,7 @@ export interface Shoot {
     project_id?: number | null;
     status: string;
     post_prod_status?: string;
+    due_date?: string;
 }
 
 export interface ShootVideo {
@@ -84,6 +85,11 @@ export interface Project {
     shoot_count?: number;
     service_count?: number;
     total_value?: number;
+    due_date?: string;
+    label_id?: number;
+    // Joined
+    label_name?: string;
+    label_color?: string;
 }
 
 export interface Service {
@@ -164,6 +170,12 @@ export interface TaskStage {
     color: string;
     position: number;
     is_default: boolean;
+}
+
+export interface ProjectLabel {
+    id: number;
+    name: string;
+    color: string;
 }
 
 export interface Expense {
