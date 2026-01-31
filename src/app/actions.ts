@@ -1750,4 +1750,26 @@ export async function getTeamSchedule() {
     return rows as unknown as ShootAssignment[];
 }
 
+export async function getAgencyById(id: number) {
+    const { rows } = await db.execute({
+        sql: 'SELECT * FROM agencies WHERE id = ?',
+        args: [id]
+    });
+    return rows[0] as unknown as { id: number; name: string; color: string };
+}
+
+export async function getAgencyClients(agencyId: number) {
+    const { rows } = await db.execute({
+        sql: `
+            SELECT c.*, 
+            (SELECT COUNT(*) FROM projects p WHERE p.client_id = c.id) as project_count
+            FROM clients c 
+            WHERE c.agency_id = ?
+            ORDER BY c.name ASC
+        `,
+        args: [agencyId]
+    });
+    return rows as unknown as any[];
+}
+
 
