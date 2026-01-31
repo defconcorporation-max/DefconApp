@@ -60,16 +60,16 @@ export default function ProjectFinancialList({ projects }: { projects: any[] }) 
                                                 }`}>
                                                 {isPaidOff ? 'Paid Off' : (project.status || 'Active')}
                                             </span>
-                                            {project.label_name && (
+                                            {project.agency_name && (
                                                 <span
                                                     className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full border"
                                                     style={{
-                                                        backgroundColor: `${project.label_color}20`,
-                                                        color: project.label_color,
-                                                        borderColor: `${project.label_color}30`
+                                                        backgroundColor: `${project.agency_color}20`,
+                                                        color: project.agency_color,
+                                                        borderColor: `${project.agency_color}30`
                                                     }}
                                                 >
-                                                    {project.label_name}
+                                                    {project.agency_name}
                                                 </span>
                                             )}
                                             {project.due_date && (

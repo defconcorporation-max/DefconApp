@@ -14,24 +14,24 @@ export async function createClient(formData: FormData) {
     const company = formData.get('company') as string;
     const plan = formData.get('plan') as string;
 
-    // Handle Label Logic
-    const rawLabelId = formData.get('labelId');
-    let finalLabelId = null;
+    // Handle Agency Logic
+    const rawAgencyId = formData.get('agencyId');
+    let finalAgencyId = null;
 
-    if (rawLabelId === 'NEW') {
-        const newLabelName = formData.get('newLabelName') as string;
-        const newLabelColor = formData.get('newLabelColor') as string;
+    if (rawAgencyId === 'NEW') {
+        const newAgencyName = formData.get('newAgencyName') as string;
+        const newAgencyColor = formData.get('newAgencyColor') as string;
 
-        if (newLabelName) {
-            const labelRes = await db.execute({
-                sql: 'INSERT INTO project_labels (name, color) VALUES (?, ?)',
-                args: [newLabelName, newLabelColor || '#8b5cf6']
+        if (newAgencyName) {
+            const agencyRes = await db.execute({
+                sql: 'INSERT INTO agencies (name, color) VALUES (?, ?)',
+                args: [newAgencyName, newAgencyColor || '#8b5cf6']
             });
-            finalLabelId = Number(labelRes.lastInsertRowid);
+            finalAgencyId = Number(agencyRes.lastInsertRowid);
         }
     } else {
-        const parsedLabelId = rawLabelId ? Number(rawLabelId) : null;
-        finalLabelId = Number.isFinite(parsedLabelId) ? parsedLabelId : null;
+        const parsedAgencyId = rawAgencyId ? Number(rawAgencyId) : null;
+        finalAgencyId = Number.isFinite(parsedAgencyId) ? parsedAgencyId : null;
     }
 
     // Create Folder (Local Dev Only - skip on Vercel)
@@ -43,8 +43,8 @@ export async function createClient(formData: FormData) {
     // Use cloud storage or manual folder management in production
 
     await db.execute({
-        sql: 'INSERT INTO clients (name, company_name, plan, folder_path, label_id) VALUES (?, ?, ?, ?, ?)',
-        args: [name, company, plan, folderPath, finalLabelId]
+        sql: 'INSERT INTO clients (name, company_name, plan, folder_path, agency_id) VALUES (?, ?, ?, ?, ?)',
+        args: [name, company, plan, folderPath, finalAgencyId]
     });
 
     revalidatePath('/');
@@ -53,8 +53,10 @@ export async function createClient(formData: FormData) {
 // --- SCHEMA MIGRATION HELPERS (Lazy Run) ---
 async function ensureProjectFeatures() {
     // 1. Project Labels Table
+    // 1. Agencies Table (Handled by migration, but keeping safe if needed? No, migrate-agencies handles it)
+    // Removed project_labels creation
     await db.execute(`
-        CREATE TABLE IF NOT EXISTS project_labels (
+        CREATE TABLE IF NOT EXISTS agencies (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
             color TEXT NOT NULL
@@ -318,17 +320,17 @@ export async function getAllShoots() {
         projects.title as project_title,
         pp.status as post_prod_status,
         pp.id as post_prod_id,
-        pl.name as label_name,
-        pl.color as label_color
+        ag.name as agency_name,
+        ag.color as agency_color
         FROM shoots 
         JOIN clients ON shoots.client_id = clients.id 
         LEFT JOIN projects ON shoots.project_id = projects.id
         LEFT JOIN post_prod_projects pp ON shoots.id = pp.shoot_id
-        LEFT JOIN project_labels pl ON clients.label_id = pl.id
+        LEFT JOIN agencies ag ON clients.agency_id = ag.id
         ORDER BY shoot_date ASC
     `);
     console.log('getAllShoots DEBUG:', rows.length > 0 ? rows[0] : 'No rows');
-    return rows as unknown as (Shoot & { client_name: string, client_id: number, label_name?: string, label_color?: string, post_prod_status?: string })[];
+    return rows as unknown as (Shoot & { client_name: string, client_id: number, agency_name?: string, agency_color?: string, post_prod_status?: string })[];
 }
 
 export async function addShoot(formData: FormData) {
@@ -968,11 +970,7 @@ export async function getProjects(clientId: number): Promise<Project[]> {
         `,
         args: [clientId]
     });
-    return rows.map((r: any) => ({
-        ...r,
-        label_name: r.agency_name,
-        label_color: r.agency_color
-    })) as unknown as Project[];
+    return rows as unknown as Project[];
 }
 
 
@@ -1087,15 +1085,14 @@ export async function createProject(formData: FormData) {
 
     const status = formData.get('status') as string;
     const dueDate = formData.get('dueDate') as string;
-    const labelId = formData.get('labelId') ? Number(formData.get('labelId')) : null;
 
     if (!clientId || !title) return;
 
     await ensureProjectFeatures();
 
     await db.execute({
-        sql: 'INSERT INTO projects (client_id, title, status, due_date, label_id) VALUES (?, ?, ?, ?, ?)',
-        args: [clientId, title, status, dueDate, labelId]
+        sql: 'INSERT INTO projects (client_id, title, status, due_date) VALUES (?, ?, ?, ?)',
+        args: [clientId, title, status, dueDate]
     });
     revalidatePath(`/clients/${clientId}`);
 }

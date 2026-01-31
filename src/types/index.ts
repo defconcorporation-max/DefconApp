@@ -87,10 +87,7 @@ export interface Project {
     service_count?: number;
     total_value?: number;
     due_date?: string;
-    label_id?: number;
     // Joined
-    label_name?: string;
-    label_color?: string;
     agency_id?: number;
     agency_name?: string;
     agency_color?: string;

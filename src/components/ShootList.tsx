@@ -52,11 +52,6 @@ export default function ShootList({ shoots, teamMembers, allAssignments }: Shoot
                     valB = b.due_date ? new Date(b.due_date).getTime() : (sortOrder === 'asc' ? 9999999999999 : 0);
                     break;
                 case 'agency':
-                    valA = a.label_name || ''; // Kept as label_name for compat or updated? 
-                    // Let's assume we update the property to agency_name.
-                    // But wait, if I update interface EnhancedShoot, I need to update it everywhere.
-                    // The interface is defined in lines 9-16 locally? Yes.
-                    // I'll update the interface too.
                     valA = a.agency_name || '';
                     valB = b.agency_name || '';
                     break;

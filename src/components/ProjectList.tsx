@@ -13,15 +13,15 @@ interface EnhancedProject extends Project {
     shoots_in_post_prod: number;
     shoots_done: number;
     total_value: number;
-    label_name?: string;
-    label_color?: string;
+    agency_name?: string;
+    agency_color?: string;
 }
 
 interface ProjectListProps {
     projects: EnhancedProject[];
 }
 
-type SortOption = 'date' | 'dueDate' | 'label' | 'status' | 'client' | 'value';
+type SortOption = 'date' | 'dueDate' | 'agency' | 'status' | 'client' | 'value';
 type SortOrder = 'asc' | 'desc';
 
 export default function ProjectList({ projects }: ProjectListProps) {
@@ -52,9 +52,9 @@ export default function ProjectList({ projects }: ProjectListProps) {
                     valA = a.due_date ? new Date(a.due_date).getTime() : (sortOrder === 'asc' ? 9999999999999 : 0);
                     valB = b.due_date ? new Date(b.due_date).getTime() : (sortOrder === 'asc' ? 9999999999999 : 0);
                     break;
-                case 'label':
-                    valA = a.label_name || '';
-                    valB = b.label_name || '';
+                case 'agency':
+                    valA = a.agency_name || '';
+                    valB = b.agency_name || '';
                     break;
                 case 'status':
                     valA = a.status;
@@ -140,7 +140,7 @@ export default function ProjectList({ projects }: ProjectListProps) {
                         {[
                             { id: 'date', label: 'Created' },
                             { id: 'dueDate', label: 'Due Date' },
-                            { id: 'label', label: 'Label' },
+                            { id: 'agency', label: 'Agency' },
                             { id: 'client', label: 'Client' },
                             { id: 'value', label: 'Value' }
                         ].map((opt) => (

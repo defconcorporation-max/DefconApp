@@ -29,16 +29,16 @@ export default function ProjectManager({ clientId, projects, agencies = [] }: { 
                                             }`}>
                                             {project.status || 'Active'}
                                         </span>
-                                        {(project.agency_name || project.label_name) && (
+                                        {project.agency_name && (
                                             <span
                                                 className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full border border-white/10"
                                                 style={{
-                                                    backgroundColor: `${project.agency_color || project.label_color}20`,
-                                                    color: project.agency_color || project.label_color,
-                                                    borderColor: `${project.agency_color || project.label_color}30`
+                                                    backgroundColor: `${project.agency_color}20`,
+                                                    color: project.agency_color,
+                                                    borderColor: `${project.agency_color}30`
                                                 }}
                                             >
-                                                {project.agency_name || project.label_name}
+                                                {project.agency_name}
                                             </span>
                                         )}
                                     </div>
