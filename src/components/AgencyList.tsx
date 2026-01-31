@@ -28,36 +28,38 @@ export default function AgencyList({ agencies, stats }: Props) {
             {/* Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {stats.map(stat => (
-                    <div key={stat.id} className="bg-[#0A0A0A] border border-[var(--border-subtle)] rounded-xl p-6 relative overflow-hidden group hover:border-indigo-500/30 transition-all">
-                        <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
-                            <Building size={64} style={{ color: stat.color }} />
-                        </div>
-
-                        <div className="relative z-10">
-                            <div className="flex items-center gap-3 mb-4">
-                                <div className="w-3 h-8 rounded-full" style={{ backgroundColor: stat.color }}></div>
-                                <h3 className="text-xl font-bold text-white">{stat.name}</h3>
+                    <div key={stat.id} className="bg-[#0A0A0A] border border-[var(--border-subtle)] rounded-xl relative overflow-hidden group hover:border-indigo-500/30 transition-all">
+                        <Link href={`/agencies/${stat.id}`} className="block p-6 h-full">
+                            <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
+                                <Building size={64} style={{ color: stat.color }} />
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <p className="text-xs text-[var(--text-secondary)] uppercase font-mono mb-1">Clients</p>
-                                    <p className="text-2xl font-bold text-white flex items-center gap-2">
-                                        <Users size={16} className="text-[var(--text-tertiary)]" />
-                                        {stat.client_count}
-                                    </p>
+                            <div className="relative z-10">
+                                <div className="flex items-center gap-3 mb-4">
+                                    <div className="w-3 h-8 rounded-full" style={{ backgroundColor: stat.color }}></div>
+                                    <h3 className="text-xl font-bold text-white">{stat.name}</h3>
                                 </div>
-                                <div>
-                                    <p className="text-xs text-[var(--text-secondary)] uppercase font-mono mb-1">Revenue</p>
-                                    <p className="text-2xl font-bold text-green-400 flex items-center gap-2">
-                                        {/* <DollarSign size={16} className="text-green-500/50" /> */}
-                                        ${stat.total_revenue.toLocaleString()}
-                                    </p>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <p className="text-xs text-[var(--text-secondary)] uppercase font-mono mb-1">Clients</p>
+                                        <p className="text-2xl font-bold text-white flex items-center gap-2">
+                                            <Users size={16} className="text-[var(--text-tertiary)]" />
+                                            {stat.client_count}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs text-[var(--text-secondary)] uppercase font-mono mb-1">Revenue</p>
+                                        <p className="text-2xl font-bold text-green-400 flex items-center gap-2">
+                                            {/* <DollarSign size={16} className="text-green-500/50" /> */}
+                                            ${stat.total_revenue.toLocaleString()}
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
+                        </Link>
 
-                        <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
+                        <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2 z-20">
                             <form action={deleteAgency}>
                                 <input type="hidden" name="id" value={stat.id} />
                                 <button type="submit" className="p-2 bg-red-500/10 text-red-400 rounded hover:bg-red-500/20" title="Delete Agency">
