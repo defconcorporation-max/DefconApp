@@ -1,9 +1,10 @@
-import { getClients, createClient, getAllShoots, getDashboardStats, getPipelineStages, getAllDashboardTasks, getAgencies } from './actions';
+import { getClients, createClient, getAllShoots, getDashboardStats, getPipelineStages, getAllDashboardTasks, getAgencies, getActivities } from './actions';
 import Link from 'next/link';
 import DashboardCalendar from '@/components/DashboardCalendar';
 import ClientKanban from '@/components/ClientKanban';
 import TaskManager from '@/components/TaskManager';
 import ClientAgencySelect from '@/components/ClientAgencySelect';
+import ActivityFeed from '@/components/ActivityFeed';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,6 +15,7 @@ export default async function Home() {
     let stages: any[] = [];
     let tasks: any[] = [];
     let agencies: any[] = [];
+    let activities: any[] = [];
     let error = null;
 
     try {
@@ -23,10 +25,11 @@ export default async function Home() {
             getDashboardStats(),
             getPipelineStages(),
             getAllDashboardTasks(),
-            getAgencies()
+            getAgencies(),
+            getActivities()
         ]);
 
-        [clients, allShoots, stats, stages, tasks, agencies] = results;
+        [clients, allShoots, stats, stages, tasks, agencies, activities] = results;
     } catch (e: any) {
         console.warn('Dashboard Data Fetch Error:', e);
         error = e.message || 'Unknown database error';
@@ -129,9 +132,14 @@ export default async function Home() {
                 </div>
             </div>
 
-            <div className="overflow-x-auto pb-4 -mx-4 px-4 md:mx-0 md:px-0">
-                <div className="min-w-[800px] md:min-w-0">
+
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div className="md:col-span-2">
                     <TaskManager initialTasks={tasks} />
+                </div>
+                <div className="md:col-span-1">
+                    <ActivityFeed activities={activities} />
                 </div>
             </div>
 

@@ -47,6 +47,10 @@ export async function createClient(formData: FormData) {
         args: [name, company, plan, folderPath, finalAgencyId]
     });
 
+    try {
+        await logActivity('CLIENT_CREATED', `New client added: ${company || name}`, Number((await db.execute('SELECT last_insert_rowid() as id')).rows[0].id as unknown as number), 'client');
+    } catch (e) { console.error('Log error', e); }
+
     revalidatePath('/');
 }
 
@@ -350,6 +354,10 @@ export async function addShoot(formData: FormData) {
         args: [clientId, projectId, title, date, startTime, endTime, color, dueDate]
     });
 
+    try {
+        await logActivity('SHOOT_CREATED', `Shoot scheduled: ${title}`, projectId || clientId, projectId ? 'project' : 'client');
+    } catch (e) { console.error('Log error', e); }
+
     revalidatePath(`/clients/${clientId}`);
     if (projectId) {
         revalidatePath(`/projects/${projectId}`);
@@ -619,8 +627,13 @@ export async function addPayment(formData: FormData) {
         args: [clientId, amount, status, date, description, projectId]
     });
 
+    try {
+        await logActivity('PAYMENT_RECEIVED', `Payment received: $${amount}`, clientId, 'client');
+    } catch (e) { console.error('Log error', e); }
+
     revalidatePath('/finance');
     revalidatePath(`/clients/${clientId}`);
+    revalidatePath('/');
 }
 
 export async function getDashboardStats() {
@@ -1094,6 +1107,10 @@ export async function createProject(formData: FormData) {
         sql: 'INSERT INTO projects (client_id, title, status, due_date) VALUES (?, ?, ?, ?)',
         args: [clientId, title, status, dueDate]
     });
+
+    try {
+        await logActivity('PROJECT_CREATED', `New project: ${title}`, clientId, 'client');
+    } catch (e) { console.error('Log error', e); }
     revalidatePath(`/clients/${clientId}`);
 }
 
@@ -1171,6 +1188,10 @@ export async function updateProjectStatus(formData: FormData) {
         sql: 'UPDATE projects SET status = ? WHERE id = ?',
         args: [status, id]
     });
+
+    try {
+        await logActivity('PROJECT_STATUS', `Project status updated to ${status}`, id, 'project');
+    } catch (e) { console.error('Log error', e); }
     revalidatePath(`/projects/${id}`);
 }
 
@@ -1220,9 +1241,14 @@ export async function finishShoot(shootId: number) {
             { sql: 'UPDATE shoots SET status = ? WHERE id = ?', args: ['Completed', shootId] },
             { sql: 'INSERT INTO post_production (shoot_id, status) VALUES (?, ?)', args: [shootId, 'Derush'] }
         ], 'write');
+
+        try {
+            await logActivity('SHOOT_COMPLETED', `Shoot finished and moved to post-production`, shootId, 'shoot');
+        } catch (e) { console.error('Log error', e); }
         console.log('Batch transaction completed successfully');
         revalidatePath(`/shoots/${shootId}`);
         revalidatePath('/post-production');
+        revalidatePath('/');
     } catch (error) {
         console.error('Error in finishShoot:', error);
         throw error;
@@ -1770,3 +1796,46 @@ export async function getAgencyClients(agencyId: number) {
 }
 
 
+
+// --- ACTIVITY FEED ACTIONS ---
+
+async function ensureActivityTable() {
+    await db.execute(`
+        CREATE TABLE IF NOT EXISTS activities (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            type TEXT NOT NULL,
+            description TEXT NOT NULL,
+            entity_id INTEGER,
+            entity_type TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            meta TEXT
+        )
+    `);
+}
+
+export async function logActivity(type: string, description: string, entityId?: number, entityType?: string, meta?: any) {
+    // Fire and forget - don't await strictly if performance is concern, but here we want to ensure it's logged
+    try {
+        await ensureActivityTable();
+        await db.execute({
+            sql: 'INSERT INTO activities (type, description, entity_id, entity_type, meta) VALUES (?, ?, ?, ?, ?)',
+            args: [type, description, entityId || null, entityType || null, meta ? JSON.stringify(meta) : null]
+        });
+    } catch (e) {
+        console.error('Failed to log activity:', e);
+    }
+}
+
+export async function getActivities(limit = 20) {
+    try {
+        await ensureActivityTable();
+        const { rows } = await db.execute({
+            sql: 'SELECT * FROM activities ORDER BY created_at DESC LIMIT ?',
+            args: [limit]
+        });
+        return rows as unknown as any[];
+    } catch (e) {
+        console.error('Failed to fetch activities:', e);
+        return [];
+    }
+}
