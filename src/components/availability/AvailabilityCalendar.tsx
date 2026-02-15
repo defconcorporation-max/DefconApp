@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AvailabilitySlot, AvailabilityRequest } from '@/types';
 import { deleteAvailabilitySlot, requestAvailabilitySlot, updateAvailabilityRequest, createAvailabilitySlot, toggleShootBlocking } from '@/app/actions';
 import { format, startOfWeek, addDays, isSameDay, getHours, getMinutes, isToday, addMinutes } from 'date-fns';
@@ -29,6 +29,19 @@ export default function AvailabilityCalendar({ initialSlots, initialShoots, init
     const [slots, setSlots] = useState(initialSlots);
     const [shoots, setShoots] = useState(initialShoots);
     const [requests, setRequests] = useState(initialRequests);
+
+    // Sync state with props when server revalidates
+    useEffect(() => {
+        setSlots(initialSlots);
+    }, [initialSlots]);
+
+    useEffect(() => {
+        setShoots(initialShoots);
+    }, [initialShoots]);
+
+    useEffect(() => {
+        setRequests(initialRequests);
+    }, [initialRequests]);
 
     // Modal State
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -93,17 +106,24 @@ export default function AvailabilityCalendar({ initialSlots, initialShoots, init
         setIsModalOpen(true);
     };
 
-    const handleShootClick = (shoot: any, isBlocking: boolean) => {
+    const handleShootClick = async (shoot: any, isBlocking: boolean) => {
+        console.log('handleShootClick', shoot.id, isBlocking);
         if (!isAdmin) return;
 
         if (isBlocking) {
-            // If already blocked, clicking opens EDIT mode to adjust time or unblock
+            // Unblocking or Editing
             setEditingShoot(shoot);
             setEditingSlot(undefined);
             setIsModalOpen(true);
         } else {
-            // If not blocked, clicking blocks it immediately (default 2h or whatever is set)
-            toggleShootBlocking(shoot.id, true);
+            // Blocking
+            try {
+                console.log('Toggling blocking ON for shoot', shoot.id);
+                await toggleShootBlocking(shoot.id, true);
+            } catch (error) {
+                console.error('Failed to toggle blocking', error);
+                alert('Failed to block shoot. Check console.');
+            }
         }
     };
 
@@ -231,7 +251,7 @@ export default function AvailabilityCalendar({ initialSlots, initialShoots, init
                                         }
 
                                         // Linked Block Mode
-                                        const isBlocking = shoot.is_blocking === 1;
+                                        const isBlocking = !!shoot.is_blocking;
 
                                         // Style classes
                                         const baseClasses = "absolute left-1.5 right-1.5 rounded-md border p-1.5 text-xs transition-all shadow-sm";
