@@ -83,34 +83,52 @@ export default function AvailabilityCalendar({ initialSlots, initialShoots, init
     // Quick Action: Block Shoot Time
     const handleBlockShoot = async (shoot: any) => {
         if (!isAdmin) return;
-        // Create availability slot (block) based on shoot time
-        // We'll trust the user interaction, but ideally we'd optimistic update
+
+        console.log('Blocking shoot:', shoot); // Debugging
+
         if (confirm(`Mark time as unavailable for "${shoot.project_title}"?`)) {
-            // For simplicity, we just use the create action. 
-            // Ideally we shouldn't rely on window.confirm in a "Pro" app, but for speed:
-            const start = typeof shoot.shoot_date === 'string' ? `${shoot.shoot_date.split(' ')[0]} 09:00` : format(new Date(shoot.shoot_date), 'yyyy-MM-dd HH:mm');
-            // Defaulting because shoot_date might not have time or duration in this object yet? 
-            // Actually database `shoots` has `shoot_date` (datetime) usually. 
-            // If not, we might need a default block. Let's assume 9-5 or similar if time missing.
-            // Wait, `shoot_date` in DB is usually just YYYY-MM-DD or datetime.
-            // If just date, we default.
+            try {
+                let startStr = '';
+                let endStr = '';
 
-            let startStr = shoot.shoot_date;
-            let endStr = shoot.shoot_date; // Placeholder
+                // Safe Date Parsing
+                const shootDateVal = shoot.shoot_date;
+                let d: Date;
 
-            // If shoot_date is YYYY-MM-DD
-            if (shoot.shoot_date.length === 10) {
-                startStr = `${shoot.shoot_date} 09:00`;
-                endStr = `${shoot.shoot_date} 17:00`;
-            } else {
-                // Assume it has time
-                const d = new Date(shoot.shoot_date);
-                startStr = format(d, 'yyyy-MM-dd HH:mm');
-                endStr = format(addMinutes(d, 480), 'yyyy-MM-dd HH:mm'); // +8 hours
+                if (shootDateVal instanceof Date) {
+                    d = shootDateVal;
+                } else {
+                    d = new Date(shootDateVal);
+                }
+
+                // Check if valid date
+                if (isNaN(d.getTime())) {
+                    alert('Invalid shoot date found.');
+                    console.error('Invalid date:', shootDateVal);
+                    return;
+                }
+
+                // Determine context: Is it a generic date (YYYY-MM-DD) or specific time?
+                // If the input string was length 10 (YYYY-MM-DD), assume full day logic (09:00 - 17:00)
+                // If it has time, use it.
+                const isDateOnly = typeof shootDateVal === 'string' && shootDateVal.length === 10;
+
+                if (isDateOnly) {
+                    startStr = `${format(d, 'yyyy-MM-dd')} 09:00`;
+                    endStr = `${format(d, 'yyyy-MM-dd')} 17:00`;
+                } else {
+                    // specific time
+                    startStr = format(d, 'yyyy-MM-dd HH:mm');
+                    endStr = format(addMinutes(d, 480), 'yyyy-MM-dd HH:mm'); // +8 hours default
+                }
+
+                console.log('Creating block:', { startStr, endStr });
+                await createAvailabilitySlot(startStr, endStr);
+                // Revalidate happens on server
+            } catch (error) {
+                console.error('Failed to block shoot:', error);
+                alert('Failed to create unavailability block.');
             }
-
-            await createAvailabilitySlot(startStr, endStr);
-            // Revalidate happens on server
         }
     };
 
