@@ -2025,6 +2025,34 @@ export async function updateAvailabilitySlot(id: number, start: string, end: str
     revalidatePath('/availability');
 }
 
+export async function updateShootTime(id: number, start: string, end: string) {
+    if (!id || !start || !end) return;
+    // Extract times if full datetime provided, or just use as is if logic handles it. 
+    // The DB likely expects HH:MM:SS or similar for start_time/end_time columns? 
+    // Previous lookup showed start_time/end_time in Shoot interface.
+    // Let's assume we pass just the TIME part (HH:mm) or update the local columns.
+
+    // WAIT: Shoot table has `shoot_date` (TEXT/DATE) and `start_time` (TEXT) and `end_time` (TEXT).
+    // The inputs `start` and `end` from SlotModal are usually full DateTime strings or generic arguments?
+    // In SlotModal currently, we construct full strings "YYYY-MM-DD HH:mm".
+
+    // We need to parse these to update `shoots`. 
+    // `shoot_date` = YYYY-MM-DD
+    // `start_time` = HH:mm
+    // `end_time` = HH:mm
+
+    const datePart = start.split(' ')[0];
+    const startTimePart = start.split(' ')[1];
+    const endTimePart = end.split(' ')[1];
+
+    await db.execute({
+        sql: 'UPDATE shoots SET shoot_date = ?, start_time = ?, end_time = ? WHERE id = ?',
+        args: [datePart, startTimePart, endTimePart, id]
+    });
+    revalidatePath('/availability');
+    revalidatePath(`/shoots/${id}`);
+}
+
 export async function deleteAvailabilitySlot(id: number) {
     if (!id) return;
     try {

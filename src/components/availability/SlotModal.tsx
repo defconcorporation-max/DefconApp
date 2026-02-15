@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { createAvailabilitySlot, updateAvailabilitySlot } from '@/app/actions';
-import { X, Clock, Calendar as CalendarIcon, Check, Edit } from 'lucide-react';
+import { createAvailabilitySlot, updateAvailabilitySlot, updateShootTime, toggleShootBlocking } from '@/app/actions';
+import { X, Clock, Calendar as CalendarIcon, Check, Edit, Video, Unlock } from 'lucide-react';
 import { format, differenceInMinutes, parseISO } from 'date-fns';
 
 interface SlotModalProps {
@@ -8,11 +8,12 @@ interface SlotModalProps {
     onClose: () => void;
     initialDate?: Date;
     initialStartTime?: string; // HH:mm
-    initialSlot?: { id: number; start_time: string; end_time: string };
-    mode?: 'create' | 'block' | 'edit';
+    initialSlot?: { id: number; start_time: string; end_time: string }; // For manual blocks
+    initialShoot?: { id: number; shoot_date: string; start_time?: string; end_time?: string; is_blocking: number }; // For shoots
+    mode?: 'create' | 'block' | 'edit' | 'edit-shoot';
 }
 
-export default function SlotModal({ isOpen, onClose, initialDate, initialStartTime, initialSlot, mode = 'create' }: SlotModalProps) {
+export default function SlotModal({ isOpen, onClose, initialDate, initialStartTime, initialSlot, initialShoot, mode = 'create' }: SlotModalProps) {
     const [isLoading, setIsLoading] = useState(false);
     const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'));
     const [startTime, setStartTime] = useState('10:00');
@@ -21,42 +22,75 @@ export default function SlotModal({ isOpen, onClose, initialDate, initialStartTi
     // Reset state when opening
     useEffect(() => {
         if (isOpen) {
-            if (initialSlot) {
+            if (mode === 'edit-shoot' && initialShoot) {
+                // Shoot Data
+                // shoot_date is YYYY-MM-DD (usually)
+                // start_time / end_time might be HH:mm or undefined
+
+                let sTime = initialShoot.start_time || '09:00';
+                if (initialShoot.shoot_date.includes(' ')) {
+                    // If legacy datetime format in shoot_date
+                    sTime = initialShoot.shoot_date.split(' ')[1].substring(0, 5);
+                    setDate(initialShoot.shoot_date.split(' ')[0]);
+                } else {
+                    setDate(initialShoot.shoot_date);
+                }
+                setStartTime(sTime.substring(0, 5)); // ensure HH:mm
+
+                // Duration
+                if (initialShoot.start_time && initialShoot.end_time) {
+                    const start = new Date(`2000-01-01 ${initialShoot.start_time}`);
+                    const end = new Date(`2000-01-01 ${initialShoot.end_time}`);
+                    const diff = differenceInMinutes(end, start);
+                    const hours = Math.round(diff / 60);
+                    if ([1, 2, 3, 4, 8].includes(hours)) setDuration(hours.toString());
+                    else setDuration('custom');
+                } else {
+                    setDuration('8'); // Default to full day if no times set yet
+                }
+
+            } else if (mode === 'edit' && initialSlot) {
                 const start = new Date(initialSlot.start_time);
                 const end = new Date(initialSlot.end_time);
                 setDate(format(start, 'yyyy-MM-dd'));
                 setStartTime(format(start, 'HH:mm'));
-                
-                // Calculate duration in hours (approx)
+
                 const diffMins = differenceInMinutes(end, start);
                 const diffHours = Math.round(diffMins / 60);
                 if ([1, 2, 3, 4, 8].includes(diffHours)) {
                     setDuration(diffHours.toString());
                 } else {
-                    setDuration('custom'); // Handle custom duration if needed, for now default to nearest or keep simple
+                    setDuration('custom');
                 }
             } else {
                 if (initialDate) setDate(format(initialDate, 'yyyy-MM-dd'));
                 if (initialStartTime) setStartTime(initialStartTime);
             }
         }
-    }, [isOpen, initialDate, initialStartTime, initialSlot]);
+    }, [isOpen, initialDate, initialStartTime, initialSlot, initialShoot, mode]);
 
     if (!isOpen) return null;
 
     // UI Theme based on mode
     const isBlock = mode === 'block';
     const isEdit = mode === 'edit';
+    const isEditShoot = mode === 'edit-shoot';
+
+    // Shoots are blue/violet, Blocks are red
     const accentColor = (isBlock || isEdit) ? 'red' : 'violet';
-    
+
     let title = 'New Availability Slot';
     let buttonText = 'Create Slot';
+
     if (isBlock) {
         title = 'Add Unavailability';
         buttonText = 'Block Time';
     } else if (isEdit) {
         title = 'Edit Unavailability';
         buttonText = 'Update Block';
+    } else if (isEditShoot) {
+        title = 'Edit Shoot Duration';
+        buttonText = 'Update Shoot Time';
     }
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -66,10 +100,10 @@ export default function SlotModal({ isOpen, onClose, initialDate, initialStartTi
         try {
             // Calculate end time
             const [hours, minutes] = startTime.split(':').map(Number);
-            
+
             // If custom duration logic needed later, handle here. For now rely on select.
-            const durHours = duration === 'custom' ? 2 : Number(duration); 
-            
+            const durHours = duration === 'custom' ? 2 : Number(duration);
+
             const totalMinutes = hours * 60 + minutes + durHours * 60;
             const endHours = Math.floor(totalMinutes / 60);
             const endMinutes = totalMinutes % 60;
@@ -78,7 +112,9 @@ export default function SlotModal({ isOpen, onClose, initialDate, initialStartTi
             const start = `${date} ${startTime}`;
             const end = `${date} ${endTimeStr}`;
 
-            if (isEdit && initialSlot) {
+            if (isEditShoot && initialShoot) {
+                await updateShootTime(initialShoot.id, start, end);
+            } else if (isEdit && initialSlot) {
                 await updateAvailabilitySlot(initialSlot.id, start, end);
             } else {
                 await createAvailabilitySlot(start, end);
@@ -92,12 +128,20 @@ export default function SlotModal({ isOpen, onClose, initialDate, initialStartTi
         }
     };
 
+    const handleUnblock = async () => {
+        if (!initialShoot) return;
+        if (confirm('Unblock this shoot? This will remove the redUnavailable block but keep the shoot event.')) {
+            await toggleShootBlocking(initialShoot.id, false);
+            onClose();
+        }
+    };
+
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
             <div className="bg-[#0f0f0f] border border-[var(--border-subtle)] rounded-xl w-full max-w-sm shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
                 <div className="p-4 border-b border-[var(--border-subtle)] flex justify-between items-center bg-[var(--bg-surface)]">
                     <h3 className="font-semibold text-white flex items-center gap-2">
-                        {isEdit ? <Edit size={16} className={`text-${accentColor}-400`} /> : <Clock size={16} className={`text-${accentColor}-400`} />}
+                        {isEdit || isEditShoot ? <Edit size={16} className={`text-${accentColor}-400`} /> : <Clock size={16} className={`text-${accentColor}-400`} />}
                         {title}
                     </h3>
                     <button onClick={onClose} className="text-[var(--text-tertiary)] hover:text-white transition-colors">
@@ -150,6 +194,17 @@ export default function SlotModal({ isOpen, onClose, initialDate, initialStartTi
                     </div>
 
                     <div className="pt-2 flex justify-end gap-3">
+                        {isEditShoot && (
+                            <button
+                                type="button"
+                                onClick={handleUnblock}
+                                className="mr-auto px-3 py-2 text-xs text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded transition-colors flex items-center gap-1"
+                                title="Remove the unavailability block"
+                            >
+                                <Unlock size={14} /> Unblock
+                            </button>
+                        )}
+
                         <button
                             type="button"
                             onClick={onClose}

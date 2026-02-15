@@ -302,7 +302,8 @@ export default function AvailabilityCalendar({ initialSlots, initialShoots, init
                 initialDate={selectedDate}
                 initialStartTime={selectedTime}
                 initialSlot={editingSlot}
-                mode={editingSlot ? 'edit' : 'block'}
+                initialShoot={editingShoot}
+                mode={editingShoot ? 'edit-shoot' : (editingSlot ? 'edit' : 'block')}
             />
         </div>
     );
