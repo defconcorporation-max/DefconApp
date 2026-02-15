@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Users, Briefcase, Video, CreditCard, Settings, Command, Layers, Share2, UserPlus, BookOpen, Building, Calendar, DollarSign } from 'lucide-react';
+import { Home, Users, Briefcase, Video, CreditCard, Settings, Command, Layers, UserPlus, BookOpen, Building, Calendar, Shield } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import BetaFeedbackWidget from './BetaFeedbackWidget';
 
@@ -27,8 +27,8 @@ export default function Sidebar() {
         { href: '/post-production', label: 'Post-Production', icon: Layers },
 
         { href: '/agencies', label: 'Agencies', icon: Building },
-        { href: '/social', label: 'Social', icon: Share2 },
         { href: '/team', label: 'Team', icon: UserPlus },
+        { href: '/users', label: 'Users', icon: Shield },
         { href: '/services', label: 'Services', icon: BookOpen },
         { href: '/settings', label: 'Settings', icon: Settings },
     ];

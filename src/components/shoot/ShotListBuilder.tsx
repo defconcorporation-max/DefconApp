@@ -1,14 +1,14 @@
 'use client';
 
 import { useState } from 'react';
-import { ArrowUp, ArrowDown, X, Plus } from 'lucide-react';
+import { ArrowUp, ArrowDown, X, Plus, Check } from 'lucide-react';
 
 export interface ShotItem {
     id: string;
-    scene: string;
+    title: string;
     description: string;
-    type: string; // 'Wide', 'Close-up', 'Drone'
-    equipment: string;
+    type: string; // 'Wide', 'Close-up', 'Drone', etc.
+    completed?: boolean;
 }
 
 export default function ShotListBuilder({ shots, setShots }: { shots: ShotItem[], setShots: (s: ShotItem[]) => void }) {
@@ -16,16 +16,20 @@ export default function ShotListBuilder({ shots, setShots }: { shots: ShotItem[]
     const addShot = () => {
         const newShot: ShotItem = {
             id: Date.now().toString(),
-            scene: '',
+            title: '',
             description: '',
             type: 'Wide',
-            equipment: ''
+            completed: false
         };
         setShots([...shots, newShot]);
     };
 
-    const updateShot = (id: string, field: keyof ShotItem, value: string) => {
+    const updateShot = (id: string, field: keyof ShotItem, value: string | boolean) => {
         setShots(shots.map(s => s.id === id ? { ...s, [field]: value } : s));
+    };
+
+    const toggleCompleted = (id: string) => {
+        setShots(shots.map(s => s.id === id ? { ...s, completed: !s.completed } : s));
     };
 
     const removeShot = (id: string) => {
@@ -42,11 +46,13 @@ export default function ShotListBuilder({ shots, setShots }: { shots: ShotItem[]
         setShots(newShots);
     };
 
+    const completedCount = shots.filter(s => s.completed).length;
+
     return (
         <div className="space-y-4">
             <div className="flex justify-between items-center mb-4">
                 <p className="text-sm text-[var(--text-secondary)]">
-                    Define your shot list.
+                    {completedCount}/{shots.length} shots completed
                 </p>
                 <button
                     onClick={addShot}
@@ -59,46 +65,60 @@ export default function ShotListBuilder({ shots, setShots }: { shots: ShotItem[]
 
             <div className="bg-[var(--bg-root)]/50 rounded-lg p-2 min-h-[200px] space-y-2">
                 {shots.map((item, index) => (
-                    <div key={item.id} className="bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded p-3 flex items-start gap-3 group relative hover:border-[var(--text-tertiary)] transition-colors">
+                    <div key={item.id} className={`bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded p-3 flex items-start gap-3 group relative hover:border-[var(--text-tertiary)] transition-colors ${item.completed ? 'opacity-60' : ''}`}>
 
+                        {/* Checkmark */}
+                        <button
+                            onClick={() => toggleCompleted(item.id)}
+                            className={`w-6 h-6 rounded border flex-shrink-0 flex items-center justify-center transition-colors mt-1 ${item.completed
+                                ? 'bg-emerald-500 border-emerald-500 text-black'
+                                : 'border-[var(--text-tertiary)] hover:border-white text-transparent'
+                                }`}
+                        >
+                            <Check size={14} />
+                        </button>
+
+                        {/* Reorder */}
                         <div className="flex flex-col gap-1 mt-1">
                             <button
                                 onClick={() => moveShot(index, 'up')}
                                 disabled={index === 0}
-                                className="p-1 text-[var(--text-tertiary)] hover:text-white disabled:opacity-20"
+                                className="p-0.5 text-[var(--text-tertiary)] hover:text-white disabled:opacity-20"
                             >
-                                <ArrowUp size={16} />
+                                <ArrowUp size={14} />
                             </button>
                             <button
                                 onClick={() => moveShot(index, 'down')}
                                 disabled={index === shots.length - 1}
-                                className="p-1 text-[var(--text-tertiary)] hover:text-white disabled:opacity-20"
+                                className="p-0.5 text-[var(--text-tertiary)] hover:text-white disabled:opacity-20"
                             >
-                                <ArrowDown size={16} />
+                                <ArrowDown size={14} />
                             </button>
                         </div>
 
+                        {/* Fields: Title / Description / Type */}
                         <div className="grid grid-cols-12 gap-3 flex-1">
-                            <div className="col-span-2">
-                                <label className="text-[10px] text-[var(--text-tertiary)] uppercase block mb-1">Scene/Loc</label>
+                            <div className="col-span-3">
+                                <label className="text-[10px] text-[var(--text-tertiary)] uppercase block mb-1">Title</label>
                                 <input
-                                    value={item.scene}
-                                    onChange={(e) => updateShot(item.id, 'scene', e.target.value)}
-                                    className="w-full bg-black/30 border border-white/10 rounded px-2 py-1 text-sm text-white focus:border-emerald-500 outline-none"
-                                    placeholder="Kitchen"
+                                    value={item.title}
+                                    onChange={(e) => updateShot(item.id, 'title', e.target.value)}
+                                    className={`w-full bg-black/30 border border-white/10 rounded px-2 py-1 text-sm text-white focus:border-emerald-500 outline-none ${item.completed ? 'line-through' : ''}`}
+                                    placeholder="Opening shot"
                                 />
                             </div>
-                            <div className="col-span-5">
-                                <label className="text-[10px] text-[var(--text-tertiary)] uppercase block mb-1">Action / Description</label>
-                                <input
+                            <div className="col-span-6">
+                                <label className="text-[10px] text-[var(--text-tertiary)] uppercase block mb-1">Description</label>
+                                <textarea
                                     value={item.description}
                                     onChange={(e) => updateShot(item.id, 'description', e.target.value)}
-                                    className="w-full bg-black/30 border border-white/10 rounded px-2 py-1 text-sm text-white focus:border-emerald-500 outline-none"
-                                    placeholder="Chef plating the dish..."
+                                    className="w-full bg-black/30 border border-white/10 rounded px-2 py-1 text-sm text-white focus:border-emerald-500 outline-none resize-none min-h-[60px]"
+                                    placeholder="Full description of the shot, script notes, directions..."
+                                    rows={3}
                                 />
                             </div>
-                            <div className="col-span-2">
-                                <label className="text-[10px] text-[var(--text-tertiary)] uppercase block mb-1">Shot Type</label>
+                            <div className="col-span-3">
+                                <label className="text-[10px] text-[var(--text-tertiary)] uppercase block mb-1">Type</label>
                                 <select
                                     value={item.type}
                                     onChange={(e) => updateShot(item.id, 'type', e.target.value)}
@@ -111,16 +131,12 @@ export default function ShotListBuilder({ shots, setShots }: { shots: ShotItem[]
                                     <option>Drone</option>
                                     <option>POV</option>
                                     <option>Gimbal</option>
+                                    <option>B-Roll</option>
+                                    <option>Interview</option>
+                                    <option>Talking Head</option>
+                                    <option>Product</option>
+                                    <option>Transition</option>
                                 </select>
-                            </div>
-                            <div className="col-span-3">
-                                <label className="text-[10px] text-[var(--text-tertiary)] uppercase block mb-1">Equipment</label>
-                                <input
-                                    value={item.equipment}
-                                    onChange={(e) => updateShot(item.id, 'equipment', e.target.value)}
-                                    className="w-full bg-black/30 border border-white/10 rounded px-2 py-1 text-sm text-white focus:border-emerald-500 outline-none"
-                                    placeholder="50mm, A7S3..."
-                                />
                             </div>
                         </div>
 

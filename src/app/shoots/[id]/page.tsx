@@ -11,6 +11,7 @@ import AssignmentControl from '@/components/team/AssignmentControl';
 import NotesEditor from '@/components/NotesEditor';
 import VideoTitleEditor from '@/components/VideoTitleEditor';
 import CreativeDirector from '@/components/shoot/CreativeDirector';
+import ShootPlanPDF from '@/components/shoot/ShootPlanPDF';
 
 
 
@@ -138,6 +139,15 @@ export default async function ShootPage({ params }: { params: Promise<{ id: stri
                                 <div className={`w-1.5 h-1.5 rounded-full ${shoot.status === 'Completed' ? 'bg-emerald-500' : shoot.status === 'Cancelled' ? 'bg-red-500' : 'bg-indigo-500'}`}></div>
                                 {shoot.status || 'Scheduled'}
                             </div>
+                            <ShootPlanPDF
+                                shootId={shoot.id}
+                                shootTitle={shoot.title}
+                                clientName={shoot.client_company || shoot.client_name}
+                                shootDate={shoot.shoot_date}
+                                concept={shoot.concept || undefined}
+                                mood={shoot.mood || undefined}
+                                shotList={shoot.shot_list || undefined}
+                            />
                         </div>
                     </header>
 
@@ -154,7 +164,7 @@ export default async function ShootPage({ params }: { params: Promise<{ id: stri
 
                     <section>
                         <div className="flex justify-between items-center mb-4">
-                            <h2 className="text-lg font-medium text-white">Shot List</h2>
+                            <h2 className="text-lg font-medium text-white">Video Deliverables</h2>
                             <span className="text-xs text-[var(--text-tertiary)]">{videos.filter(v => v.completed).length}/{videos.length} Completed</span>
                         </div>
 
@@ -195,7 +205,7 @@ export default async function ShootPage({ params }: { params: Promise<{ id: stri
                                                 </form>
                                             </div>
 
-                                            {/* Notes List */}
+                                            {/* Notes / Script area */}
                                             <div className="space-y-1">
                                                 {notes.filter(n => n.video_id === video.id).map(note => (
                                                     <div key={note.id} className="text-xs text-[var(--text-secondary)] bg-[var(--bg-root)]/50 px-2 py-1 rounded flex justify-between items-start group/note">
@@ -214,20 +224,20 @@ export default async function ShootPage({ params }: { params: Promise<{ id: stri
                                                 ))}
                                             </div>
 
-                                            {/* Add Note Form */}
+                                            {/* Add Note Form - textarea for full scripts */}
                                             <form action={handleAddNote} className="flex gap-2">
                                                 <input type="hidden" name="videoId" value={video.id} />
                                                 <input type="hidden" name="clientId" value={shoot.client_id} />
                                                 <div className="relative flex-1">
-                                                    <input
+                                                    <textarea
                                                         name="content"
-                                                        type="text"
-                                                        placeholder="Add a note..."
-                                                        className="w-full bg-[var(--bg-root)] border border-[var(--border-subtle)] rounded px-3 py-1.5 text-xs text-[var(--text-secondary)] focus:text-white focus:border-[var(--text-secondary)] outline-none transition-colors"
+                                                        placeholder="Add a note or script..."
+                                                        className="w-full bg-[var(--bg-root)] border border-[var(--border-subtle)] rounded px-3 py-2 text-xs text-[var(--text-secondary)] focus:text-white focus:border-[var(--text-secondary)] outline-none transition-colors resize-y min-h-[36px]"
+                                                        rows={1}
                                                         required
                                                     />
                                                 </div>
-                                                <button type="submit" className="text-xs bg-[var(--bg-root)] border border-[var(--border-subtle)] px-2 rounded text-[var(--text-tertiary)] hover:text-white hover:border-[var(--text-secondary)] transition-colors">
+                                                <button type="submit" className="text-xs bg-[var(--bg-root)] border border-[var(--border-subtle)] px-3 rounded text-[var(--text-tertiary)] hover:text-white hover:border-[var(--text-secondary)] transition-colors self-start mt-0.5">
                                                     +
                                                 </button>
                                             </form>
@@ -244,7 +254,7 @@ export default async function ShootPage({ params }: { params: Promise<{ id: stri
                             <input
                                 name="title"
                                 type="text"
-                                placeholder="+ Add new shot..."
+                                placeholder="+ Add new video deliverable..."
                                 className="flex-1 bg-transparent border-b border-[var(--border-subtle)] py-2 text-sm text-white placeholder:text-[var(--text-tertiary)] focus:border-[var(--text-secondary)] outline-none transition-colors"
                                 required
                             />

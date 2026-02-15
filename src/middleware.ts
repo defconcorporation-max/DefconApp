@@ -7,7 +7,9 @@ export default auth((req) => {
     const { nextUrl } = req;
 
     const isApiAuthRoute = nextUrl.pathname.startsWith('/api/auth');
-    const isPublicRoute = nextUrl.pathname === '/login' || nextUrl.pathname === '/portal/login' || nextUrl.pathname.startsWith('/review'); // Public review pages
+    const isLoginRoute = nextUrl.pathname === '/login' || nextUrl.pathname === '/portal/login';
+    const isReviewRoute = nextUrl.pathname.startsWith('/review');
+    const isPublicRoute = isLoginRoute || isReviewRoute;
     const isPortalRoute = nextUrl.pathname.startsWith('/portal');
     const isFinanceRoute = nextUrl.pathname.startsWith('/finance');
     const isSettingsRoute = nextUrl.pathname.startsWith('/settings');
@@ -17,7 +19,14 @@ export default auth((req) => {
         return NextResponse.next();
     }
 
-    // 2. Redirect unauthenticated users to login
+    // 2. Review routes are accessible by EVERYONE - no redirect
+    if (isReviewRoute) {
+        const response = NextResponse.next();
+        response.headers.set('x-pathname', nextUrl.pathname);
+        return response;
+    }
+
+    // 3. Redirect unauthenticated users to login
     if (!isLoggedIn && !isPublicRoute) {
         // If trying to access portal, send to portal login
         if (isPortalRoute) {
@@ -26,8 +35,8 @@ export default auth((req) => {
         return NextResponse.redirect(new URL('/login', nextUrl));
     }
 
-    // 3. Redirect authenticated users away from login pages
-    if (isLoggedIn && isPublicRoute) {
+    // 4. Redirect authenticated users away from LOGIN pages (not review)
+    if (isLoggedIn && isLoginRoute) {
         // If Client, send to Portal
         if (userRole === 'Client') {
             return NextResponse.redirect(new URL('/portal', nextUrl));
@@ -62,7 +71,9 @@ export default auth((req) => {
 
     // ADMIN -> Access All
 
-    return NextResponse.next();
+    const response = NextResponse.next();
+    response.headers.set('x-pathname', nextUrl.pathname);
+    return response;
 });
 
 export const config = {
