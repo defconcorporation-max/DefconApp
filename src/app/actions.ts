@@ -1972,10 +1972,17 @@ export async function updateShootCreative(shootId: number, data: { concept?: str
 import { AvailabilitySlot, AvailabilityRequest } from '@/types';
 
 export async function getAvailabilitySlots() {
-    // Fetch Slots (Now treated as Blocks)
+    // Migration: Ensure shoots has is_blocking (Auto-migration for simplicity)
+    try {
+        await db.execute('ALTER TABLE shoots ADD COLUMN is_blocking BOOLEAN DEFAULT 0');
+    } catch (e) {
+        // Ignore if column exists
+    }
+
+    // Fetch Slots (Manual Blocks)
     const { rows: slots } = await db.execute('SELECT * FROM availability_slots ORDER BY start_time ASC');
 
-    // Fetch Shoots (Visual Events)
+    // Fetch Shoots (Visual Events & Linked Blocks)
     // Join with Projects -> Clients to get Agency info
     const { rows: shoots } = await db.execute(`
         SELECT s.*, p.title as project_title, c.company_name as client_name, c.agency_id
@@ -1990,6 +1997,14 @@ export async function getAvailabilitySlots() {
         slots: slots as unknown as AvailabilitySlot[],
         shoots: shoots as unknown as any[]
     };
+}
+
+export async function toggleShootBlocking(shootId: number, isBlocking: boolean) {
+    await db.execute({
+        sql: 'UPDATE shoots SET is_blocking = ? WHERE id = ?',
+        args: [isBlocking ? 1 : 0, shootId]
+    });
+    revalidatePath('/availability');
 }
 
 export async function createAvailabilitySlot(start: string, end: string) {

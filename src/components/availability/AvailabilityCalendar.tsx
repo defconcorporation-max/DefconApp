@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { AvailabilitySlot, AvailabilityRequest } from '@/types';
-import { deleteAvailabilitySlot, requestAvailabilitySlot, updateAvailabilityRequest, createAvailabilitySlot } from '@/app/actions';
+import { deleteAvailabilitySlot, requestAvailabilitySlot, updateAvailabilityRequest, createAvailabilitySlot, toggleShootBlocking } from '@/app/actions';
 import { format, startOfWeek, addDays, isSameDay, getHours, getMinutes, isToday, addMinutes } from 'date-fns';
 import { Trash, Check, X, Clock, Plus, User, Calendar as CalendarIcon, Video } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
@@ -80,58 +80,6 @@ export default function AvailabilityCalendar({ initialSlots, initialShoots, init
         setIsModalOpen(true);
     };
 
-    // Quick Action: Block Shoot Time
-    const handleBlockShoot = async (shoot: any) => {
-        if (!isAdmin) return;
-
-        console.log('Blocking shoot:', shoot); // Debugging
-
-        if (confirm(`Mark time as unavailable for "${shoot.project_title}"?`)) {
-            try {
-                let startStr = '';
-                let endStr = '';
-
-                // Safe Date Parsing
-                const shootDateVal = shoot.shoot_date;
-                let d: Date;
-
-                if (shootDateVal instanceof Date) {
-                    d = shootDateVal;
-                } else {
-                    d = new Date(shootDateVal);
-                }
-
-                // Check if valid date
-                if (isNaN(d.getTime())) {
-                    alert('Invalid shoot date found.');
-                    console.error('Invalid date:', shootDateVal);
-                    return;
-                }
-
-                // Determine context: Is it a generic date (YYYY-MM-DD) or specific time?
-                // If the input string was length 10 (YYYY-MM-DD), assume full day logic (09:00 - 17:00)
-                // If it has time, use it.
-                const isDateOnly = typeof shootDateVal === 'string' && shootDateVal.length === 10;
-
-                if (isDateOnly) {
-                    startStr = `${format(d, 'yyyy-MM-dd')} 09:00`;
-                    endStr = `${format(d, 'yyyy-MM-dd')} 17:00`;
-                } else {
-                    // specific time
-                    startStr = format(d, 'yyyy-MM-dd HH:mm');
-                    endStr = format(addMinutes(d, 480), 'yyyy-MM-dd HH:mm'); // +8 hours default
-                }
-
-                console.log('Creating block:', { startStr, endStr });
-                await createAvailabilitySlot(startStr, endStr);
-                // Revalidate happens on server
-            } catch (error) {
-                console.error('Failed to block shoot:', error);
-                alert('Failed to create unavailability block.');
-            }
-        }
-    };
-
     return (
         <div className="flex flex-col h-[calc(100vh-200px)] min-h-[600px] select-none">
             <CalendarHeader
@@ -203,7 +151,7 @@ export default function AvailabilityCalendar({ initialSlots, initialShoots, init
                                         />
                                     ))}
 
-                                    {/* SHOOTS LAYER (Bottom Z-Index) */}
+                                    {/* SHOOTS LAYER */}
                                     {dayShoots.map(shoot => {
                                         // Agency Visibility: 
                                         // - Owner: Visible as "My Shoot"
@@ -224,28 +172,36 @@ export default function AvailabilityCalendar({ initialSlots, initialShoots, init
                                         const startTime = shoot.shoot_date.includes(' ') ? shoot.shoot_date : `${shoot.shoot_date} 09:00:00`;
                                         const endTime = addMinutes(new Date(startTime), 480).toISOString(); // +8h mockup
 
+                                        // Linked Block Mode
+                                        const isBlocking = shoot.is_blocking === 1;
+
+                                        // Style classes
+                                        const baseClasses = "absolute left-1.5 right-1.5 rounded-md border p-1.5 text-xs transition-all shadow-sm";
+                                        const eventClasses = "bg-indigo-500/20 border-indigo-500/40 text-indigo-200 hover:z-20 hover:bg-indigo-500/30";
+                                        const blockClasses = "bg-red-500/20 border-red-500/40 text-red-200 z-20 hover:z-30 hover:bg-red-500/30 striped-bg";
+                                        const classes = isBlocking ? blockClasses : eventClasses;
+
+                                        const cursorClass = isAdmin ? "cursor-pointer hover:border-opacity-100" : "cursor-default";
+
                                         return (
                                             <div
                                                 key={`shoot-${shoot.id}`}
                                                 onClick={(e) => {
                                                     if (isAdmin) {
                                                         e.stopPropagation();
-                                                        handleBlockShoot(shoot);
+                                                        toggleShootBlocking(shoot.id, !isBlocking);
                                                     }
                                                 }}
-                                                className={cn(
-                                                    "absolute left-1.5 right-1.5 rounded-md border p-1.5 text-xs transition-all shadow-sm bg-indigo-500/20 border-indigo-500/40 text-indigo-200 hover:z-20 hover:bg-indigo-500/30",
-                                                    isAdmin ? "cursor-pointer hover:border-indigo-400" : "cursor-default"
-                                                )}
+                                                className={cn(baseClasses, classes, cursorClass)}
                                                 style={getSlotStyle(startTime, endTime)}
-                                                title={isAdmin ? "Click to block this time" : shoot.project_title}
+                                                title={isAdmin ? (isBlocking ? "Click to verify available" : "Click to mark unavailable") : shoot.project_title}
                                             >
                                                 <div className="flex items-center gap-1 font-mono font-bold text-[10px] opacity-70 mb-0.5">
-                                                    <Video size={10} />
-                                                    Shoot
+                                                    {isBlocking ? <X size={10} /> : <Video size={10} />}
+                                                    {isBlocking ? "Blocked Shoot" : "Shoot"}
                                                     {isAdmin && (
                                                         <div className="ml-auto bg-black/40 text-white rounded p-0.5 opacity-0 group-hover:opacity-100">
-                                                            <X size={8} />
+                                                            {isBlocking ? <Check size={8} /> : <X size={8} />}
                                                         </div>
                                                     )}
                                                 </div>
