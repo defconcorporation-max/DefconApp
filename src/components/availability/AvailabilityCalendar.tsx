@@ -75,10 +75,12 @@ export default function AvailabilityCalendar({ initialSlots, initialShoots, init
 
     // Edit State
     const [editingSlot, setEditingSlot] = useState<AvailabilitySlot | undefined>(undefined);
+    const [editingShoot, setEditingShoot] = useState<any | undefined>(undefined);
 
     const handleGridClick = (day: Date, hour: number) => {
         if (!isAdmin) return;
         setEditingSlot(undefined); // Clear edit state
+        setEditingShoot(undefined);
         setSelectedDate(day);
         setSelectedTime(`${hour.toString().padStart(2, '0')}:00`);
         setIsModalOpen(true);
@@ -87,7 +89,22 @@ export default function AvailabilityCalendar({ initialSlots, initialShoots, init
     const handleBlockClick = (slot: AvailabilitySlot) => {
         if (!isAdmin) return;
         setEditingSlot(slot);
+        setEditingShoot(undefined);
         setIsModalOpen(true);
+    };
+
+    const handleShootClick = (shoot: any, isBlocking: boolean) => {
+        if (!isAdmin) return;
+
+        if (isBlocking) {
+            // If already blocked, clicking opens EDIT mode to adjust time or unblock
+            setEditingShoot(shoot);
+            setEditingSlot(undefined);
+            setIsModalOpen(true);
+        } else {
+            // If not blocked, clicking blocks it immediately (default 2h or whatever is set)
+            toggleShootBlocking(shoot.id, true);
+        }
     };
 
     return (
@@ -228,10 +245,8 @@ export default function AvailabilityCalendar({ initialSlots, initialShoots, init
                                             <div
                                                 key={`shoot-${shoot.id}`}
                                                 onClick={(e) => {
-                                                    if (isAdmin) {
-                                                        e.stopPropagation();
-                                                        toggleShootBlocking(shoot.id, !isBlocking);
-                                                    }
+                                                    e.stopPropagation();
+                                                    handleShootClick(shoot, isBlocking);
                                                 }}
                                                 className={cn(baseClasses, classes, cursorClass)}
                                                 style={getSlotStyle(startTime, endTime)}
