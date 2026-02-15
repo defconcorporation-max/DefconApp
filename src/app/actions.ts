@@ -2016,6 +2016,15 @@ export async function createAvailabilitySlot(start: string, end: string) {
     revalidatePath('/availability');
 }
 
+export async function updateAvailabilitySlot(id: number, start: string, end: string) {
+    if (!id || !start || !end) return;
+    await db.execute({
+        sql: 'UPDATE availability_slots SET start_time = ?, end_time = ? WHERE id = ?',
+        args: [start, end, id]
+    });
+    revalidatePath('/availability');
+}
+
 export async function deleteAvailabilitySlot(id: number) {
     if (!id) return;
     try {

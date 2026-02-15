@@ -73,10 +73,20 @@ export default function AvailabilityCalendar({ initialSlots, initialShoots, init
         };
     };
 
+    // Edit State
+    const [editingSlot, setEditingSlot] = useState<AvailabilitySlot | undefined>(undefined);
+
     const handleGridClick = (day: Date, hour: number) => {
         if (!isAdmin) return;
+        setEditingSlot(undefined); // Clear edit state
         setSelectedDate(day);
         setSelectedTime(`${hour.toString().padStart(2, '0')}:00`);
+        setIsModalOpen(true);
+    };
+
+    const handleBlockClick = (slot: AvailabilitySlot) => {
+        if (!isAdmin) return;
+        setEditingSlot(slot);
         setIsModalOpen(true);
     };
 
@@ -236,8 +246,15 @@ export default function AvailabilityCalendar({ initialSlots, initialShoots, init
                                         return (
                                             <div
                                                 key={slot.id}
+                                                onClick={(e) => {
+                                                    // Only trigger edit if not clicking delete
+                                                    // e.stopPropagation(); (Wait, delete button stops prop, so we don't need to check target here ideally)
+                                                    // But to be safe:
+                                                    handleBlockClick(slot);
+                                                }}
                                                 className="absolute left-1 right-1 rounded-md border p-1.5 text-xs transition-all cursor-pointer group/slot shadow-sm overflow-hidden bg-zinc-800/80 border-zinc-600 text-zinc-400 z-30 striped-bg"
                                                 style={getSlotStyle(slot.start_time, slot.end_time)}
+                                                title="Click to Edit"
                                             >
                                                 <div className="flex justify-between items-start mb-0.5">
                                                     <span className="font-mono font-bold text-[10px] opacity-70">
@@ -284,7 +301,8 @@ export default function AvailabilityCalendar({ initialSlots, initialShoots, init
                 onClose={() => setIsModalOpen(false)}
                 initialDate={selectedDate}
                 initialStartTime={selectedTime}
-                mode="block"
+                initialSlot={editingSlot}
+                mode={editingSlot ? 'edit' : 'block'}
             />
         </div>
     );
