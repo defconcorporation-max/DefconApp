@@ -23,8 +23,9 @@ export default function Sidebar() {
         { href: '/clients', label: 'Clients', icon: Users },
         { href: '/projects', label: 'Projects', icon: Briefcase },
         { href: '/shoots', label: 'Shoots', icon: Video },
+        { href: '/availability', label: 'Availability', icon: Calendar },
         { href: '/post-production', label: 'Post-Production', icon: Layers },
-        { href: '/finance', label: 'Finance', icon: DollarSign },
+
         { href: '/agencies', label: 'Agencies', icon: Building },
         { href: '/social', label: 'Social', icon: Share2 },
         { href: '/team', label: 'Team', icon: UserPlus },

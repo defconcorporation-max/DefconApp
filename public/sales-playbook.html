@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Defcon - Guide de Vente Complet</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;600;700;800&display=swap"
+        rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+            color: #1f2937;
+            display: flex;
+            justify-content: center;
+            padding: 40px;
+            margin: 0;
+            line-height: 1.6;
+        }
+
+        .document-container {
+            background: white;
+            width: 210mm;
+            min-height: 297mm;
+            padding: 20mm;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+
+        h1,
+        h2,
+        h3,
+        h4 {
+            font-family: 'Space Grotesk', sans-serif;
+            color: #111827;
+        }
+
+        /* Page Layout */
+        .page {
+            page-break-after: always;
+            position: relative;
+            min-height: 1000px;
+        }
+
+        .page:last-child {
+            page-break-after: avoid;
+        }
+
+        /* Styles Specifics */
+        .logo-text {
+            font-size: 32px;
+            font-weight: 800;
+            letter-spacing: -1px;
+            margin-bottom: 10px;
+        }
+
+        .cover-title {
+            font-size: 48px;
+            font-weight: 800;
+            line-height: 1.1;
+            margin-top: 100px;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+        }
+
+        .cover-subtitle {
+            font-size: 20px;
+            color: #4b5563;
+            font-weight: 400;
+        }
+
+        .section-header {
+            border-bottom: 2px solid #6366f1;
+            margin-bottom: 30px;
+            padding-bottom: 10px;
+            margin-top: 40px;
+        }
+
+        .section-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #6366f1;
+            text-transform: uppercase;
+            margin: 0;
+        }
+
+        .highlight-box {
+            background-color: #f3f4f6;
+            border-left: 4px solid #6366f1;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 20px;
+        }
+
+        .grid-table {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr;
+            gap: 0;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 30px 0;
+        }
+
+        .table-header {
+            font-weight: 700;
+            padding: 15px;
+            background: #f9fafb;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .table-cell {
+            padding: 15px;
+            border-bottom: 1px solid #e5e7eb;
+            font-size: 14px;
+        }
+
+        .price-tag {
+            font-size: 20px;
+            font-weight: 800;
+            color: #059669;
+        }
+
+        .script-q {
+            font-weight: 700;
+            color: #b91c1c;
+            margin-top: 15px;
+            display: block;
+        }
+
+        .script-a {
+            display: block;
+            margin-left: 15px;
+            margin-bottom: 15px;
+            color: #374151;
+            font-style: italic;
+        }
+
+        /* Print styles */
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+
+            .document-container {
+                width: 100%;
+                box-shadow: none;
+                padding: 0;
+                margin: 0;
+            }
+
+            .no-print {
+                display: none !important;
+            }
+
+            .page {
+                min-height: 0;
+                height: auto;
+                padding-top: 20px;
+            }
+        }
+
+        .download-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background-color: #6366f1;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 50px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(99, 102, 241, 0.3);
+            transition: all 0.2s;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .download-btn:hover {
+            background-color: #4f46e5;
+        }
+    </style>
+</head>
+
+<body>
+
+    <button onclick="window.print()" class="download-btn no-print">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+        </svg>
+        Enregistrer en PDF
+    </button>
+
+    <div class="document-container">
+
+        <!-- PAGE 1: COVER & INTRO -->
+        <div class="page">
+            <div style="height: 40px; border-bottom: 4px solid #111827; width: 60px; margin-bottom: 40px;"></div>
+            <div class="logo-text">DEFCON</div>
+
+            <h1 class="cover-title">Guide de Vente<br>& Processus Opérationnels</h1>
+            <p class="cover-subtitle">Manuel complet pour la vente de services marketing Defcon.<br>Version 2.0 -
+                Confidentiel</p>
+
+            <div style="margin-top: 100px;">
+                <h3 style="text-transform: uppercase; font-size: 14px; letter-spacing: 2px; color: #9ca3af;">Sommaire
+                </h3>
+                <ul style="list-style: none; padding: 0; font-size: 18px; font-weight: 500;">
+                    <li
+                        style="border-bottom: 1px solid #e5e7eb; padding: 15px 0; display: flex; justify-content: space-between;">
+                        <span>01. La Philosophie & L'Accroche</span> <span>p.2</span>
+                    </li>
+                    <li
+                        style="border-bottom: 1px solid #e5e7eb; padding: 15px 0; display: flex; justify-content: space-between;">
+                        <span>02. Production Vidéo (Le Cœur)</span> <span>p.3</span>
+                    </li>
+                    <li
+                        style="border-bottom: 1px solid #e5e7eb; padding: 15px 0; display: flex; justify-content: space-between;">
+                        <span>03. Gestion Social Media & Ads</span> <span>p.4</span>
+                    </li>
+                    <li
+                        style="border-bottom: 1px solid #e5e7eb; padding: 15px 0; display: flex; justify-content: space-between;">
+                        <span>04. CRM & Logiciels (Scale)</span> <span>p.5</span>
+                    </li>
+                    <li
+                        style="border-bottom: 1px solid #e5e7eb; padding: 15px 0; display: flex; justify-content: space-between;">
+                        <span>05. Pricing & Scripts de Vente</span> <span>p.6</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- PAGE 2: PHILOSOPHY -->
+        <div class="page">
+            <div class="section-header">
+                <h2 class="section-title">01. La Philosophie & L'Accroche</h2>
+            </div>
+
+            <h3>La Cible (Avatar Client)</h3>
+            <p>Nous ciblons les entreprises locales (Restaurants, Immobilier, Gyms, Services) qui ont un <strong>manque
+                    visible</strong> de qualité ou de régularité dans leur marketing.</p>
+
+            <div class="highlight-box">
+                <h4 style="margin-top: 0; color: #6366f1;">LE PITCH "BRUTAL" (Interne)</h4>
+                <p style="font-size: 18px; font-weight: 600;">"Votre marketing est faible. Votre image ne reflète pas la
+                    qualité de votre service. On peut faire 10x mieux."</p>
+            </div>
+
+            <h3>Pourquoi nous ? (USP)</h3>
+            <ol>
+                <li><strong>On ne vend pas du rêve :</strong> On vend des résultats basés sur l'analyse de données (ce
+                    qui marche chez la concurrence).</li>
+                <li><strong>Clé en main :</strong> Le client n'a rien à faire à part valider les vidéos et closer les
+                    leads.</li>
+                <li><strong>Qualité Studio :</strong> On amène une qualité cinéma inaccessible pour eux seuls avec un
+                    iPhone.</li>
+            </ol>
+
+            <h3>Script d'Ouverture (L'Appel à Froid)</h3>
+            <div style="background: #fff; border: 1px solid #e5e7eb; padding: 20px; border-radius: 8px;">
+                <p><strong>Vendeur :</strong> "Bonjour [Nom], je vous appelle pas par hasard. J'ai passé un moment sur
+                    vos réseaux sociaux ce matin, et j'ai vu que vous aviez un super potentiel, mais honnêtement, la
+                    qualité de votre contenu actuel vous fait perdre des clients face à [Concurrent X]."</p>
+                <p><strong>Client :</strong> "Ah bon ?"</p>
+                <p><strong>Vendeur :</strong> "Oui. Aujourd'hui l'attention est la monnaie la plus chère. Si vous ne
+                    captez pas l'attention en 3 secondes, vous n'existez pas. On a une méthode pour changer ça
+                    radicalement, sans que ça vous prenne du temps. Vous avez 2 minutes ?"</p>
+            </div>
+        </div>
+
+        <!-- PAGE 3: VIDEO PRODUCTION -->
+        <div class="page">
+            <div class="section-header">
+                <h2 class="section-title">02. Production Vidéo (Le Cœur)</h2>
+            </div>
+
+            <p>C'est notre produit d'appel. C'est tangible, visuel, et indéniablement supérieur à ce qu'ils font
+                eux-mêmes.</p>
+
+            <div class="grid-2">
+                <div>
+                    <h3 style="color: #111827;">1. Préparation & Coaching</h3>
+                    <p>Beaucoup de clients ont peur de la caméra. C'est notre force.</p>
+                    <ul style="font-size: 14px; color: #4b5563;">
+                        <li><strong>Analyse Concurrentielle :</strong> On ne devine pas. On regarde ce qui fait des vues
+                            dans leur niche.</li>
+                        <li><strong>Scripting :</strong> On écrit les concepts, les accroches et les appels à l'action.
+                        </li>
+                        <li><strong>Coaching :</strong> On les met à l'aise. On sait diriger des débutants pour qu'ils
+                            aient l'air d'experts.</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 style="color: #111827;">2. Tournage & Délivrance</h3>
+                    <p>Vitesse et efficacité.</p>
+                    <ul style="font-size: 14px; color: #4b5563;">
+                        <li><strong>Équipe Mobile :</strong> On se déplace chez eux avec tout le matériel pro (Lumière,
+                            Son, Caméras).</li>
+                        <li><strong>Montage en 3 jours :</strong> Livraison ultra-rapide pour garder le momentum.</li>
+                        <li><strong>Révisions :</strong> 3 rondes de corrections incluses. (Ensuite 50$/ronde). Pas de
+                            surprises.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div
+                style="margin-top: 40px; border: 2px dashed #f59e0b; padding: 20px; background: #fffbeb; border-radius: 8px;">
+                <h3 style="margin-top: 0; color: #b45309;">STRATÉGIE "PIED DANS LA PORTE" : LE CONTRAT TEST</h3>
+                <div
+                    style="background-color: #fff7ed; border: 1px solid #c2410c; color: #c2410c; padding: 10px; border-radius: 4px; font-size: 13px; font-weight: 700; margin-bottom: 15px;">
+                    ⚠️ NOTE IMPORTANTE : Ceci est une DERNIÈRE CARTE À JOUER. Ne proposez jamais cette offre en premier.
+                    C'est un "downsell" si le client hésite trop sur l'engagement mensuel.
+                </div>
+                <p>Le plus dur, c'est la confiance. Pour ça, on a le <strong>Contrat Test à 400$</strong>.</p>
+                <ul style="margin: 0;">
+                    <li>5 Vidéos complètes.</li>
+                    <li>Aucun engagement mensuel.</li>
+                    <li>S'ils aiment (ils vont aimer), on signe le mensuel.</li>
+                    <li>S'ils n'aiment pas, ils partent avec 5 vidéos pro pour 400$. C'est sans risque.</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- PAGE 4: SOCIAL & ADS -->
+        <div class="page">
+            <div class="section-header">
+                <h2 class="section-title">03. Gestion & Publicité</h2>
+            </div>
+
+            <div class="grid-2">
+                <div>
+                    <h3>Gestion Social Media (Organique)</h3>
+                    <p>Pour les clients qui n'ont pas le temps de poster.</p>
+                    <div style="background: #e5e7eb; padding: 15px; border-radius: 8px; font-size: 14px;">
+                        <strong>CE QU'ON FAIT :</strong><br>
+                        ✅ Programmation des posts<br>
+                        ✅ Rédaction des descriptions (copywriting)<br>
+                        ✅ Optimisation des hashtags/SEO<br><br>
+                        <strong>CE QU'ON NE FAIT PAS :</strong><br>
+                        ❌ Répondre aux commentaires<br>
+                        ❌ Répondre aux messages privés (DM)<br>
+                        ❌ Service client
+                    </div>
+                </div>
+                <div>
+                    <h3>Publicité Payante (Ads)</h3>
+                    <p>Pour les clients qui veulent des <strong>Leads</strong> (Clients potentiels).</p>
+                    <p>On ne laisse pas tourner une pub passivement. On est des scientifiques :</p>
+                    <ol style="font-size: 14px;">
+                        <li><strong>Ciblage Précis :</strong> On trouve leur client idéal.</li>
+                        <li><strong>Création :</strong> On fait des pubs qui convertissent.</li>
+                        <li><strong>Optimisation Constante :</strong> On coupe ce qui perd de l'argent, on scale ce qui
+                            en gagne.</li>
+                    </ol>
+                </div>
+            </div>
+
+            <div style="margin-top: 30px;">
+                <h3>Estimations de Résultats (Ads)</h3>
+                <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+                    <tr style="background: #1e40af; color: white;">
+                        <th style="padding: 10px; text-align: left;">Budget Pub (Payé à Facebook/Google)</th>
+                        <th style="padding: 10px; text-align: left;">Volume de Leads Estimé*</th>
+                        <th style="padding: 10px; text-align: left;">Action Requise du Client</th>
+                    </tr>
+                    <tr style="background: #fff; border-bottom: 1px solid #e5e7eb;">
+                        <td style="padding: 10px;"><strong>50$ / jour</strong></td>
+                        <td style="padding: 10px;">20 à 30 Leads / semaine</td>
+                        <td style="padding: 10px;">Appeler les leads sous 24h</td>
+                    </tr>
+                    <tr style="background: #fff; border-bottom: 1px solid #e5e7eb;">
+                        <td style="padding: 10px;"><strong>150$ / jour</strong></td>
+                        <td style="padding: 10px;">~20 Leads / jour</td>
+                        <td style="padding: 10px;">Avoir une équipe de vente dédiée</td>
+                    </tr>
+                </table>
+                <p style="font-size: 12px; color: #6b7280; font-style: italic;">*Les résultats varient selon l'industrie
+                    et l'offre. Ces chiffres sont des moyennes observées.</p>
+            </div>
+        </div>
+
+        <!-- PAGE 5: CRM & SOFTWARE -->
+        <div class="page">
+            <div class="section-header">
+                <h2 class="section-title">04. CRM & Logiciels (Scale)</h2>
+            </div>
+
+            <p>Une fois qu'on leur apporte des leads, leur problème devient : "Je n'arrive pas à tout gérer". C'est là
+                qu'on vend la structure.</p>
+
+            <div style="display: flex; gap: 30px; margin-top: 30px;">
+                <div style="flex: 1; background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #e5e7eb;">
+                    <h3 style="margin-top: 0; color: #4f46e5;">SETUP CRM (2 000$)</h3>
+                    <p style="font-size: 14px;">L'outil pour ne jamais perdre d'argent bêtement.</p>
+                    <ul style="font-size: 14px; line-height: 1.8;">
+                        <li><strong>Centralisation :</strong> Tous les contacts au même endroit.</li>
+                        <li><strong>Automatisation :</strong> Le client ne répond pas ? Le système lui envoie un SMS de
+                            relance automatiquement.</li>
+                        <li><strong>Pipeline :</strong> Vue claire de qui est "Nouveau", "En discussion", "Closé".</li>
+                        <li><strong>Avis Google :</strong> Demande d'avis automatique après le service.</li>
+                    </ul>
+                </div>
+
+                <div
+                    style="flex: 1; background: #fdf4ff; padding: 20px; border-radius: 8px; border: 1px solid #e879f9;">
+                    <h3 style="margin-top: 0; color: #a21caf;">LOGICIEL SUR MESURE (15k$+)</h3>
+                    <p style="font-size: 14px;">Pour les entreprises qui veulent dominer leur marché.</p>
+                    <ul style="font-size: 14px; line-height: 1.8;">
+                        <li><strong>ERP Complet :</strong> Gestion des stocks, employés, facturation custom.</li>
+                        <li><strong>App Mobile :</strong> Pour leurs clients ou employés.</li>
+                        <li><strong>Dashboard Avancé :</strong> Statistiques en temps réel.</li>
+                        <li><strong>Propriété :</strong> Ils possèdent le code. C'est un actif pour leur entreprise.
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <div style="margin-top: 30px; border-top: 1px solid #e5e7eb; padding-top: 20px;">
+                <h3>Sites Web (De 3 000$ à 30 000$)</h3>
+                <p>On ne fait pas juste des "jolis sites". On fait des machines à convertir.</p>
+                <div class="grid-3">
+                    <div>
+                        <strong>Site Vitrine (Service)</strong>
+                        <p style="font-size: 13px; color: #6b7280;">Présenter l'activité et capturer des coordonnées.
+                        </p>
+                    </div>
+                    <div>
+                        <strong>E-Commerce</strong>
+                        <p style="font-size: 13px; color: #6b7280;">Vente en ligne, gestion produits, panier.</p>
+                    </div>
+                    <div>
+                        <strong>Funnel de Vente</strong>
+                        <p style="font-size: 13px; color: #6b7280;">Page unique optimisée pour vendre UN produit
+                            spécifique.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PAGE 6: PRICING & CLOSING -->
+        <div class="page">
+            <div class="section-header">
+                <h2 class="section-title">05. Pricing & Closing</h2>
+            </div>
+
+            <h3>Grille Tarifaire Simplifiée</h3>
+            <table style="width: 100%; border-collapse: collapse; margin-bottom: 40px;">
+                <tr style="background: #111827; color: white;">
+                    <th style="padding: 10px; text-align: left;">Service</th>
+                    <th style="padding: 10px; text-align: left;">Prix Mensuel</th>
+                    <th style="padding: 10px; text-align: left;">Prix Trimestriel (Save $)</th>
+                </tr>
+                <tr style="border-bottom: 1px solid #e5e7eb;">
+                    <td style="padding: 10px;"><strong>Organique (10 Reels)</strong></td>
+                    <td style="padding: 10px;">750$ /mois</td>
+                    <td style="padding: 10px;">1 700$ (3 mois)</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #e5e7eb;">
+                    <td style="padding: 10px;"><strong>Ads (5 Vidéos Scriptées)</strong></td>
+                    <td style="padding: 10px;">750$ /mois</td>
+                    <td style="padding: 10px;">1 700$ (3 mois)</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #e5e7eb; background-color: #f0fdf4;">
+                    <td style="padding: 10px;"><strong>COMBO (Org + Ads)</strong> ⭐</td>
+                    <td style="padding: 10px;">1 200$ /mois</td>
+                    <td style="padding: 10px;">3 250$ (3 mois)</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #e5e7eb;">
+                    <td style="padding: 10px;">Gestion Social Media (Post Only)</td>
+                    <td style="padding: 10px;">+450$ /mois</td>
+                    <td style="padding: 10px;">+1 200$ (3 mois)</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #e5e7eb;">
+                    <td style="padding: 10px;">Gestion Ads (Setup & Opti)</td>
+                    <td style="padding: 10px;">+250$ /mois</td>
+                    <td style="padding: 10px;">-</td>
+                </tr>
+            </table>
+
+            <h3>Traitement des Objections</h3>
+
+            <span class="script-q">"On a déjà quelqu'un en interne / un neveu qui fait ça."</span>
+            <span class="script-a">"C'est super. Mais est-ce que votre neveu a l'équipement cinéma, l'expérience des
+                scripts qui vendent et l'analyse de données ? Si vous voulez des résultats professionnels, il faut une
+                équipe professionnelle. On peut aussi travailler AVEC lui : on produit le contenu pro, il gère le
+                quotidien."</span>
+
+            <span class="script-q">"C'est trop cher."</span>
+            <span class="script-a">"Comparé à quoi ? Un employé au salaire minimum coûte 2500$+ par mois sans
+                équipement. Pour 1200$, vous avez une équipe complète, le matériel, le montage et la stratégie. C'est
+                50% moins cher qu'un stagiaire."</span>
+
+            <div
+                style="margin-top: 40px; background-color: #111827; color: white; padding: 20px; border-radius: 8px; text-align: center;">
+                <h3 style="color: white; margin: 0 0 10px 0;">LE CLOSING</h3>
+                <p style="margin: 0;">L'objectif de l'appel n'est pas d'envoyer un devis par email.</p>
+                <p style="font-size: 20px; font-weight: 700; margin: 15px 0; color: #4ade80;">L'OBJECTIF EST DE BOOKER
+                    LA DATE DE TOURNAGE.</p>
+                <p style="font-size: 14px; opacity: 0.8;">"Ok [Nom], on a une dispo mardi prochain ou jeudi matin.
+                    Lequel vous arrange le mieux pour qu'on vienne shooter ?"</p>
+                <p style="font-size: 12px; margin-top: 10px; border-top: 1px solid #374151; padding-top: 10px;">Acompte
+                    de 50% requis pour bloquer la date (flexible si nécessaire pour closer).</p>
+            </div>
+
+        </div>
+
+    </div>
+
+</body>
+
+</html>

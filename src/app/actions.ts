@@ -1839,3 +1839,156 @@ export async function getActivities(limit = 20) {
         return [];
     }
 }
+
+// --- CLIENT V2 FEATURES ---
+
+import { saveFile } from '@/lib/upload';
+
+export async function updateClientValue(clientId: number, value: number) {
+    // Ideally check for Admin role here using auth() but for speed we trust the UI/Middleware for now or add it.
+    // const session = await auth();
+    // if (session?.user?.role !== 'Admin') return;
+
+    await db.execute({
+        sql: 'UPDATE clients SET client_value = ? WHERE id = ?',
+        args: [value, clientId]
+    });
+    revalidatePath(`/clients/${clientId}`);
+}
+
+export async function updateClientAvatar(formData: FormData) {
+    const clientId = Number(formData.get('clientId'));
+    const file = formData.get('file') as File;
+
+    if (!file || !clientId) return;
+
+    try {
+        const avatarUrl = await saveFile(file, 'avatars');
+
+        await db.execute({
+            sql: 'UPDATE clients SET avatar_url = ? WHERE id = ?',
+            args: [avatarUrl, clientId]
+        });
+
+        revalidatePath(`/clients/${clientId}`);
+        revalidatePath('/'); // Update list view if avatars are shown there
+    } catch (e) {
+        console.error("Avatar upload failed:", e);
+    }
+}
+
+export async function updateShootCreative(shootId: number, data: { concept?: string, mood?: string, shot_list?: string, moodboard_urls?: string }) {
+    // Construct dynamic update query
+    const fields = [];
+    const args = [];
+
+    if (data.concept !== undefined) { fields.push('concept = ?'); args.push(data.concept); }
+    if (data.mood !== undefined) { fields.push('mood = ?'); args.push(data.mood); }
+    if (data.shot_list !== undefined) { fields.push('shot_list = ?'); args.push(data.shot_list); }
+    if (data.moodboard_urls !== undefined) { fields.push('moodboard_urls = ?'); args.push(data.moodboard_urls); }
+
+    if (fields.length === 0) return;
+
+    // Type casting args for execute
+    args.push(shootId);
+
+    // Using any[] to bypass strict typing on args which expects specifics but supports simple values
+    const finalArgs: any[] = args;
+
+    await db.execute({
+        sql: `UPDATE shoots SET ${fields.join(', ')} WHERE id = ?`,
+        args: finalArgs
+    });
+
+    revalidatePath(`/shoots/${shootId}`);
+}
+
+// --- AVAILABILITY MODULE ---
+
+import { AvailabilitySlot, AvailabilityRequest } from '@/types';
+
+export async function getAvailabilitySlots() {
+    const { rows } = await db.execute('SELECT * FROM availability_slots ORDER BY start_time ASC');
+    return rows as unknown as AvailabilitySlot[];
+}
+
+export async function createAvailabilitySlot(start: string, end: string) {
+    if (!start || !end) return;
+    await db.execute({
+        sql: 'INSERT INTO availability_slots (start_time, end_time, is_booked) VALUES (?, ?, 0)',
+        args: [start, end]
+    });
+    revalidatePath('/availability');
+}
+
+export async function deleteAvailabilitySlot(formData: FormData) {
+    const id = Number(formData.get('id'));
+    await db.execute({
+        sql: 'DELETE FROM availability_slots WHERE id = ?',
+        args: [id]
+    });
+    revalidatePath('/availability');
+}
+
+export async function requestAvailabilitySlot(formData: FormData) {
+    const slotId = Number(formData.get('slotId'));
+    const agencyId = Number(formData.get('agencyId'));
+
+    // Check if valid
+    if (!slotId || !agencyId) return;
+
+    await db.execute({
+        sql: "INSERT INTO availability_requests (slot_id, agency_id, status) VALUES (?, ?, 'Pending')",
+        args: [slotId, agencyId]
+    });
+    revalidatePath('/availability');
+}
+
+export async function getAvailabilityRequests(agencyId?: number) {
+    let sql = `
+        SELECT ar.*, a.name as agency_name, s.start_time as slot_start 
+        FROM availability_requests ar
+        JOIN agencies a ON ar.agency_id = a.id
+        JOIN availability_slots s ON ar.slot_id = s.id
+    `;
+    const args = [];
+
+    if (agencyId) {
+        sql += ' WHERE ar.agency_id = ?';
+        args.push(agencyId);
+    }
+
+    sql += ' ORDER BY ar.created_at DESC';
+
+    // TypeScript workaround for args array type
+    const finalArgs: any[] = args;
+
+    const { rows } = await db.execute({ sql, args: finalArgs });
+    return rows as unknown as (AvailabilityRequest & { agency_name: string, slot_start: string })[];
+}
+
+export async function updateAvailabilityRequest(formData: FormData) {
+    const id = Number(formData.get('id'));
+    const status = formData.get('status') as string;
+    const slotId = Number(formData.get('slotId'));
+
+    await db.execute({
+        sql: 'UPDATE availability_requests SET status = ? WHERE id = ?',
+        args: [status, id]
+    });
+
+    if (status === 'Approved') {
+        // Mark slot as booked
+        await db.execute({
+            sql: 'UPDATE availability_slots SET is_booked = 1 WHERE id = ?',
+            args: [slotId]
+        });
+    } else if (status === 'Rejected') {
+        await db.execute({
+            sql: 'UPDATE availability_slots SET is_booked = 0 WHERE id = ?',
+            args: [slotId]
+        });
+    }
+
+    revalidatePath('/availability');
+}

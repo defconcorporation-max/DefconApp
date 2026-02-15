@@ -10,6 +10,7 @@ import { getTeamMembers } from '@/app/actions';
 import AssignmentControl from '@/components/team/AssignmentControl';
 import NotesEditor from '@/components/NotesEditor';
 import VideoTitleEditor from '@/components/VideoTitleEditor';
+import CreativeDirector from '@/components/shoot/CreativeDirector';
 
 
 
@@ -147,6 +148,9 @@ export default async function ShootPage({ params }: { params: Promise<{ id: stri
                             allMembers={allMembers}
                         />
                     </div>
+
+                    <CreativeDirector shoot={shoot} />
+
 
                     <section>
                         <div className="flex justify-between items-center mb-4">

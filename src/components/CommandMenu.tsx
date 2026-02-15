@@ -82,7 +82,7 @@ export default function CommandMenu() {
                         <>
                             <Command.Group heading="Quick Actions" className="text-xs font-medium text-[var(--text-tertiary)] px-2 py-1.5 mb-1">
                                 <Item item={{ id: 'new-client', label: 'Create New Client', type: 'Action', url: '#' }} onSelect={() => runCommand(() => document.getElementById('create-client-input')?.focus())} />
-                                <Item item={{ id: 'go-finance', label: 'View Finance', type: 'Action', url: '/finance' }} onSelect={() => runCommand(() => router.push('/finance'))} />
+
                             </Command.Group>
 
                             <Command.Group heading="Pages" className="text-xs font-medium text-[var(--text-tertiary)] px-2 py-1.5 mb-1">

@@ -6,7 +6,7 @@ import { Client, Project, SocialLink, Commission, Idea, Payment, Credential, Soc
 import ProjectManager from '@/components/ProjectManager';
 import SocialLinks from '@/components/SocialLinks';
 import IdeaBox from '@/components/IdeaBox';
-import PaymentTracker from '@/components/PaymentTracker';
+
 import CredentialsBox from '@/components/CredentialsBox';
 import SocialPlanner from '@/components/social/SocialPlanner';
 import ConnectAccountBtn from '@/components/social/ConnectAccountBtn';
@@ -109,10 +109,7 @@ export default function ClientTabs({
                         </div>
 
                         <div className="space-y-8">
-                            {/* Payment Tracker */}
-                            <div>
-                                <PaymentTracker clientId={client.id} payments={payments} />
-                            </div>
+
                         </div>
                     </div>
                 )}

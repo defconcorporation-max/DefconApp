@@ -1,4 +1,14 @@
 
+export interface User {
+    id: number;
+    email: string;
+    name: string;
+    role: 'Admin' | 'Team' | 'AgencyAdmin' | 'AgencyTeam' | 'Client';
+    agency_id?: number;
+    avatar_url?: string;
+    created_at: string;
+}
+
 export interface Client {
     id: number;
     name: string;
@@ -12,6 +22,7 @@ export interface Client {
     password_hash?: string;
     portal_enabled?: boolean;
     agency_id?: number;
+    client_value?: number; // Admin only
 }
 
 export interface SocialLink {
@@ -43,6 +54,11 @@ export interface Shoot {
     status: string;
     post_prod_status?: string;
     due_date?: string;
+    // Creative Fields
+    concept?: string;
+    mood?: string;
+    shot_list?: string; // JSON
+    moodboard_urls?: string; // JSON
 }
 
 export interface ShootVideo {
@@ -268,6 +284,7 @@ export interface PostProdTask {
     title: string;
     is_completed: boolean;
     order_index: number;
+    created_at?: string;
 }
 
 export interface PostProdVersion {
@@ -297,4 +314,26 @@ export interface BetaFeedback {
     page_url: string;
     created_at: string;
     is_resolved: boolean;
+}
+
+// --- AVAILABILITY TYPES ---
+
+export interface AvailabilitySlot {
+    id: number;
+    start_time: string;
+    end_time: string;
+    is_booked: boolean;
+    created_at?: string;
+}
+
+export interface AvailabilityRequest {
+    id: number;
+    slot_id: number;
+    agency_id: number;
+    status: 'Pending' | 'Approved' | 'Rejected';
+    notes?: string;
+    created_at: string;
+    // Joined
+    slot_start?: string;
+    agency_name?: string;
 }

@@ -1,26 +1,24 @@
 'use client';
 
-import { clientLogin } from '@/app/portal-actions';
-import { useState, useTransition } from 'react';
+import { authenticate } from '@/app/login/actions'; // Re-use common auth action
+import { useFormState, useFormStatus } from 'react-dom';
 import { LayoutGrid, Loader2 } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+
+function LoginButton() {
+    const { pending } = useFormStatus();
+    return (
+        <button
+            type="submit"
+            disabled={pending}
+            className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-medium py-3 rounded-lg transition-colors flex items-center justify-center"
+        >
+            {pending ? <Loader2 className="animate-spin" size={20} /> : 'Enter Portal'}
+        </button>
+    );
+}
 
 export default function ClientLoginPage() {
-    const [error, setError] = useState<string>('');
-    const [isPending, startTransition] = useTransition();
-    const router = useRouter();
-
-    const handleSubmit = async (formData: FormData) => {
-        setError('');
-        startTransition(async () => {
-            const result = await clientLogin(formData);
-            if (result?.error) {
-                setError(result.error);
-            } else {
-                router.push('/portal/dashboard');
-            }
-        });
-    };
+    const [errorMessage, dispatch] = useFormState(authenticate, undefined);
 
     return (
         <div className="min-h-screen bg-[#050505] flex items-center justify-center p-4">
@@ -33,7 +31,7 @@ export default function ClientLoginPage() {
                     <p className="text-[var(--text-secondary)] text-sm mt-1">Access your projects & invoices</p>
                 </div>
 
-                <form action={handleSubmit} className="space-y-4">
+                <form action={dispatch} className="space-y-4">
                     <div>
                         <label className="block text-xs font-medium text-[var(--text-secondary)] uppercase mb-2">Email</label>
                         <input
@@ -55,19 +53,13 @@ export default function ClientLoginPage() {
                         />
                     </div>
 
-                    {error && (
+                    {errorMessage && (
                         <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm text-center">
-                            {error}
+                            {errorMessage}
                         </div>
                     )}
 
-                    <button
-                        type="submit"
-                        disabled={isPending}
-                        className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-medium py-3 rounded-lg transition-colors flex items-center justify-center"
-                    >
-                        {isPending ? <Loader2 className="animate-spin" size={20} /> : 'Enter Portal'}
-                    </button>
+                    <LoginButton />
 
                     <p className="text-center text-xs text-[var(--text-tertiary)] mt-4">
                         Don't have a login? Contact your project manager.

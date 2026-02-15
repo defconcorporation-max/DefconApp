@@ -5,6 +5,9 @@ import FolderButton from '@/components/FolderButton';
 import { ClientSettingsButton } from '@/components/ClientSettingsModal';
 import Link from 'next/link';
 import ClientTabs from '@/components/ClientTabs';
+import ClientAvatar from '@/components/ClientAvatar';
+import ClientValue from '@/components/ClientValue';
+import { auth } from '@/auth';
 
 
 
@@ -26,6 +29,10 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
     const socialAccounts = await getSocialAccounts(clientId);
     const socialPosts = await getSocialPosts(clientId);
 
+    const session = await auth();
+    const isAdmin = session?.user?.role === 'Admin';
+
+
     if (!client) return <div>Client not found</div>;
 
     return (
@@ -39,8 +46,17 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
                         </Link>
                         <div className="h-4 w-px bg-[var(--border-subtle)]"></div>
                         <div className="flex items-center gap-3">
-                            <h1 className="text-sm font-bold tracking-wide uppercase">{client.company_name}</h1>
-                            <span className="pro-badge">{client.plan}</span>
+                            {/* Avatar */}
+                            <ClientAvatar client={client} />
+
+                            <div className="flex flex-col">
+                                <h1 className="text-sm font-bold tracking-wide uppercase leading-tight">{client.company_name}</h1>
+                                <div className="flex items-center gap-2 mt-0.5">
+                                    <span className="pro-badge text-[10px] py-0.5">{client.plan}</span>
+                                    {/* Client Value (Admin Only) */}
+                                    <ClientValue client={client} isAdmin={isAdmin} />
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <div className="flex items-center gap-3">

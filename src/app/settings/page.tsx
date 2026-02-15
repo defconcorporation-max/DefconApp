@@ -3,6 +3,7 @@ import { getPostProdTemplates } from '@/app/post-prod-actions';
 import SettingsForm from '@/components/SettingsForm';
 import TaskStageManager from '@/components/TaskStageManager';
 import WorkflowManager from '@/components/settings/WorkflowManager';
+import SalesPlaybookButton from '@/components/settings/SalesPlaybookButton';
 import Link from 'next/link';
 
 
@@ -33,6 +34,7 @@ export default async function Page() {
                             <h3 className="text-lg font-bold text-white mb-2 group-hover:text-violet-400">Agencies</h3>
                             <p className="text-sm text-[var(--text-secondary)]">Manage client agencies and their color codes.</p>
                         </Link>
+                        <SalesPlaybookButton />
                     </div>
 
                     <WorkflowManager templates={templates} />
