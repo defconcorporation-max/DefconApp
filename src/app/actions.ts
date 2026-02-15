@@ -2105,10 +2105,10 @@ export async function requestShoot(title: string, date: string, start: string, e
     if (!title || !date || !start || !end || !agencyId) return;
 
     try {
-        // Insert with NULL client_id for pending requests (FK won't fail on NULL)
+        // client_id omitted — it's nullable after migration (no client for pending requests)
         await db.execute({
-            sql: `INSERT INTO shoots (client_id, title, shoot_date, start_time, end_time, status, agency_id, is_blocking) 
-                  VALUES (NULL, ?, ?, ?, ?, 'Pending', ?, 0)`,
+            sql: `INSERT INTO shoots (title, shoot_date, start_time, end_time, status, agency_id, is_blocking) 
+                  VALUES (?, ?, ?, ?, 'Pending', ?, 0)`,
             args: [title, date, start, end, agencyId]
         });
         revalidatePath('/availability');
