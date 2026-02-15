@@ -2016,13 +2016,17 @@ export async function createAvailabilitySlot(start: string, end: string) {
     revalidatePath('/availability');
 }
 
-export async function deleteAvailabilitySlot(formData: FormData) {
-    const id = Number(formData.get('id'));
-    await db.execute({
-        sql: 'DELETE FROM availability_slots WHERE id = ?',
-        args: [id]
-    });
-    revalidatePath('/availability');
+export async function deleteAvailabilitySlot(id: number) {
+    if (!id) return;
+    try {
+        await db.execute({
+            sql: 'DELETE FROM availability_slots WHERE id = ?',
+            args: [id]
+        });
+        revalidatePath('/availability');
+    } catch (e) {
+        throw new Error('Failed to delete availability slot');
+    }
 }
 
 export async function requestAvailabilitySlot(formData: FormData) {

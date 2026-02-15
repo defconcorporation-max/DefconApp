@@ -232,17 +232,24 @@ export default function AvailabilityCalendar({ initialSlots, initialShoots, init
                                                         {slot.start_time.split(' ')[1].slice(0, 5)} - {slot.end_time.split(' ')[1].slice(0, 5)}
                                                     </span>
                                                     {isAdmin && (
-                                                        <form action={deleteAvailabilitySlot}>
-                                                            <input type="hidden" name="id" value={slot.id} />
-                                                            <button
-                                                                type="submit"
-                                                                onClick={(e) => e.stopPropagation()}
-                                                                title="Remove Block"
-                                                                className="text-zinc-400 hover:text-red-400 bg-black/60 hover:bg-black/80 rounded p-1 transition-colors"
-                                                            >
-                                                                <Trash size={12} />
-                                                            </button>
-                                                        </form>
+                                                        <button
+                                                            onClick={async (e) => {
+                                                                e.stopPropagation();
+                                                                if (confirm('Are you sure you want to remove this unavailability block?')) {
+                                                                    try {
+                                                                        console.log('Deleting slot:', slot.id);
+                                                                        await deleteAvailabilitySlot(slot.id);
+                                                                    } catch (err) {
+                                                                        console.error('Delete failed:', err);
+                                                                        alert('Failed to delete availability block. Check console.');
+                                                                    }
+                                                                }
+                                                            }}
+                                                            title="Remove Block"
+                                                            className="text-zinc-400 hover:text-red-400 bg-black/60 hover:bg-black/80 rounded p-1 transition-colors ml-auto z-50 relative pointer-events-auto"
+                                                        >
+                                                            <Trash size={12} />
+                                                        </button>
                                                     )}
                                                 </div>
 
