@@ -169,8 +169,20 @@ export default function AvailabilityCalendar({ initialSlots, initialShoots, init
                                         // DB `shoots` has `shoot_date` datetime? Assuming yes from previous steps.
                                         // Let's rely on standard day positioning for now.
                                         // Hack: Just put it at 9am-5pm for visual unless we have specific time data
-                                        const startTime = shoot.shoot_date.includes(' ') ? shoot.shoot_date : `${shoot.shoot_date} 09:00:00`;
-                                        const endTime = addMinutes(new Date(startTime), 480).toISOString(); // +8h mockup
+                                        // Time Parsing Logic
+                                        let startTime = `${shoot.shoot_date} 09:00:00`;
+                                        let endTime = addMinutes(new Date(startTime), 480).toISOString(); // Default 9-5
+
+                                        // If shoot has explicit start/end times (HH:mm or HH:mm:ss)
+                                        if (shoot.start_time && shoot.end_time) {
+                                            const datePart = shoot.shoot_date.split(' ')[0]; // Ensure YYYY-MM-DD
+                                            startTime = `${datePart} ${shoot.start_time}`;
+                                            endTime = `${datePart} ${shoot.end_time}`;
+                                        } else if (shoot.shoot_date.includes(' ')) {
+                                            // Fallback if shoot_date is datetime
+                                            startTime = shoot.shoot_date;
+                                            endTime = addMinutes(new Date(startTime), 120).toISOString(); // Default 2h if datetime but no end_time
+                                        }
 
                                         // Linked Block Mode
                                         const isBlocking = shoot.is_blocking === 1;
