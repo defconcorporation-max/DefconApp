@@ -6,8 +6,16 @@ import bcrypt from 'bcryptjs';
 
 export async function getUsers() {
     const { rows } = await db.execute(
-        "SELECT id, email, name, role, agency_id, avatar_url, created_at FROM users ORDER BY created_at DESC"
+        `SELECT u.id, u.email, u.name, u.role, u.agency_id, u.avatar_url, u.created_at, a.name as agency_name 
+         FROM users u 
+         LEFT JOIN agencies a ON u.agency_id = a.id 
+         ORDER BY u.created_at DESC`
     );
+    return rows as any[];
+}
+
+export async function getAgencies() {
+    const { rows } = await db.execute("SELECT id, name FROM agencies ORDER BY name ASC");
     return rows as any[];
 }
 
@@ -16,9 +24,14 @@ export async function createUser(formData: FormData) {
     const name = formData.get('name') as string;
     const role = formData.get('role') as string;
     const password = formData.get('password') as string;
+    const agencyId = formData.get('agencyId') ? parseInt(formData.get('agencyId') as string) : null;
 
     if (!email || !name || !role || !password) {
         throw new Error('All fields are required');
+    }
+
+    if ((role === 'AgencyAdmin' || role === 'AgencyTeam') && !agencyId) {
+        throw new Error('Agency is required for Agency roles');
     }
 
     // Check for duplicate email
@@ -30,8 +43,8 @@ export async function createUser(formData: FormData) {
     const passwordHash = await bcrypt.hash(password, 10);
 
     await db.execute({
-        sql: 'INSERT INTO users (email, name, role, password_hash) VALUES (?, ?, ?, ?)',
-        args: [email, name, role, passwordHash]
+        sql: 'INSERT INTO users (email, name, role, password_hash, agency_id) VALUES (?, ?, ?, ?, ?)',
+        args: [email, name, role, passwordHash, agencyId]
     });
 
     revalidatePath('/users');
@@ -44,6 +57,19 @@ export async function updateUserRole(formData: FormData) {
     await db.execute({
         sql: 'UPDATE users SET role = ? WHERE id = ?',
         args: [role, userId]
+    });
+
+    revalidatePath('/users');
+}
+
+export async function updateUserAgency(formData: FormData) {
+    const userId = parseInt(formData.get('userId') as string);
+    const agencyIdRaw = formData.get('agencyId');
+    const agencyId = agencyIdRaw ? parseInt(agencyIdRaw as string) : null;
+
+    await db.execute({
+        sql: 'UPDATE users SET agency_id = ? WHERE id = ?',
+        args: [agencyId, userId]
     });
 
     revalidatePath('/users');
