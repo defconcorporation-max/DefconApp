@@ -28,14 +28,24 @@ export default function SlotModal({ isOpen, onClose, initialDate, initialStartTi
                 // start_time / end_time might be HH:mm or undefined
 
                 let sTime = initialShoot.start_time || '09:00';
-                if (initialShoot.shoot_date.includes(' ')) {
+                const sDate = initialShoot.shoot_date || format(new Date(), 'yyyy-MM-dd');
+
+                if (sDate.includes(' ')) {
                     // If legacy datetime format in shoot_date
-                    sTime = initialShoot.shoot_date.split(' ')[1].substring(0, 5);
-                    setDate(initialShoot.shoot_date.split(' ')[0]);
+                    try {
+                        setDate(sDate.split(' ')[0]);
+                        // If start_time wasn't explicitly set, try to grab from date string
+                        if (!initialShoot.start_time) {
+                            const parts = sDate.split(' ');
+                            if (parts.length > 1) sTime = parts[1].substring(0, 5);
+                        }
+                    } catch (e) {
+                        setDate(format(new Date(), 'yyyy-MM-dd'));
+                    }
                 } else {
-                    setDate(initialShoot.shoot_date);
+                    setDate(sDate);
                 }
-                setStartTime(sTime.substring(0, 5)); // ensure HH:mm
+                setStartTime(sTime ? sTime.substring(0, 5) : '09:00'); // ensure HH:mm
 
                 // Duration
                 if (initialShoot.start_time && initialShoot.end_time) {

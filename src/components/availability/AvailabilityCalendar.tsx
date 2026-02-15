@@ -179,9 +179,23 @@ export default function AvailabilityCalendar({ initialSlots, initialShoots, init
                                         // DB `shoots` has `shoot_date` datetime? Assuming yes from previous steps.
                                         // Let's rely on standard day positioning for now.
                                         // Hack: Just put it at 9am-5pm for visual unless we have specific time data
+                                        // Safety check for shoot_date
+                                        if (!shoot.shoot_date || typeof shoot.shoot_date !== 'string') {
+                                            console.warn('Invalid shoot_date for shoot:', shoot.id, shoot.shoot_date);
+                                            return null;
+                                        }
+
                                         // Time Parsing Logic
                                         let startTime = `${shoot.shoot_date} 09:00:00`;
-                                        let endTime = addMinutes(new Date(startTime), 480).toISOString(); // Default 9-5
+                                        let endTime = '';
+
+                                        try {
+                                            endTime = addMinutes(new Date(startTime), 480).toISOString(); // Default 9-5
+                                        } catch (e) {
+                                            // invalid date fallback
+                                            startTime = new Date().toISOString();
+                                            endTime = addMinutes(new Date(), 480).toISOString();
+                                        }
 
                                         // If shoot has explicit start/end times (HH:mm or HH:mm:ss)
                                         if (shoot.start_time && shoot.end_time) {
@@ -191,7 +205,12 @@ export default function AvailabilityCalendar({ initialSlots, initialShoots, init
                                         } else if (shoot.shoot_date.includes(' ')) {
                                             // Fallback if shoot_date is datetime
                                             startTime = shoot.shoot_date;
-                                            endTime = addMinutes(new Date(startTime), 120).toISOString(); // Default 2h if datetime but no end_time
+                                            try {
+                                                endTime = addMinutes(new Date(startTime), 120).toISOString();
+                                            } catch (e) {
+                                                console.error('Error parsing datetime', shoot.shoot_date);
+                                                endTime = new Date().toISOString(); // Fallback to prevent crash
+                                            }
                                         }
 
                                         // Linked Block Mode
