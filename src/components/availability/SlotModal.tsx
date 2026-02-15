@@ -1,0 +1,129 @@
+'use client';
+
+import { useState } from 'react';
+import { createAvailabilitySlot } from '@/app/actions';
+import { X, Clock, Calendar as CalendarIcon, Check } from 'lucide-react';
+import { format } from 'date-fns';
+
+interface SlotModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+    initialDate?: Date;
+    initialStartTime?: string; // HH:mm
+}
+
+export default function SlotModal({ isOpen, onClose, initialDate, initialStartTime }: SlotModalProps) {
+    const [isLoading, setIsLoading] = useState(false);
+    const [date, setDate] = useState(initialDate ? format(initialDate, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd'));
+    const [startTime, setStartTime] = useState(initialStartTime || '10:00');
+    const [duration, setDuration] = useState('2'); // hours
+
+    if (!isOpen) return null;
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsLoading(true);
+
+        try {
+            // Calculate end time
+            const [hours, minutes] = startTime.split(':').map(Number);
+            const totalMinutes = hours * 60 + minutes + Number(duration) * 60;
+            const endHours = Math.floor(totalMinutes / 60);
+            const endMinutes = totalMinutes % 60;
+            const endTime = `${endHours.toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}`;
+
+            const start = `${date} ${startTime}`;
+            const end = `${date} ${endTime}`;
+
+            await createAvailabilitySlot(start, end);
+            onClose();
+        } catch (error) {
+            console.error('Failed to create slot', error);
+            alert('Failed to create slot');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+            <div className="bg-[#0f0f0f] border border-[var(--border-subtle)] rounded-xl w-full max-w-sm shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+                <div className="p-4 border-b border-[var(--border-subtle)] flex justify-between items-center bg-[var(--bg-surface)]">
+                    <h3 className="font-semibold text-white flex items-center gap-2">
+                        <Clock size={16} className="text-violet-400" />
+                        New Availability Slot
+                    </h3>
+                    <button onClick={onClose} className="text-[var(--text-tertiary)] hover:text-white transition-colors">
+                        <X size={18} />
+                    </button>
+                </div>
+
+                <form onSubmit={handleSubmit} className="p-5 space-y-5">
+                    <div className="space-y-4">
+                        <div className="space-y-1.5">
+                            <label className="text-xs font-medium text-[var(--text-secondary)] uppercase">Date</label>
+                            <div className="relative">
+                                <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] pointer-events-none" size={16} />
+                                <input
+                                    type="date"
+                                    value={date}
+                                    onChange={(e) => setDate(e.target.value)}
+                                    className="w-full bg-[var(--bg-root)] border border-[var(--border-subtle)] rounded-lg py-2.5 pl-10 pr-3 text-sm text-white focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500 transition-all"
+                                    required
+                                />
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-medium text-[var(--text-secondary)] uppercase">Start Time</label>
+                                <input
+                                    type="time"
+                                    value={startTime}
+                                    onChange={(e) => setStartTime(e.target.value)}
+                                    className="w-full bg-[var(--bg-root)] border border-[var(--border-subtle)] rounded-lg py-2.5 px-3 text-sm text-white focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500 transition-all"
+                                    required
+                                />
+                            </div>
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-medium text-[var(--text-secondary)] uppercase">Duration</label>
+                                <select
+                                    value={duration}
+                                    onChange={(e) => setDuration(e.target.value)}
+                                    className="w-full bg-[var(--bg-root)] border border-[var(--border-subtle)] rounded-lg py-2.5 px-3 text-sm text-white focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500 transition-all appearance-none"
+                                >
+                                    <option value="1">1 Hour</option>
+                                    <option value="2">2 Hours</option>
+                                    <option value="3">3 Hours</option>
+                                    <option value="4">4 Hours</option>
+                                    <option value="8">Full Day (8h)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="pt-2 flex justify-end gap-3">
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="px-4 py-2 text-sm text-[var(--text-secondary)] hover:text-white transition-colors"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            disabled={isLoading}
+                            className="bg-violet-600 hover:bg-violet-500 text-white px-5 py-2 rounded-lg text-sm font-medium transition-all shadow-lg shadow-violet-600/20 disabled:opacity-50 flex items-center gap-2"
+                        >
+                            {isLoading ? 'Creating...' : (
+                                <>
+                                    <Check size={16} /> Create Slot
+                                </>
+                            )}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    );
+}
