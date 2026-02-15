@@ -1,4 +1,4 @@
-import { getClientPortalData, clientLogout } from '@/app/portal-actions';
+import { getClientPortalData, clientLogout } from '@/app/actions';
 import { cookies } from 'next/headers';
 import { decrypt } from '@/lib/auth-utils';
 import { redirect } from 'next/navigation';

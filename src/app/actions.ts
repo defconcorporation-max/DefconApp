@@ -1992,3 +1992,34 @@ export async function updateAvailabilityRequest(formData: FormData) {
 
     revalidatePath('/availability');
 }
+
+// --- MISSING SYSTEM ACTIONS (Restored from deletions) ---
+
+import { signIn, signOut } from '@/auth';
+
+export async function signInAction(provider: string, clientId?: number) {
+    // If clientId is provided, we might want to attach it to state or handle differently
+    // For now, standard signIn
+    await signIn(provider);
+}
+
+export async function clientLogout() {
+    await signOut({ redirectTo: '/portal/login' });
+}
+
+export async function getClientPortalData(clientId: number) {
+    const clientRes = await db.execute({
+        sql: 'SELECT * FROM clients WHERE id = ?',
+        args: [clientId]
+    });
+
+    const projectsRes = await db.execute({
+        sql: 'SELECT * FROM projects WHERE client_id = ? ORDER BY created_at DESC',
+        args: [clientId]
+    });
+
+    return {
+        client: clientRes.rows[0] as unknown as Client,
+        projects: projectsRes.rows as unknown as Project[]
+    };
+}

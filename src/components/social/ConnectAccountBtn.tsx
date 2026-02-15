@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/Button';
 import { Instagram, Linkedin, Facebook, Youtube, Video } from 'lucide-react';
-import { signInAction } from '@/app/auth-actions';
+import { signInAction } from '@/app/actions';
 
 interface ConnectProps {
     platform: 'instagram' | 'linkedin' | 'facebook' | 'tiktok' | 'youtube';
