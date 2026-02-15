@@ -227,20 +227,26 @@ export default function AvailabilityCalendar({ initialSlots, initialShoots, init
                                         return (
                                             <div
                                                 key={`shoot-${shoot.id}`}
-                                                className="absolute left-1.5 right-1.5 rounded-md border p-1.5 text-xs transition-all shadow-sm bg-indigo-500/20 border-indigo-500/40 text-indigo-200 hover:z-20 hover:bg-indigo-500/30 cursor-default"
+                                                onClick={(e) => {
+                                                    if (isAdmin) {
+                                                        e.stopPropagation();
+                                                        handleBlockShoot(shoot);
+                                                    }
+                                                }}
+                                                className={cn(
+                                                    "absolute left-1.5 right-1.5 rounded-md border p-1.5 text-xs transition-all shadow-sm bg-indigo-500/20 border-indigo-500/40 text-indigo-200 hover:z-20 hover:bg-indigo-500/30",
+                                                    isAdmin ? "cursor-pointer hover:border-indigo-400" : "cursor-default"
+                                                )}
                                                 style={getSlotStyle(startTime, endTime)}
+                                                title={isAdmin ? "Click to block this time" : shoot.project_title}
                                             >
                                                 <div className="flex items-center gap-1 font-mono font-bold text-[10px] opacity-70 mb-0.5">
                                                     <Video size={10} />
                                                     Shoot
                                                     {isAdmin && (
-                                                        <button
-                                                            onClick={(e) => { e.stopPropagation(); handleBlockShoot(shoot); }}
-                                                            className="ml-auto bg-black/40 hover:bg-red-500/80 text-white rounded p-0.5"
-                                                            title="Block Time"
-                                                        >
+                                                        <div className="ml-auto bg-black/40 text-white rounded p-0.5 opacity-0 group-hover:opacity-100">
                                                             <X size={8} />
-                                                        </button>
+                                                        </div>
                                                     )}
                                                 </div>
                                                 <div className="font-semibold truncate leading-tight">
