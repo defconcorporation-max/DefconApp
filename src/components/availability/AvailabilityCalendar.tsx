@@ -234,7 +234,14 @@ export default function AvailabilityCalendar({ initialSlots, initialShoots, init
                                                     {isAdmin && (
                                                         <form action={deleteAvailabilitySlot}>
                                                             <input type="hidden" name="id" value={slot.id} />
-                                                            <button title="Remove Block" className="text-zinc-500 hover:text-red-400 bg-black/50 rounded"><Trash size={10} /></button>
+                                                            <button
+                                                                type="submit"
+                                                                onClick={(e) => e.stopPropagation()}
+                                                                title="Remove Block"
+                                                                className="text-zinc-400 hover:text-red-400 bg-black/60 hover:bg-black/80 rounded p-1 transition-colors"
+                                                            >
+                                                                <Trash size={12} />
+                                                            </button>
                                                         </form>
                                                     )}
                                                 </div>
