@@ -12,7 +12,7 @@ export default async function AvailabilityPage() {
     const isAdmin = userRole === 'Admin' || userRole === 'Team';
 
     // Fetch data
-    const slots = await getAvailabilitySlots();
+    const { slots, shoots } = await getAvailabilitySlots();
     const requests = await getAvailabilityRequests(isAdmin ? undefined : session.user.agency_id);
 
     return (
@@ -24,6 +24,7 @@ export default async function AvailabilityPage() {
 
             <AvailabilityCalendar
                 initialSlots={slots}
+                initialShoots={shoots}
                 initialRequests={requests}
                 userRole={userRole}
                 agencyId={session.user.agency_id}

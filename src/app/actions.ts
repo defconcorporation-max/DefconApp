@@ -1972,8 +1972,24 @@ export async function updateShootCreative(shootId: number, data: { concept?: str
 import { AvailabilitySlot, AvailabilityRequest } from '@/types';
 
 export async function getAvailabilitySlots() {
-    const { rows } = await db.execute('SELECT * FROM availability_slots ORDER BY start_time ASC');
-    return rows as unknown as AvailabilitySlot[];
+    // Fetch Slots (Now treated as Blocks)
+    const { rows: slots } = await db.execute('SELECT * FROM availability_slots ORDER BY start_time ASC');
+
+    // Fetch Shoots (Visual Events)
+    // Join with Projects -> Clients to get Agency info
+    const { rows: shoots } = await db.execute(`
+        SELECT s.*, p.title as project_title, c.company_name as client_name, c.agency_id
+        FROM shoots s
+        LEFT JOIN projects p ON s.project_id = p.id
+        LEFT JOIN clients c ON p.client_id = c.id
+        WHERE s.shoot_date >= date('now', '-1 month')
+        ORDER BY s.shoot_date ASC
+    `);
+
+    return {
+        slots: slots as unknown as AvailabilitySlot[],
+        shoots: shoots as unknown as any[]
+    };
 }
 
 export async function createAvailabilitySlot(start: string, end: string) {

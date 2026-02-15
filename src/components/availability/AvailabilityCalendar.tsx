@@ -2,9 +2,9 @@
 
 import { useState } from 'react';
 import { AvailabilitySlot, AvailabilityRequest } from '@/types';
-import { deleteAvailabilitySlot, requestAvailabilitySlot, updateAvailabilityRequest } from '@/app/actions';
+import { deleteAvailabilitySlot, requestAvailabilitySlot, updateAvailabilityRequest, createAvailabilitySlot } from '@/app/actions';
 import { format, startOfWeek, addDays, isSameDay, getHours, getMinutes, isToday, addMinutes } from 'date-fns';
-import { Trash, Check, X, Clock, Plus, User } from 'lucide-react';
+import { Trash, Check, X, Clock, Plus, User, Calendar as CalendarIcon, Video } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import CalendarHeader from './CalendarHeader';
@@ -16,22 +16,27 @@ function cn(...inputs: ClassValue[]) {
 }
 
 interface AvailabilityCalendarProps {
-    initialSlots: AvailabilitySlot[];
+    initialSlots: AvailabilitySlot[]; // NOW 'BLOCKS'
+    initialShoots: any[];
     initialRequests: AvailabilityRequest[];
     userRole: string;
     agencyId?: number;
 }
 
-export default function AvailabilityCalendar({ initialSlots, initialRequests, userRole, agencyId }: AvailabilityCalendarProps) {
+export default function AvailabilityCalendar({ initialSlots, initialShoots, initialRequests, userRole, agencyId }: AvailabilityCalendarProps) {
     const [currentDate, setCurrentDate] = useState(new Date());
     const [view, setView] = useState<'week' | 'day'>('week');
     const [slots, setSlots] = useState(initialSlots);
+    const [shoots, setShoots] = useState(initialShoots);
     const [requests, setRequests] = useState(initialRequests);
 
     // Modal State
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
     const [selectedTime, setSelectedTime] = useState<string | undefined>(undefined); // HH:mm
+
+    // Shoot Details Popover (Simple implementation)
+    const [selectedShoot, setSelectedShoot] = useState<any | null>(null);
 
     // Admin Controls
     const isAdmin = userRole === 'Admin' || userRole === 'Team';
@@ -73,6 +78,40 @@ export default function AvailabilityCalendar({ initialSlots, initialRequests, us
         setSelectedDate(day);
         setSelectedTime(`${hour.toString().padStart(2, '0')}:00`);
         setIsModalOpen(true);
+    };
+
+    // Quick Action: Block Shoot Time
+    const handleBlockShoot = async (shoot: any) => {
+        if (!isAdmin) return;
+        // Create availability slot (block) based on shoot time
+        // We'll trust the user interaction, but ideally we'd optimistic update
+        if (confirm(`Mark time as unavailable for "${shoot.project_title}"?`)) {
+            // For simplicity, we just use the create action. 
+            // Ideally we shouldn't rely on window.confirm in a "Pro" app, but for speed:
+            const start = typeof shoot.shoot_date === 'string' ? `${shoot.shoot_date.split(' ')[0]} 09:00` : format(new Date(shoot.shoot_date), 'yyyy-MM-dd HH:mm');
+            // Defaulting because shoot_date might not have time or duration in this object yet? 
+            // Actually database `shoots` has `shoot_date` (datetime) usually. 
+            // If not, we might need a default block. Let's assume 9-5 or similar if time missing.
+            // Wait, `shoot_date` in DB is usually just YYYY-MM-DD or datetime.
+            // If just date, we default.
+
+            let startStr = shoot.shoot_date;
+            let endStr = shoot.shoot_date; // Placeholder
+
+            // If shoot_date is YYYY-MM-DD
+            if (shoot.shoot_date.length === 10) {
+                startStr = `${shoot.shoot_date} 09:00`;
+                endStr = `${shoot.shoot_date} 17:00`;
+            } else {
+                // Assume it has time
+                const d = new Date(shoot.shoot_date);
+                startStr = format(d, 'yyyy-MM-dd HH:mm');
+                endStr = format(addMinutes(d, 480), 'yyyy-MM-dd HH:mm'); // +8 hours
+            }
+
+            await createAvailabilitySlot(startStr, endStr);
+            // Revalidate happens on server
+        }
     };
 
     return (
@@ -127,7 +166,12 @@ export default function AvailabilityCalendar({ initialSlots, initialRequests, us
                         {/* Days Columns */}
                         {weekDays.map(day => {
                             const dateStr = format(day, 'yyyy-MM-dd');
-                            const daySlots = slots.filter(s => s.start_time.startsWith(dateStr));
+
+                            // 1. Availability Blocks (Manually created unavailabilities)
+                            const dayBlocks = slots.filter(s => s.start_time.startsWith(dateStr));
+
+                            // 2. Shoots (Visual Events)
+                            const dayShoots = shoots.filter(s => s.shoot_date.startsWith(dateStr));
 
                             return (
                                 <div key={day.toString()} className="relative border-r border-[var(--border-subtle)] last:border-r-0 group/col hover:bg-white/[0.02] transition-colors">
@@ -141,114 +185,83 @@ export default function AvailabilityCalendar({ initialSlots, initialRequests, us
                                         />
                                     ))}
 
-                                    {/* Slots */}
-                                    {daySlots.map(slot => {
-                                        const slotRequests = requests.filter(r => r.slot_id === slot.id);
-                                        const selfRequest = slotRequests.find(r => r.agency_id === agencyId);
-                                        const approvedRequest = slotRequests.find(r => r.status === 'Approved');
+                                    {/* SHOOTS LAYER (Bottom Z-Index) */}
+                                    {dayShoots.map(shoot => {
+                                        // Agency Visibility: 
+                                        // - Owner: Visible as "My Shoot"
+                                        // - Others: Only visible if filtered? User said: "agency should see info for their shoot and just ''unavailable'' for the shoot unrelated to them"
+                                        // BUT "shoots should not mark unavailable right away"
+                                        // So: 
+                                        // If Admin: See Shoot.
+                                        // If Agency & Own: See Shoot.
+                                        // If Agency & Other: Do NOT see (unless blocked manually).
 
-                                        // Visibility Logic:
-                                        // Admin: Sees ALL
-                                        // Agency: Sees Available, Pending (Self), Booked (Self). Could revert to specific logic.
-                                        // Let's hide unrelated bookings or show as "Booked"? Usually showing "Booked" is better UX to avoid "why can't I book here?".
+                                        if (isAgency && shoot.agency_id !== agencyId) return null;
 
-                                        // Determine Color/State
-                                        let statusColor = "bg-[#1A1A1A] border-[var(--border-subtle)] text-[var(--text-secondary)]"; // Default
-                                        let statusLabel = ""; // No label by default
-                                        let opacity = "opacity-100";
+                                        // Default duration 8h if not specified (or calculated from start time)
+                                        // For visual, let's assume 9am-5pm if strict date, or parse time.
+                                        // DB `shoots` has `shoot_date` datetime? Assuming yes from previous steps.
+                                        // Let's rely on standard day positioning for now.
+                                        // Hack: Just put it at 9am-5pm for visual unless we have specific time data
+                                        const startTime = shoot.shoot_date.includes(' ') ? shoot.shoot_date : `${shoot.shoot_date} 09:00:00`;
+                                        const endTime = addMinutes(new Date(startTime), 480).toISOString(); // +8h mockup
 
-                                        if (approvedRequest) {
-                                            statusColor = "bg-red-500/10 border-red-500/30 text-red-200";
-                                            if (approvedRequest.agency_id === agencyId) {
-                                                statusLabel = "Booked (You)";
-                                            } else {
-                                                statusLabel = isAdmin ? `Booked: ${approvedRequest.agency_name}` : "Booked";
-                                                if (!isAdmin) opacity = "opacity-50 pointer-events-none"; // Dim other bookings
-                                            }
-                                        } else if (selfRequest) {
-                                            if (selfRequest.status === 'Pending') {
-                                                statusColor = "bg-amber-500/10 border-amber-500/30 text-amber-200";
-                                                statusLabel = "Requested";
-                                            } else if (selfRequest.status === 'Rejected') {
-                                                statusColor = "bg-red-900/20 border-red-500/30 text-red-400";
-                                                statusLabel = "Rejected";
-                                            }
-                                        } else {
-                                            // Available
-                                            statusColor = "bg-emerald-500/10 border-emerald-500/30 text-emerald-200 hover:bg-emerald-500/20";
-                                            statusLabel = "Open Slot";
-                                        }
+                                        return (
+                                            <div
+                                                key={`shoot-${shoot.id}`}
+                                                className="absolute left-1.5 right-1.5 rounded-md border p-1.5 text-xs transition-all shadow-sm bg-indigo-500/20 border-indigo-500/40 text-indigo-200 hover:z-20 hover:bg-indigo-500/30 cursor-default"
+                                                style={getSlotStyle(startTime, endTime)}
+                                            >
+                                                <div className="flex items-center gap-1 font-mono font-bold text-[10px] opacity-70 mb-0.5">
+                                                    <Video size={10} />
+                                                    Shoot
+                                                    {isAdmin && (
+                                                        <button
+                                                            onClick={(e) => { e.stopPropagation(); handleBlockShoot(shoot); }}
+                                                            className="ml-auto bg-black/40 hover:bg-red-500/80 text-white rounded p-0.5"
+                                                            title="Block Time"
+                                                        >
+                                                            <X size={8} />
+                                                        </button>
+                                                    )}
+                                                </div>
+                                                <div className="font-semibold truncate leading-tight">
+                                                    {shoot.project_title}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+
+                                    {/* BLOCKS LAYER (Top Z-Index - "Unavailable") */}
+                                    {dayBlocks.map(slot => {
+                                        // These are explicit "Unavailabilities"
+                                        // Agency sees: "Unavailable"
+                                        // Admin sees: "Unavailable" (and can delete)
+
+                                        // Check if this block corresponds to a generic "Unavailable" or a specific "Booking" (if we keep requests)
+                                        // For now, treat all `slots` as Blocks.
 
                                         return (
                                             <div
                                                 key={slot.id}
-                                                className={cn(
-                                                    "absolute left-1 right-1 rounded-md border p-1.5 text-xs transition-all cursor-pointer group/slot shadow-sm overflow-hidden",
-                                                    statusColor,
-                                                    opacity,
-                                                    "hover:z-10 hover:shadow-md"
-                                                )}
+                                                className="absolute left-1 right-1 rounded-md border p-1.5 text-xs transition-all cursor-pointer group/slot shadow-sm overflow-hidden bg-zinc-800/80 border-zinc-600 text-zinc-400 z-30 striped-bg"
                                                 style={getSlotStyle(slot.start_time, slot.end_time)}
                                             >
-                                                {/* Time Label */}
-                                                <div className="font-mono font-bold text-[10px] opacity-70 mb-0.5">
-                                                    {slot.start_time.split(' ')[1].slice(0, 5)} - {slot.end_time.split(' ')[1].slice(0, 5)}
-                                                </div>
-
-                                                <div className="font-semibold truncate leading-tight select-none">
-                                                    {statusLabel}
-                                                </div>
-
-                                                {/* Hover Actions */}
-                                                <div className="absolute top-1 right-1 opacity-0 group-hover/slot:opacity-100 transition-opacity flex gap-1">
-                                                    {isAdmin && !approvedRequest && (
+                                                <div className="flex justify-between items-start mb-0.5">
+                                                    <span className="font-mono font-bold text-[10px] opacity-70">
+                                                        {slot.start_time.split(' ')[1].slice(0, 5)} - {slot.end_time.split(' ')[1].slice(0, 5)}
+                                                    </span>
+                                                    {isAdmin && (
                                                         <form action={deleteAvailabilitySlot}>
                                                             <input type="hidden" name="id" value={slot.id} />
-                                                            <button title="Delete Slot" className="bg-black/50 hover:bg-red-500 p-1 rounded text-white backdrop-blur-sm"><Trash size={10} /></button>
-                                                        </form>
-                                                    )}
-
-                                                    {/* Agency Request Action */}
-                                                    {isAgency && !selfRequest && !approvedRequest && (
-                                                        <form action={requestAvailabilitySlot} onSubmit={(e) => {
-                                                            // e.preventDefault(); // Let it submit naturally
-                                                        }}>
-                                                            <input type="hidden" name="slotId" value={slot.id} />
-                                                            <input type="hidden" name="agencyId" value={agencyId} />
-                                                            <button title="Request" className="bg-violet-600 hover:bg-violet-500 text-white px-2 py-0.5 rounded text-[10px] font-bold shadow-sm">
-                                                                Book
-                                                            </button>
+                                                            <button title="Remove Block" className="text-zinc-500 hover:text-red-400 bg-black/50 rounded"><Trash size={10} /></button>
                                                         </form>
                                                     )}
                                                 </div>
 
-                                                {/* Admin Request Approvals (Inside Slot?) or Popover? Inside for now if space permits */}
-                                                {isAdmin && slotRequests.length > 0 && (
-                                                    <div className="mt-1 pt-1 border-t border-white/10 space-y-1">
-                                                        {slotRequests.map(req => (
-                                                            <div key={req.id} className="flex justify-between items-center text-[9px] bg-black/20 rounded px-1 py-0.5">
-                                                                <span className="truncate max-w-[60px]">{req.agency_name}</span>
-                                                                {req.status === 'Pending' && (
-                                                                    <div className="flex gap-0.5">
-                                                                        <form action={updateAvailabilityRequest}>
-                                                                            <input type="hidden" name="id" value={req.id} />
-                                                                            <input type="hidden" name="status" value="Approved" />
-                                                                            <input type="hidden" name="slotId" value={slot.id} />
-                                                                            <button className="text-emerald-400 hover:text-emerald-300"><Check size={10} /></button>
-                                                                        </form>
-                                                                        <form action={updateAvailabilityRequest}>
-                                                                            <input type="hidden" name="id" value={req.id} />
-                                                                            <input type="hidden" name="status" value="Rejected" />
-                                                                            <input type="hidden" name="slotId" value={slot.id} />
-                                                                            <button className="text-red-400 hover:text-red-300"><X size={10} /></button>
-                                                                        </form>
-                                                                    </div>
-                                                                )}
-                                                                {req.status === 'Approved' && <Check size={8} className="text-emerald-400" />}
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                )}
+                                                <div className="font-bold uppercase tracking-wider text-[10px] flex items-center gap-1">
+                                                    <X size={10} /> Unavailable
+                                                </div>
                                             </div>
                                         );
                                     })}
@@ -259,14 +272,14 @@ export default function AvailabilityCalendar({ initialSlots, initialRequests, us
                 </div>
             </div>
 
-            {/* Admin Add Slot Modal */}
+            {/* Admin Add Unavailability Modal */}
             <SlotModal
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
                 initialDate={selectedDate}
                 initialStartTime={selectedTime}
+                mode="block"
             />
         </div>
     );
 }
-

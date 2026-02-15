@@ -10,15 +10,22 @@ interface SlotModalProps {
     onClose: () => void;
     initialDate?: Date;
     initialStartTime?: string; // HH:mm
+    mode?: 'create' | 'block';
 }
 
-export default function SlotModal({ isOpen, onClose, initialDate, initialStartTime }: SlotModalProps) {
+export default function SlotModal({ isOpen, onClose, initialDate, initialStartTime, mode = 'create' }: SlotModalProps) {
     const [isLoading, setIsLoading] = useState(false);
     const [date, setDate] = useState(initialDate ? format(initialDate, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd'));
     const [startTime, setStartTime] = useState(initialStartTime || '10:00');
     const [duration, setDuration] = useState('2'); // hours
 
     if (!isOpen) return null;
+
+    // UI Theme based on mode
+    const isBlock = mode === 'block';
+    const accentColor = isBlock ? 'red' : 'violet';
+    const title = isBlock ? 'Add Unavailability' : 'New Availability Slot';
+    const buttonText = isBlock ? 'Block Time' : 'Create Slot';
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -50,8 +57,8 @@ export default function SlotModal({ isOpen, onClose, initialDate, initialStartTi
             <div className="bg-[#0f0f0f] border border-[var(--border-subtle)] rounded-xl w-full max-w-sm shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
                 <div className="p-4 border-b border-[var(--border-subtle)] flex justify-between items-center bg-[var(--bg-surface)]">
                     <h3 className="font-semibold text-white flex items-center gap-2">
-                        <Clock size={16} className="text-violet-400" />
-                        New Availability Slot
+                        <Clock size={16} className={`text-${accentColor}-400`} />
+                        {title}
                     </h3>
                     <button onClick={onClose} className="text-[var(--text-tertiary)] hover:text-white transition-colors">
                         <X size={18} />
@@ -68,7 +75,7 @@ export default function SlotModal({ isOpen, onClose, initialDate, initialStartTi
                                     type="date"
                                     value={date}
                                     onChange={(e) => setDate(e.target.value)}
-                                    className="w-full bg-[var(--bg-root)] border border-[var(--border-subtle)] rounded-lg py-2.5 pl-10 pr-3 text-sm text-white focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500 transition-all"
+                                    className={`w-full bg-[var(--bg-root)] border border-[var(--border-subtle)] rounded-lg py-2.5 pl-10 pr-3 text-sm text-white focus:outline-none focus:border-${accentColor}-500 focus:ring-1 focus:ring-${accentColor}-500 transition-all`}
                                     required
                                 />
                             </div>
@@ -81,7 +88,7 @@ export default function SlotModal({ isOpen, onClose, initialDate, initialStartTi
                                     type="time"
                                     value={startTime}
                                     onChange={(e) => setStartTime(e.target.value)}
-                                    className="w-full bg-[var(--bg-root)] border border-[var(--border-subtle)] rounded-lg py-2.5 px-3 text-sm text-white focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500 transition-all"
+                                    className={`w-full bg-[var(--bg-root)] border border-[var(--border-subtle)] rounded-lg py-2.5 px-3 text-sm text-white focus:outline-none focus:border-${accentColor}-500 focus:ring-1 focus:ring-${accentColor}-500 transition-all`}
                                     required
                                 />
                             </div>
@@ -90,7 +97,7 @@ export default function SlotModal({ isOpen, onClose, initialDate, initialStartTi
                                 <select
                                     value={duration}
                                     onChange={(e) => setDuration(e.target.value)}
-                                    className="w-full bg-[var(--bg-root)] border border-[var(--border-subtle)] rounded-lg py-2.5 px-3 text-sm text-white focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500 transition-all appearance-none"
+                                    className={`w-full bg-[var(--bg-root)] border border-[var(--border-subtle)] rounded-lg py-2.5 px-3 text-sm text-white focus:outline-none focus:border-${accentColor}-500 focus:ring-1 focus:ring-${accentColor}-500 transition-all appearance-none`}
                                 >
                                     <option value="1">1 Hour</option>
                                     <option value="2">2 Hours</option>
@@ -113,11 +120,11 @@ export default function SlotModal({ isOpen, onClose, initialDate, initialStartTi
                         <button
                             type="submit"
                             disabled={isLoading}
-                            className="bg-violet-600 hover:bg-violet-500 text-white px-5 py-2 rounded-lg text-sm font-medium transition-all shadow-lg shadow-violet-600/20 disabled:opacity-50 flex items-center gap-2"
+                            className={`bg-${accentColor}-600 hover:bg-${accentColor}-500 text-white px-5 py-2 rounded-lg text-sm font-medium transition-all shadow-lg shadow-${accentColor}-600/20 disabled:opacity-50 flex items-center gap-2`}
                         >
-                            {isLoading ? 'Creating...' : (
+                            {isLoading ? 'Processing...' : (
                                 <>
-                                    <Check size={16} /> Create Slot
+                                    {isBlock ? <X size={16} /> : <Check size={16} />} {buttonText}
                                 </>
                             )}
                         </button>
