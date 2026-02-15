@@ -279,13 +279,21 @@ export default function AvailabilityCalendar({ initialSlots, initialShoots, init
 
                                         // Style classes
                                         const baseClasses = "absolute left-1.5 right-1.5 rounded-md border p-1.5 text-xs transition-all shadow-sm";
-                                        const eventClasses = "bg-indigo-500/20 border-indigo-500/40 text-indigo-200 hover:z-20 hover:bg-indigo-500/30";
+                                        // Shoots = Purple/Violet
+                                        const eventClasses = "bg-violet-500/20 border-violet-500/40 text-violet-200 hover:z-20 hover:bg-violet-500/30";
+                                        // Blocks/Unavailable = Red
                                         const blockClasses = "bg-red-500/20 border-red-500/40 text-red-200 z-20 hover:z-30 hover:bg-red-500/30 striped-bg";
-                                        const pendingClasses = "bg-amber-500/20 border-amber-500/40 text-amber-200 hover:z-20 hover:bg-amber-500/30 border-dashed"; // Pending style
+                                        // Pending
+                                        const pendingClasses = "bg-amber-500/20 border-amber-500/40 text-amber-200 hover:z-20 hover:bg-amber-500/30 border-dashed";
 
-                                        const classes = isBlocking ? blockClasses : (isPending ? pendingClasses : eventClasses);
+                                        // Logic:
+                                        // 1. Generic (Other's Blocked Shoot) -> Red (Unavailable)
+                                        // 2. Pending -> Amber
+                                        // 3. My Shoot (Blocked or Not) -> Purple (eventClasses) - User said "except when it's a shoot it should be purple"
 
-                                        const cursorClass = (isAdmin || (isOwner && isPending)) ? "cursor-pointer hover:border-opacity-100" : "cursor-default";
+                                        const classesToUse = renderAsGeneric ? blockClasses : (isPending ? pendingClasses : eventClasses);
+
+                                        const cursorClass = (isAdmin || (isOwner && isPending) || isOwner) ? "cursor-pointer hover:border-opacity-100" : "cursor-default";
 
                                         return (
                                             <div
@@ -296,16 +304,16 @@ export default function AvailabilityCalendar({ initialSlots, initialShoots, init
                                                         handleShootClick(shoot, isBlocking, isPending);
                                                     }
                                                 }}
-                                                className={cn(baseClasses, classes, cursorClass)}
+                                                className={cn(baseClasses, classesToUse, cursorClass)}
                                                 style={getSlotStyle(startTime, endTime)}
                                                 title={renderAsGeneric ? "Unavailable" : (isPending ? "Pending Request" : (isAdmin ? (isBlocking ? "Click to verify available" : "Click to mark unavailable") : shoot.project_title))}
                                             >
                                                 <div className="flex items-center gap-1 font-mono font-bold text-[10px] opacity-70 mb-0.5">
-                                                    {renderAsGeneric ? <X size={10} /> : (isBlocking ? <X size={10} /> : (isPending ? <Clock size={10} /> : <Video size={10} />))}
-                                                    {renderAsGeneric ? "Unavailable" : (isBlocking ? "Blocked Shoot" : (isPending ? "Request" : "Shoot"))}
-                                                    {isAdmin && !renderAsGeneric && !isPending && (
+                                                    {renderAsGeneric ? <X size={10} /> : (isPending ? <Clock size={10} /> : <Video size={10} />)}
+                                                    {renderAsGeneric ? "Unavailable" : (isPending ? "Request" : "Shoot")}
+                                                    {isAdmin && !renderAsGeneric && !isPending && isBlocking && (
                                                         <div className="ml-auto bg-black/40 text-white rounded p-0.5 opacity-0 group-hover:opacity-100">
-                                                            {isBlocking ? <Check size={8} /> : <X size={8} />}
+                                                            <Check size={8} />
                                                         </div>
                                                     )}
                                                 </div>
