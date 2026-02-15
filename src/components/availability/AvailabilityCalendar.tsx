@@ -225,7 +225,8 @@ export default function AvailabilityCalendar({ initialSlots, initialShoots, init
 
 
                                         // Agency Visibility Logic
-                                        const isOwner = isAgency && shoot.agency_id === agencyId;
+                                        // eslint-disable-next-line eqeqeq
+                                        const isOwner = isAgency && shoot.agency_id != null && shoot.agency_id == agencyId;
                                         const isOtherAgency = isAgency && !isOwner;
                                         const isBlockingShoot = !!shoot.is_blocking;
                                         // Check for pending status - assuming 'status' field is populated

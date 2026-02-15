@@ -2002,11 +2002,13 @@ export async function getAvailabilitySlots() {
 
     // Fetch Shoots (Visual Events & Linked Blocks)
     // Join with Projects -> Clients to get Agency info
+    // COALESCE: prefer s.agency_id (set on direct requests) over c.agency_id (via client)
     const { rows: shoots } = await db.execute(`
-        SELECT s.*, p.title as project_title, c.company_name as client_name, c.agency_id
+        SELECT s.*, p.title as project_title, c.company_name as client_name, 
+               COALESCE(s.agency_id, c.agency_id) as agency_id
         FROM shoots s
         LEFT JOIN projects p ON s.project_id = p.id
-        LEFT JOIN clients c ON p.client_id = c.id
+        LEFT JOIN clients c ON s.client_id = c.id
         WHERE s.shoot_date >= date('now', '-1 month')
         ORDER BY s.shoot_date ASC
     `);
@@ -2103,10 +2105,10 @@ export async function requestShoot(title: string, date: string, start: string, e
     if (!title || !date || !start || !end || !agencyId) return;
 
     try {
-        // client_id is NOT NULL in the original schema, use 0 as placeholder for pending requests
+        // Insert with NULL client_id for pending requests (FK won't fail on NULL)
         await db.execute({
             sql: `INSERT INTO shoots (client_id, title, shoot_date, start_time, end_time, status, agency_id, is_blocking) 
-                  VALUES (0, ?, ?, ?, ?, 'Pending', ?, 0)`,
+                  VALUES (NULL, ?, ?, ?, ?, 'Pending', ?, 0)`,
             args: [title, date, start, end, agencyId]
         });
         revalidatePath('/availability');
