@@ -5,11 +5,17 @@ import TaskStageManager from '@/components/TaskStageManager';
 import WorkflowManager from '@/components/settings/WorkflowManager';
 import SalesPlaybookButton from '@/components/settings/SalesPlaybookButton';
 import Link from 'next/link';
+import { auth } from '@/auth';
+import { redirect } from 'next/navigation';
 
 
 export const dynamic = 'force-dynamic';
 
 export default async function Page() {
+    const session = await auth();
+    if (!session) redirect('/login');
+    const role = session.user?.role;
+    if (role !== 'Admin' && role !== 'Team') redirect('/');
     const settings = await getSettings();
     const stages = await getTaskStages();
     const templates = await getPostProdTemplates();

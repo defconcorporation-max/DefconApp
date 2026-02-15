@@ -5,6 +5,7 @@ import { Shield, UserPlus, Trash2, Key, Users } from 'lucide-react';
 import RoleSelector from '@/components/RoleSelector';
 import AgencySelector from '@/components/AgencySelector';
 import AddUserForm from '@/components/users/AddUserForm';
+import { auth } from '@/auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,6 +18,10 @@ const ROLES = [
 ];
 
 export default async function UsersPage() {
+    const session = await auth();
+    if (!session) redirect('/login');
+    const role = session.user?.role;
+    if (role !== 'Admin' && role !== 'Team') redirect('/');
     const users = await getUsers();
     const agencies = await getAgencies();
 

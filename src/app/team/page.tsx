@@ -5,10 +5,16 @@ import { TeamMember } from '@/types';
 import { addTeamMember } from '@/app/actions'; // Re-importing explicit action for form
 import TeamCalendar from '@/components/team/TeamCalendar';
 import TeamView from '@/components/team/TeamView';
+import { auth } from '@/auth';
+import { redirect } from 'next/navigation';
 
 export const dynamic = 'force-dynamic';
 
 export default async function TeamPage() {
+    const session = await auth();
+    if (!session) redirect('/login');
+    const role = session.user?.role;
+    if (role !== 'Admin' && role !== 'Team') redirect('/');
     const members = await getTeamMembers();
     const schedule = await getTeamSchedule();
 

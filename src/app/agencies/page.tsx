@@ -1,9 +1,15 @@
 import { getAgencies, getAgencyStats } from '@/app/actions';
 import AgencyList from '@/components/AgencyList';
+import { auth } from '@/auth';
+import { redirect } from 'next/navigation';
 
 export const dynamic = 'force-dynamic';
 
 export default async function AgenciesPage() {
+    const session = await auth();
+    if (!session) redirect('/login');
+    const role = session.user?.role;
+    if (role !== 'Admin' && role !== 'Team') redirect('/');
     const agencies = await getAgencies();
     const agencyStats = await getAgencyStats();
 

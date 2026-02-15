@@ -6,7 +6,7 @@ import { Home, Users, Briefcase, Video, CreditCard, Settings, Command, Layers, U
 import { useEffect, useState } from 'react';
 import BetaFeedbackWidget from './BetaFeedbackWidget';
 
-export default function Sidebar() {
+export default function Sidebar({ userRole = '' }: { userRole?: string }) {
     const pathname = usePathname();
     const [open, setOpen] = useState(false);
 
@@ -16,9 +16,9 @@ export default function Sidebar() {
         document.dispatchEvent(event);
     };
 
+    const isAdmin = userRole === 'Admin' || userRole === 'Team';
 
-
-    const links = [
+    const allLinks = [
         { href: '/', label: 'Dashboard', icon: Home },
         { href: '/clients', label: 'Clients', icon: Users },
         { href: '/projects', label: 'Projects', icon: Briefcase },
@@ -26,12 +26,14 @@ export default function Sidebar() {
         { href: '/availability', label: 'Availability', icon: Calendar },
         { href: '/post-production', label: 'Post-Production', icon: Layers },
 
-        { href: '/agencies', label: 'Agencies', icon: Building },
-        { href: '/team', label: 'Team', icon: UserPlus },
-        { href: '/users', label: 'Users', icon: Shield },
-        { href: '/services', label: 'Services', icon: BookOpen },
-        { href: '/settings', label: 'Settings', icon: Settings },
+        { href: '/agencies', label: 'Agencies', icon: Building, adminOnly: true },
+        { href: '/team', label: 'Team', icon: UserPlus, adminOnly: true },
+        { href: '/users', label: 'Users', icon: Shield, adminOnly: true },
+        { href: '/services', label: 'Services', icon: BookOpen, adminOnly: true },
+        { href: '/settings', label: 'Settings', icon: Settings, adminOnly: true },
     ];
+
+    const links = allLinks.filter(link => !link.adminOnly || isAdmin);
 
     return (
         <>

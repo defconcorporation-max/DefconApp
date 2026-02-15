@@ -1,10 +1,15 @@
 import { getClients } from '@/app/actions';
 import Link from 'next/link';
 import { ArrowRight, Users, ExternalLink } from 'lucide-react';
+import { auth } from '@/auth';
 
 export const dynamic = 'force-dynamic';
 
 export default async function ClientsPage() {
+    const session = await auth();
+    const userRole = session?.user?.role;
+    const isAdmin = userRole === 'Admin' || userRole === 'Team';
+
     const clients = await getClients();
 
     return (
@@ -17,9 +22,11 @@ export default async function ClientsPage() {
                     </h1>
                     <p className="text-[var(--text-tertiary)] text-sm">Manage your client relationships and portfolios.</p>
                 </div>
-                <Link href="/" className="pro-button-primary flex items-center gap-2 text-sm shadow-lg shadow-indigo-500/20">
-                    <span className="text-lg leading-none">+</span> Create Client
-                </Link>
+                {isAdmin && (
+                    <Link href="/" className="pro-button-primary flex items-center gap-2 text-sm shadow-lg shadow-indigo-500/20">
+                        <span className="text-lg leading-none">+</span> Create Client
+                    </Link>
+                )}
             </header>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -31,8 +38,8 @@ export default async function ClientsPage() {
                                     {client.company_name.charAt(0)}
                                 </div>
                                 <div className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider border ${client.status === 'Active'
-                                        ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                                        : 'bg-[var(--bg-root)] text-[var(--text-tertiary)] border-[var(--border-subtle)]'
+                                    ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                                    : 'bg-[var(--bg-root)] text-[var(--text-tertiary)] border-[var(--border-subtle)]'
                                     }`}>
                                     {client.status}
                                 </div>

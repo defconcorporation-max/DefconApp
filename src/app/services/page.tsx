@@ -3,8 +3,15 @@ import { Service } from '@/types';
 import Link from 'next/link';
 import { ArrowLeft, Plus } from 'lucide-react';
 import ServiceList from '@/components/ServiceList';
+import { auth } from '@/auth';
+import { redirect } from 'next/navigation';
 
 export default async function ServicesPage() {
+    const session = await auth();
+    if (!session) redirect('/login');
+    const role = session.user?.role;
+    if (role !== 'Admin' && role !== 'Team') redirect('/');
+
     const services = await getServices() as Service[];
 
     return (
