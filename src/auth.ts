@@ -40,7 +40,7 @@ const config = {
                     let isValid = false;
                     // Try bcrypt
                     try {
-                        isValid = await bcrypt.compare(password, (user as any).password); // user interface doesn't show password but db has it
+                        isValid = await bcrypt.compare(password, (user as any).password_hash); // DB column is password_hash
                     } catch (e) {
                         // Fallback? No, secure default.
                     }
