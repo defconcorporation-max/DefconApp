@@ -1972,29 +1972,64 @@ export async function updateShootCreative(shootId: number, data: { concept?: str
 import { AvailabilitySlot, AvailabilityRequest } from '@/types';
 
 export async function getAvailabilitySlots() {
-    // Migration: Ensure shoots has is_blocking (Auto-migration for simplicity)
+    // --- Auto-Migration: Ensure shoots table has all needed columns and client_id is nullable ---
     try {
-        await db.execute('ALTER TABLE shoots ADD COLUMN is_blocking BOOLEAN DEFAULT 0');
-    } catch (e) {
-        // Ignore if column exists
-    }
-    // Migration: Ensure shoots has title column
-    try {
-        await db.execute("ALTER TABLE shoots ADD COLUMN title TEXT DEFAULT ''");
-    } catch (e) {
-        // Ignore if column exists
-    }
-    // Migration: Ensure shoots has agency_id column
-    try {
-        await db.execute('ALTER TABLE shoots ADD COLUMN agency_id INTEGER');
-    } catch (e) {
-        // Ignore if column exists
-    }
-    // Migration: Ensure shoots has status column (for Pending/Confirmed/etc)
-    try {
-        await db.execute("ALTER TABLE shoots ADD COLUMN status TEXT DEFAULT 'Confirmed'");
-    } catch (e) {
-        // Ignore if column exists  
+        // Check if client_id is NOT NULL (needs migration)
+        const { rows: tableInfo } = await db.execute("PRAGMA table_info(shoots)");
+        const clientIdCol = (tableInfo as any[]).find((c: any) => c.name === 'client_id');
+        const hasAgencyId = (tableInfo as any[]).some((c: any) => c.name === 'agency_id');
+        const hasIsBlocking = (tableInfo as any[]).some((c: any) => c.name === 'is_blocking');
+        const hasStatus = (tableInfo as any[]).some((c: any) => c.name === 'status');
+        const hasTitle = (tableInfo as any[]).some((c: any) => c.name === 'title');
+
+        const needsFullMigration = clientIdCol && clientIdCol.notnull === 1;
+
+        if (needsFullMigration) {
+            console.log('[Migration] Recreating shoots table with nullable client_id...');
+            // Full table recreation to change NOT NULL constraint
+            await db.execute(`CREATE TABLE IF NOT EXISTS shoots_new (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                client_id INTEGER,
+                project_id INTEGER,
+                title TEXT DEFAULT '',
+                shoot_date DATE,
+                start_time TEXT,
+                end_time TEXT,
+                color TEXT DEFAULT 'indigo',
+                due_date TEXT,
+                status TEXT DEFAULT 'Planned',
+                is_blocking BOOLEAN DEFAULT 0,
+                agency_id INTEGER,
+                FOREIGN KEY(client_id) REFERENCES clients(id) ON DELETE CASCADE,
+                FOREIGN KEY(project_id) REFERENCES projects(id) ON DELETE CASCADE
+            )`);
+
+            // Build dynamic column list based on what exists in old table
+            const oldCols = (tableInfo as any[]).map((c: any) => c.name);
+            const newCols = ['id', 'client_id', 'project_id', 'title', 'shoot_date', 'start_time', 'end_time', 'color', 'due_date', 'status', 'is_blocking', 'agency_id'];
+            const commonCols = newCols.filter(c => oldCols.includes(c)).join(', ');
+
+            await db.execute(`INSERT INTO shoots_new (${commonCols}) SELECT ${commonCols} FROM shoots`);
+            await db.execute('DROP TABLE shoots');
+            await db.execute('ALTER TABLE shoots_new RENAME TO shoots');
+            console.log('[Migration] shoots table recreated successfully.');
+        } else {
+            // Just add missing columns individually if table structure is already migrated
+            if (!hasIsBlocking) {
+                try { await db.execute('ALTER TABLE shoots ADD COLUMN is_blocking BOOLEAN DEFAULT 0'); } catch (e) { }
+            }
+            if (!hasTitle) {
+                try { await db.execute("ALTER TABLE shoots ADD COLUMN title TEXT DEFAULT ''"); } catch (e) { }
+            }
+            if (!hasAgencyId) {
+                try { await db.execute('ALTER TABLE shoots ADD COLUMN agency_id INTEGER'); } catch (e) { }
+            }
+            if (!hasStatus) {
+                try { await db.execute("ALTER TABLE shoots ADD COLUMN status TEXT DEFAULT 'Confirmed'"); } catch (e) { }
+            }
+        }
+    } catch (migrationError) {
+        console.error('[Migration] shoots migration error:', migrationError);
     }
 
     // Fetch Slots (Manual Blocks)
