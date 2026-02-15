@@ -34,7 +34,7 @@ export default async function Home() {
         console.warn('Dashboard Data Fetch Error:', e);
         error = e.message || 'Unknown database error';
         // Fallback Mock Data to prevent crash
-        stats = { totalRevenue: 0, pendingRevenue: 0, activeClients: 0, totalClients: 0, upcomingShoots: 0 };
+        stats = { totalProjects: 0, totalShoots: 0, activeClients: 0, totalClients: 0, upcomingShoots: 0 };
     }
 
     return (
@@ -79,22 +79,21 @@ export default async function Home() {
             <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
                 <div className="pro-dashboard-card group">
                     <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                        <svg width="60" height="60" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1.41 16.09V20h-2.67v-1.93c-1.71-.36-3.16-1.46-3.27-3.4h1.96c.1 1.05 1.06 1.91 2.57 1.91 1.62 0 2.27-.67 2.27-1.59 0-.87-.72-1.42-2.32-1.87-2.37-.65-3.56-1.55-3.56-3.23 0-1.72 1.34-2.82 2.92-3.17V4.76h2.67v1.89c1.67.33 2.87 1.48 2.98 3.16h-2.02c-.13-.88-.87-1.59-2.22-1.59-1.21 0-2.06.56-2.06 1.46 0 .75.54 1.25 2.19 1.76 2.51.77 3.69 1.69 3.69 3.33.01 1.83-1.31 3.03-3.07 3.39z" /></svg>
+                        <svg width="60" height="60" viewBox="0 0 24 24" fill="currentColor"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z" /></svg>
                     </div>
-                    <p className="text-xs text-[var(--text-secondary)] uppercase tracking-wider mb-2">Cash Collected</p>
+                    <p className="text-xs text-[var(--text-secondary)] uppercase tracking-wider mb-2">Total Projects</p>
                     <div className="text-3xl font-bold text-white flex items-end gap-2">
-                        ${stats?.totalRevenue?.toLocaleString() || 0}
-                        <span className="text-xs font-normal text-emerald-400 mb-1.5">+12%</span>
+                        {stats?.totalProjects || 0}
                     </div>
                 </div>
 
                 <div className="pro-dashboard-card group">
                     <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                        <svg width="60" height="60" viewBox="0 0 24 24" fill="currentColor"><path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z" /></svg>
+                        <svg width="60" height="60" viewBox="0 0 24 24" fill="currentColor"><path d="M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-4z" /></svg>
                     </div>
-                    <p className="text-xs text-[var(--text-secondary)] uppercase tracking-wider mb-2">Unpaid Invoices</p>
+                    <p className="text-xs text-[var(--text-secondary)] uppercase tracking-wider mb-2">Total Shoots</p>
                     <div className="text-3xl font-bold text-white flex items-end gap-2">
-                        ${stats?.pendingRevenue?.toLocaleString() || 0}
+                        {stats?.totalShoots || 0}
                     </div>
                 </div>
 

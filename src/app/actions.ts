@@ -98,11 +98,11 @@ async function ensureProjectFeatures() {
         CREATE TABLE IF NOT EXISTS shoot_assignments (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             shoot_id INTEGER NOT NULL,
-            team_member_id INTEGER NOT NULL,
+            member_id INTEGER NOT NULL,
             role TEXT,
-            assigned_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (shoot_id) REFERENCES shoots(id) ON DELETE CASCADE,
-            FOREIGN KEY (team_member_id) REFERENCES team_members(id) ON DELETE CASCADE
+            FOREIGN KEY (member_id) REFERENCES team_members(id) ON DELETE CASCADE
         )
     `);
 
@@ -402,18 +402,18 @@ export async function getAllShootAssignments() {
     await ensureProjectFeatures();
     try {
         const { rows } = await db.execute(`
-            SELECT sa.*, sa.team_member_id as member_id, tm.name as member_name, tm.role as member_role, tm.color as member_avatar_color
+            SELECT sa.*, sa.member_id, tm.name as member_name, tm.role as member_role, tm.color as member_avatar_color
             FROM shoot_assignments sa
-            JOIN team_members tm ON sa.team_member_id = tm.id
+            JOIN team_members tm ON sa.member_id = tm.id
         `);
         return rows as unknown as ShootAssignment[];
     } catch (e) {
         // Fallback if color column missing
         console.error("Failed to fetch assignments with color:", e);
         const { rows } = await db.execute(`
-            SELECT sa.*, sa.team_member_id as member_id, tm.name as member_name, tm.role as member_role
+            SELECT sa.*, sa.member_id, tm.name as member_name, tm.role as member_role
             FROM shoot_assignments sa
-            JOIN team_members tm ON sa.team_member_id = tm.id
+            JOIN team_members tm ON sa.member_id = tm.id
         `);
         return rows.map((r: any) => ({ ...r, member_avatar_color: 'indigo' })) as unknown as ShootAssignment[];
     }
@@ -423,9 +423,9 @@ export async function getShootAssignments(shootId: number) {
     await ensureProjectFeatures();
     const { rows } = await db.execute({
         sql: `
-        SELECT sa.*, sa.team_member_id as member_id, tm.name as member_name, tm.role as member_role, tm.email as member_email
+        SELECT sa.*, sa.member_id, tm.name as member_name, tm.role as member_role, tm.email as member_email
         FROM shoot_assignments sa
-        JOIN team_members tm ON sa.team_member_id = tm.id
+        JOIN team_members tm ON sa.member_id = tm.id
         WHERE sa.shoot_id = ?
         `,
         args: [shootId]
@@ -441,13 +441,13 @@ export async function createShootAssignment(formData: FormData) {
     await ensureProjectFeatures();
     // Check if already assigned
     const exists = await db.execute({
-        sql: 'SELECT id FROM shoot_assignments WHERE shoot_id = ? AND team_member_id = ?',
+        sql: 'SELECT id FROM shoot_assignments WHERE shoot_id = ? AND member_id = ?',
         args: [shootId, memberId]
     });
     if (exists.rows.length > 0) return;
 
     await db.execute({
-        sql: 'INSERT INTO shoot_assignments (shoot_id, team_member_id, role) VALUES (?, ?, ?)',
+        sql: 'INSERT INTO shoot_assignments (shoot_id, member_id, role) VALUES (?, ?, ?)',
         args: [shootId, memberId, role]
     });
     revalidatePath(`/shoots/${shootId}`);
@@ -638,47 +638,21 @@ export async function addPayment(formData: FormData) {
 
 export async function getDashboardStats() {
     try {
-        // 1. Settings
-        const settingsRes = await db.execute('SELECT * FROM settings WHERE id = 1');
-        const settings = (settingsRes.rows[0] as unknown as { tax_tps_rate: any, tax_tvq_rate: any }) || { tax_tps_rate: 5, tax_tvq_rate: 9.975 };
-
-        // Safety check for Infinity/NaN
-        const tps = Number(settings.tax_tps_rate);
-        const tvq = Number(settings.tax_tvq_rate);
-        const safeTps = Number.isFinite(tps) ? tps : 5;
-        const safeTvq = Number.isFinite(tvq) ? tvq : 9.975;
-        const taxMultiplier = 1 + (safeTps + safeTvq) / 100;
-
-        // 2. Total Collected Revenue
-        const totalCollectedRes = await db.execute(`
-            SELECT COALESCE(SUM(amount), 0) as total 
-            FROM payments
-        `);
-        const totalCollectedRevenue = (totalCollectedRes.rows[0] as unknown as { total: number });
-
-        // 3. Total Project Value
-        const totalProjectValueRes = await db.execute(`
-            SELECT COALESCE(SUM(ps.rate * ps.quantity), 0) as total
-            FROM project_services ps
-            JOIN projects p ON ps.project_id = p.id
-            WHERE p.status != 'Archived'
-        `);
-        const totalProjectValue = (totalProjectValueRes.rows[0] as unknown as { total: number });
-
-        const totalProjectValueIncTax = (totalProjectValue?.total || 0) * taxMultiplier;
-        const pendingRevenue = Math.max(0, totalProjectValueIncTax - totalCollectedRevenue.total);
-
         const activeClientsRes = await db.execute("SELECT COUNT(*) as count FROM clients WHERE status = 'Active'");
         const totalClientsRes = await db.execute("SELECT COUNT(*) as count FROM clients");
         const upcomingShootsRes = await db.execute("SELECT COUNT(*) as count FROM shoots WHERE shoot_date >= date('now')");
+        const totalProjectsRes = await db.execute("SELECT COUNT(*) as count FROM projects WHERE status != 'Archived'");
+        const totalShootsRes = await db.execute("SELECT COUNT(*) as count FROM shoots");
 
         const activeClients = activeClientsRes.rows[0] as unknown as { count: number };
         const totalClients = totalClientsRes.rows[0] as unknown as { count: number };
         const upcomingShoots = upcomingShootsRes.rows[0] as unknown as { count: number };
+        const totalProjects = totalProjectsRes.rows[0] as unknown as { count: number };
+        const totalShoots = totalShootsRes.rows[0] as unknown as { count: number };
 
         return {
-            totalRevenue: Number.isFinite(totalCollectedRevenue.total) ? totalCollectedRevenue.total : 0,
-            pendingRevenue: Number.isFinite(pendingRevenue) ? pendingRevenue : 0,
+            totalProjects: totalProjects?.count || 0,
+            totalShoots: totalShoots?.count || 0,
             activeClients: activeClients?.count || 0,
             totalClients: totalClients?.count || 0,
             upcomingShoots: upcomingShoots?.count || 0
@@ -686,8 +660,8 @@ export async function getDashboardStats() {
     } catch (e) {
         console.error("DASHBOARD STATS CRASHED:", e);
         return {
-            totalRevenue: 0,
-            pendingRevenue: 0,
+            totalProjects: 0,
+            totalShoots: 0,
             activeClients: 0,
             totalClients: 0,
             upcomingShoots: 0
