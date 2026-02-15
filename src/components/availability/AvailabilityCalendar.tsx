@@ -233,6 +233,10 @@ export default function AvailabilityCalendar({ initialSlots, initialShoots, init
 
                                         // 1. Hide Other Agency shoots IF they are NOT blocking (and not pending? Pending from others shouldn't be seen unless blocked? Pending are requests, usually private until approved?)
                                         // Actually, if Agency A requests, Agency B shouldn't see it until confirmed/blocked.
+                                        // So:
+                                        // If Admin: See Shoot.
+                                        // If Agency & Own: See Shoot.
+                                        // If Agency & Other: Do NOT see (unless blocked manually).
                                         if (isOtherAgency && !isBlockingShoot) return null;
 
                                         // 2. If it IS blocking but belongs to another agency, render as Generic Unavailable
@@ -333,6 +337,9 @@ export default function AvailabilityCalendar({ initialSlots, initialShoots, init
                                         // Check if this block corresponds to a generic "Unavailable" or a specific "Booking" (if we keep requests)
                                         // For now, treat all `slots` as Blocks.
 
+                                        // Manual Blocks should be RED (blockClasses logic)
+                                        const blockClasses = "absolute left-1 right-1 rounded-md border p-1.5 text-xs transition-all cursor-pointer group/slot shadow-sm overflow-hidden bg-red-500/20 border-red-500/40 text-red-200 z-30 striped-bg";
+
                                         return (
                                             <div
                                                 key={slot.id}
@@ -342,7 +349,7 @@ export default function AvailabilityCalendar({ initialSlots, initialShoots, init
                                                     // But to be safe:
                                                     handleBlockClick(slot);
                                                 }}
-                                                className="absolute left-1 right-1 rounded-md border p-1.5 text-xs transition-all cursor-pointer group/slot shadow-sm overflow-hidden bg-zinc-800/80 border-zinc-600 text-zinc-400 z-30 striped-bg"
+                                                className={blockClasses}
                                                 style={getSlotStyle(slot.start_time, slot.end_time)}
                                                 title="Click to Edit"
                                             >
