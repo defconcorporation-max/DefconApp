@@ -3,9 +3,33 @@
 import { turso as db } from '@/lib/turso';
 import { revalidatePath } from 'next/cache';
 import { Client, Shoot, ShootVideo, ShootVideoNote, PipelineStage, Task, SocialLink, ContentIdea, Project, Commission, TeamMember, Payment, Credential, ShootWithClient, BetaFeedback, ShootAssignment } from '@/types';
+import { auth } from '@/auth';
+
+async function getAgencyFilter() {
+    const session = await auth();
+    const userRole = session?.user?.role;
+    const agencyId = session?.user?.agency_id;
+
+    if (userRole === 'AgencyAdmin' || userRole === 'AgencyTeam') {
+        if (!agencyId) throw new Error('User has agency role but no agency ID');
+        return agencyId;
+    }
+    return null;
+}
 
 export async function getClients(): Promise<Client[]> {
-    const { rows } = await db.execute('SELECT * FROM clients ORDER BY created_at DESC');
+    const agencyId = await getAgencyFilter();
+    let sql = 'SELECT * FROM clients';
+    const args: any[] = [];
+
+    if (agencyId) {
+        sql += ' WHERE agency_id = ?';
+        args.push(agencyId);
+    }
+
+    sql += ' ORDER BY created_at DESC';
+
+    const { rows } = await db.execute({ sql, args });
     return rows as unknown as Client[];
 }
 
@@ -258,13 +282,23 @@ export async function deleteCommission(formData: FormData) {
 }
 
 export async function getAllCommissions() {
-    const { rows } = await db.execute(`
+    const agencyId = await getAgencyFilter();
+    let sql = `
         SELECT c.*, p.title as project_title, cl.company_name as client_name 
         FROM commissions c
         LEFT JOIN projects p ON c.project_id = p.id
         LEFT JOIN clients cl ON c.client_id = cl.id
-        ORDER BY c.status DESC, c.id DESC
-    `);
+    `;
+    const args: any[] = [];
+
+    if (agencyId) {
+        sql += ' WHERE cl.agency_id = ?';
+        args.push(agencyId);
+    }
+
+    sql += ' ORDER BY c.status DESC, c.id DESC';
+
+    const { rows } = await db.execute({ sql, args });
     return rows as unknown as (Commission & { project_title: string, client_name: string })[];
 }
 
@@ -286,55 +320,52 @@ export async function revertCommissionPayment(id: number) {
 }
 
 export async function getShoots(clientId?: number): Promise<Shoot[]> {
-    let sql = `
-        SELECT s.*, 
-        c.company_name as client_name,
-        ag.name as agency_name,
-        ag.color as agency_color,
-        (SELECT status FROM post_production pp WHERE pp.shoot_id = s.id LIMIT 1) as post_prod_status,
-        (SELECT id FROM post_production pp WHERE pp.shoot_id = s.id LIMIT 1) as post_prod_id
-        FROM shoots s
-        JOIN clients c ON s.client_id = c.id
-        LEFT JOIN agencies ag ON c.agency_id = ag.id
-    `;
+    const agencyId = await getAgencyFilter();
+    let sql = 'SELECT s.* FROM shoots s';
+    const args: any[] = [];
 
-    // If clientId is provided, filter by it
     if (clientId) {
         sql += ' WHERE s.client_id = ?';
+        args.push(clientId);
+        // implicit agency check via client path, but explicit check doesn't hurt if we joined clients
+    } else {
+        if (agencyId) {
+            // Need to join clients to check agency_id
+            sql = `
+                SELECT s.* FROM shoots s
+                JOIN clients c ON s.client_id = c.id
+                WHERE c.agency_id = ?
+            `;
+            args.push(agencyId);
+        }
     }
 
-    sql += ' ORDER BY s.shoot_date ASC';
+    sql += ' ORDER BY s.shoot_date DESC';
 
-    const { rows } = await db.execute({
-        sql,
-        args: clientId ? [clientId] : []
-    });
+    const { rows } = await db.execute({ sql, args });
     return rows as unknown as Shoot[];
 }
 
 
 
 export async function getAllShoots() {
-    await ensureProjectFeatures();
-    const { rows } = await db.execute(`
-        SELECT shoots.*, 
-        clients.name as client_name, 
-        clients.company_name as client_company, 
-        clients.id as client_id,
-        projects.title as project_title,
-        pp.status as post_prod_status,
-        pp.id as post_prod_id,
-        ag.name as agency_name,
-        ag.color as agency_color
-        FROM shoots 
-        JOIN clients ON shoots.client_id = clients.id 
-        LEFT JOIN projects ON shoots.project_id = projects.id
-        LEFT JOIN post_prod_projects pp ON shoots.id = pp.shoot_id
-        LEFT JOIN agencies ag ON clients.agency_id = ag.id
-        ORDER BY shoot_date ASC
-    `);
-    console.log('getAllShoots DEBUG:', rows.length > 0 ? rows[0] : 'No rows');
-    return rows as unknown as (Shoot & { client_name: string, client_id: number, agency_name?: string, agency_color?: string, post_prod_status?: string })[];
+    const agencyId = await getAgencyFilter();
+    let sql = `
+        SELECT s.*, c.name as client_name, c.company_name as client_company 
+        FROM shoots s
+        JOIN clients c ON s.client_id = c.id
+    `;
+    const args: any[] = [];
+
+    if (agencyId) {
+        sql += ' WHERE c.agency_id = ?';
+        args.push(agencyId);
+    }
+
+    sql += ' ORDER BY s.shoot_date DESC';
+
+    const { rows } = await db.execute({ sql, args });
+    return rows as unknown as any[];
 }
 
 export async function addShoot(formData: FormData) {
@@ -638,11 +669,22 @@ export async function addPayment(formData: FormData) {
 
 export async function getDashboardStats() {
     try {
-        const activeClientsRes = await db.execute("SELECT COUNT(*) as count FROM clients WHERE status = 'Active'");
-        const totalClientsRes = await db.execute("SELECT COUNT(*) as count FROM clients");
-        const upcomingShootsRes = await db.execute("SELECT COUNT(*) as count FROM shoots WHERE shoot_date >= date('now')");
-        const totalProjectsRes = await db.execute("SELECT COUNT(*) as count FROM projects WHERE status != 'Archived'");
-        const totalShootsRes = await db.execute("SELECT COUNT(*) as count FROM shoots");
+        const agencyId = await getAgencyFilter();
+        let activeClientsRes, totalClientsRes, upcomingShootsRes, totalProjectsRes, totalShootsRes;
+
+        if (agencyId) {
+            activeClientsRes = await db.execute({ sql: "SELECT COUNT(*) as count FROM clients WHERE status = 'Active' AND agency_id = ?", args: [agencyId] });
+            totalClientsRes = await db.execute({ sql: "SELECT COUNT(*) as count FROM clients WHERE agency_id = ?", args: [agencyId] });
+            upcomingShootsRes = await db.execute({ sql: "SELECT COUNT(*) as count FROM shoots s JOIN clients c ON s.client_id = c.id WHERE s.shoot_date >= date('now') AND c.agency_id = ?", args: [agencyId] });
+            totalProjectsRes = await db.execute({ sql: "SELECT COUNT(*) as count FROM projects p JOIN clients c ON p.client_id = c.id WHERE p.status != 'Archived' AND c.agency_id = ?", args: [agencyId] });
+            totalShootsRes = await db.execute({ sql: "SELECT COUNT(*) as count FROM shoots s JOIN clients c ON s.client_id = c.id WHERE c.agency_id = ?", args: [agencyId] });
+        } else {
+            activeClientsRes = await db.execute("SELECT COUNT(*) as count FROM clients WHERE status = 'Active'");
+            totalClientsRes = await db.execute("SELECT COUNT(*) as count FROM clients");
+            upcomingShootsRes = await db.execute("SELECT COUNT(*) as count FROM shoots WHERE shoot_date >= date('now')");
+            totalProjectsRes = await db.execute("SELECT COUNT(*) as count FROM projects WHERE status != 'Archived'");
+            totalShootsRes = await db.execute("SELECT COUNT(*) as count FROM shoots");
+        }
 
         const activeClients = activeClientsRes.rows[0] as unknown as { count: number };
         const totalClients = totalClientsRes.rows[0] as unknown as { count: number };
@@ -670,6 +712,29 @@ export async function getDashboardStats() {
 }
 
 export async function getFinanceData() {
+    const agencyId = await getAgencyFilter();
+
+    // If Agency User, return empty/safe structure (or we could implement agency-specific finance later)
+    if (agencyId) {
+        return {
+            stats: {
+                totalRevenue: 0,
+                revenueWithTax: 0,
+                pendingRevenueWithTax: 0,
+                taxes: { tps: 0, tvq: 0 },
+                taxesOwed: { tps: 0, tvq: 0 },
+                expenses: 0,
+                businessExpenses: 0,
+                netProfit: 0
+            },
+            revenueChart: [],
+            clients: [], // Or fetch agency clients with revenue if acceptable
+            projects: [], // Or fetch agency projects
+            settings: { tax_tps_rate: 5, tax_tvq_rate: 9.975 },
+            expensesList: []
+        };
+    }
+
     // Fetch tax rates
     const settingsRes = await db.execute('SELECT * FROM settings WHERE id = 1');
     const settings = (settingsRes.rows[0] as unknown as { tax_tps_rate: any, tax_tvq_rate: any }) || { tax_tps_rate: 5, tax_tvq_rate: 9.975 };
@@ -679,6 +744,7 @@ export async function getFinanceData() {
     const safeTps = Number.isFinite(tps) ? tps : 5;
     const safeTvq = Number.isFinite(tvq) ? tvq : 9.975;
     const taxMultiplier = 1 + (safeTps + safeTvq) / 100;
+
 
     // 1. Total Collected
     const totalCollectedRes = await db.execute(`
@@ -891,13 +957,15 @@ export type DashboardTask = {
 };
 
 export async function getAllDashboardTasks(): Promise<DashboardTask[]> {
+    const agencyId = await getAgencyFilter();
+
     const personalTasksRes = await db.execute(`
         SELECT id, content as title, is_completed, 'Personal' as type, NULL as project_id, NULL as project_title, NULL as due_date, NULL as assignee_name
         FROM tasks
     `);
     const personalTasks = personalTasksRes.rows as any[];
 
-    const projectTasksRes = await db.execute(`
+    let projectSql = `
         SELECT 
             pt.id, 
             pt.title, 
@@ -910,8 +978,20 @@ export async function getAllDashboardTasks(): Promise<DashboardTask[]> {
         FROM project_tasks pt
         JOIN projects p ON pt.project_id = p.id
         LEFT JOIN team_members tm ON pt.assigned_to = tm.id
+        JOIN clients c ON p.client_id = c.id
         WHERE p.status != 'Archived'
-    `);
+    `;
+    const projectArgs: any[] = [];
+
+    if (agencyId) {
+        projectSql += ' AND c.agency_id = ?';
+        projectArgs.push(agencyId);
+    }
+
+    const projectTasksRes = await db.execute({
+        sql: projectSql,
+        args: projectArgs
+    });
     const projectTasks = projectTasksRes.rows as any[];
 
     const allTasks = [...personalTasks, ...projectTasks];
@@ -1246,13 +1326,23 @@ export async function revertShoot(shootId: number) {
 }
 
 export async function getPostProdItems() {
-    const { rows } = await db.execute(`
+    const agencyId = await getAgencyFilter();
+    let sql = `
         SELECT pp.*, s.title as shoot_title, c.company_name as client_name 
         FROM post_production pp
         JOIN shoots s ON pp.shoot_id = s.id
         JOIN clients c ON s.client_id = c.id
-        ORDER BY pp.updated_at DESC
-    `);
+    `;
+    const args: any[] = [];
+
+    if (agencyId) {
+        sql += ' WHERE c.agency_id = ?';
+        args.push(agencyId);
+    }
+
+    sql += ' ORDER BY pp.updated_at DESC';
+
+    const { rows } = await db.execute({ sql, args });
     return rows as unknown as any[];
 }
 

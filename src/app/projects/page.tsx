@@ -4,10 +4,27 @@ import { Project } from '@/types';
 import { Folder, DollarSign, AlertCircle } from 'lucide-react';
 import ProjectList from '@/components/ProjectList';
 
+import { auth } from '@/auth';
+
 async function getAllProjectsFull() {
     'use server';
+
+    // Check Agency Role
+    const session = await auth();
+    const userRole = session?.user?.role;
+    const agencyId = session?.user?.agency_id;
+
+    let agencyFilter = '';
+    const args: any[] = [];
+
+    if ((userRole === 'AgencyAdmin' || userRole === 'AgencyTeam') && agencyId) {
+        agencyFilter = ' WHERE c.agency_id = ?';
+        args.push(agencyId);
+    }
+
     // Join with clients to get names and project_labels for badges
-    const { rows } = await db.execute(`
+    const { rows } = await db.execute({
+        sql: `
         SELECT p.*, c.company_name as client_name, c.name as client_contact,
         pl.name as label_name, pl.color as label_color,
         (SELECT COUNT(*) FROM shoots s WHERE s.project_id = p.id) as shoot_count,
@@ -18,8 +35,12 @@ async function getAllProjectsFull() {
         FROM projects p
         JOIN clients c ON p.client_id = c.id
         LEFT JOIN project_labels pl ON c.label_id = pl.id
+        ${agencyFilter}
         ORDER BY p.created_at DESC
-    `);
+        `,
+        args
+    });
+
     return rows as unknown as (Project & {
         client_name: string,
         client_contact: string,

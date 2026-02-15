@@ -4,13 +4,27 @@ import { turso as db } from '@/lib/turso';
 import { revalidatePath } from 'next/cache';
 import bcrypt from 'bcryptjs';
 
+import { auth } from '@/auth';
+
 export async function getUsers() {
-    const { rows } = await db.execute(
-        `SELECT u.id, u.email, u.name, u.role, u.agency_id, u.avatar_url, u.created_at, a.name as agency_name 
+    const session = await auth();
+    const userRole = session?.user?.role;
+    const agencyId = session?.user?.agency_id;
+
+    let sql = `SELECT u.id, u.email, u.name, u.role, u.agency_id, u.avatar_url, u.created_at, a.name as agency_name 
          FROM users u 
-         LEFT JOIN agencies a ON u.agency_id = a.id 
-         ORDER BY u.created_at DESC`
-    );
+         LEFT JOIN agencies a ON u.agency_id = a.id`;
+
+    const args: any[] = [];
+
+    if ((userRole === 'AgencyAdmin' || userRole === 'AgencyTeam') && agencyId) {
+        sql += ' WHERE u.agency_id = ?';
+        args.push(agencyId);
+    }
+
+    sql += ' ORDER BY u.created_at DESC';
+
+    const { rows } = await db.execute({ sql, args });
     return rows as any[];
 }
 
