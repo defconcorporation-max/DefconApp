@@ -78,15 +78,33 @@ export async function startPostProduction(shootId: number, templateId: number) {
 }
 
 export async function getPostProdDashboard() {
+    // Check agency role for data isolation
+    const { auth } = await import('@/auth');
+    const session = await auth();
+    const userRole = session?.user?.role;
+    const agencyId = session?.user?.agency_id;
+    const isAgency = (userRole === 'AgencyAdmin' || userRole === 'AgencyTeam') && agencyId;
+
+    let agencyFilter = '';
+    const args: any[] = [];
+
+    if (isAgency) {
+        agencyFilter = ' AND s.agency_id = ?';
+        args.push(agencyId);
+    }
+
     // Fetch all active projects
-    const { rows: projects } = await db.execute(`
+    const { rows: projects } = await db.execute({
+        sql: `
         SELECT p.*, s.title as shoot_title, t.name as template_name
         FROM post_prod_projects p
         JOIN shoots s ON p.shoot_id = s.id
         JOIN post_prod_templates t ON p.template_id = t.id
-        WHERE p.status != 'Completed'
+        WHERE p.status != 'Completed'${agencyFilter}
         ORDER BY p.created_at DESC
-    `);
+        `,
+        args
+    });
 
     // Calculate progress for each
     const dashboardData = await Promise.all(projects.map(async (p: any) => {

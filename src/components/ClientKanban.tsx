@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { Client, PipelineStage } from '@/types';
 import { GripVertical, Plus, Trash2, Edit2, Check, X, Settings2 } from 'lucide-react';
 
-export default function ClientKanban({ initialClients, initialStages }: { initialClients: Client[], initialStages: PipelineStage[] }) {
+export default function ClientKanban({ initialClients, initialStages, readOnly = false }: { initialClients: Client[], initialStages: PipelineStage[], readOnly?: boolean }) {
     const [clients, setClients] = useState<Client[]>(initialClients);
     const [stages, setStages] = useState<PipelineStage[]>(initialStages);
     const [draggedClientId, setDraggedClientId] = useState<number | null>(null);
@@ -135,7 +135,7 @@ export default function ClientKanban({ initialClients, initialStages }: { initia
                     </h2>
                 </div>
 
-                {!isCollapsed && (
+                {!isCollapsed && !readOnly && (
                     <button
                         onClick={() => setIsEditingPipeline(!isEditingPipeline)}
                         className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-colors ${isEditingPipeline ? 'bg-violet-600 text-white' : 'text-gray-400 hover:text-white bg-white/5'}`}
@@ -256,9 +256,9 @@ export default function ClientKanban({ initialClients, initialStages }: { initia
                                 {getColumnClients(column.value).map(client => (
                                     <div
                                         key={client.id}
-                                        draggable={!isEditingPipeline}
-                                        onDragStart={(e) => handleDragStart(e, client.id)}
-                                        className="group cursor-grab active:cursor-grabbing"
+                                        draggable={!isEditingPipeline && !readOnly}
+                                        onDragStart={(e) => !readOnly && handleDragStart(e, client.id)}
+                                        className={`group ${readOnly ? 'cursor-default' : 'cursor-grab active:cursor-grabbing'}`}
                                     >
                                         <Link href={`/clients/${client.id}`} draggable={false}>
                                             <article className="bg-[#121212] border border-[var(--border-subtle)] rounded-lg p-4 hover:border-violet-500/50 hover:bg-[#181818] transition-all shadow-sm hover:shadow-md">

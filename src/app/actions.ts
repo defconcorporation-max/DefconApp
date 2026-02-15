@@ -1978,6 +1978,24 @@ export async function getAvailabilitySlots() {
     } catch (e) {
         // Ignore if column exists
     }
+    // Migration: Ensure shoots has title column
+    try {
+        await db.execute("ALTER TABLE shoots ADD COLUMN title TEXT DEFAULT ''");
+    } catch (e) {
+        // Ignore if column exists
+    }
+    // Migration: Ensure shoots has agency_id column
+    try {
+        await db.execute('ALTER TABLE shoots ADD COLUMN agency_id INTEGER');
+    } catch (e) {
+        // Ignore if column exists
+    }
+    // Migration: Ensure shoots has status column (for Pending/Confirmed/etc)
+    try {
+        await db.execute("ALTER TABLE shoots ADD COLUMN status TEXT DEFAULT 'Confirmed'");
+    } catch (e) {
+        // Ignore if column exists  
+    }
 
     // Fetch Slots (Manual Blocks)
     const { rows: slots } = await db.execute('SELECT * FROM availability_slots ORDER BY start_time ASC');
@@ -2084,22 +2102,18 @@ export async function requestAvailabilitySlot(formData: FormData) {
 export async function requestShoot(title: string, date: string, start: string, end: string, agencyId: number) {
     if (!title || !date || !start || !end || !agencyId) return;
 
-    // Create query to find a dummy project or create one?
-    // Shoots need a project_id usually. 
-    // Types says: project_id?: number | null;
-    // So we can insert with null project_id for now?
-    // Existing shoots query joins projects. If project_id is null, project_title is null.
-    // We might need to handle that in the query later.
-
-    // Status column: If it doesn't exist, we might crash.
-    // Assuming 'status' exists based on types.ts.
-
-    await db.execute({
-        sql: `INSERT INTO shoots (title, shoot_date, start_time, end_time, status, agency_id, is_blocking) 
-              VALUES (?, ?, ?, ?, 'Pending', ?, 0)`,
-        args: [title, date, start, end, agencyId]
-    });
-    revalidatePath('/availability');
+    try {
+        // client_id is NOT NULL in the original schema, use 0 as placeholder for pending requests
+        await db.execute({
+            sql: `INSERT INTO shoots (client_id, title, shoot_date, start_time, end_time, status, agency_id, is_blocking) 
+                  VALUES (0, ?, ?, ?, ?, 'Pending', ?, 0)`,
+            args: [title, date, start, end, agencyId]
+        });
+        revalidatePath('/availability');
+    } catch (error) {
+        console.error('Failed to create shoot request:', error);
+        throw error;
+    }
 }
 
 export async function approveShoot(id: number) {
