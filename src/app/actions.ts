@@ -2078,6 +2078,46 @@ export async function requestAvailabilitySlot(formData: FormData) {
         args: [slotId, agencyId]
     });
     revalidatePath('/availability');
+    revalidatePath('/availability');
+}
+
+export async function requestShoot(title: string, date: string, start: string, end: string, agencyId: number) {
+    if (!title || !date || !start || !end || !agencyId) return;
+
+    // Create query to find a dummy project or create one?
+    // Shoots need a project_id usually. 
+    // Types says: project_id?: number | null;
+    // So we can insert with null project_id for now?
+    // Existing shoots query joins projects. If project_id is null, project_title is null.
+    // We might need to handle that in the query later.
+
+    // Status column: If it doesn't exist, we might crash.
+    // Assuming 'status' exists based on types.ts.
+
+    await db.execute({
+        sql: `INSERT INTO shoots (title, shoot_date, start_time, end_time, status, agency_id, is_blocking) 
+              VALUES (?, ?, ?, ?, 'Pending', ?, 0)`,
+        args: [title, date, start, end, agencyId]
+    });
+    revalidatePath('/availability');
+}
+
+export async function approveShoot(id: number) {
+    if (!id) return;
+    await db.execute({
+        sql: "UPDATE shoots SET status = 'Confirmed' WHERE id = ?",
+        args: [id]
+    });
+    revalidatePath('/availability');
+}
+
+export async function denyShoot(id: number) {
+    if (!id) return;
+    await db.execute({
+        sql: "DELETE FROM shoots WHERE id = ?",
+        args: [id]
+    });
+    revalidatePath('/availability');
 }
 
 export async function getAvailabilityRequests(agencyId?: number) {

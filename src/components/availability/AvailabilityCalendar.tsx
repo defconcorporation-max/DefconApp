@@ -91,7 +91,9 @@ export default function AvailabilityCalendar({ initialSlots, initialShoots, init
     const [editingShoot, setEditingShoot] = useState<any | undefined>(undefined);
 
     const handleGridClick = (day: Date, hour: number) => {
-        if (!isAdmin) return;
+        // Admin or Agency can click
+        if (!isAdmin && !isAgency) return;
+
         setEditingSlot(undefined); // Clear edit state
         setEditingShoot(undefined);
         setSelectedDate(day);
@@ -106,8 +108,20 @@ export default function AvailabilityCalendar({ initialSlots, initialShoots, init
         setIsModalOpen(true);
     };
 
-    const handleShootClick = async (shoot: any, isBlocking: boolean) => {
-        console.log('handleShootClick', shoot.id, isBlocking);
+    const handleShootClick = async (shoot: any, isBlocking: boolean, isPending: boolean = false) => {
+        console.log('handleShootClick', shoot.id, isBlocking, isPending);
+        // Allow Agency to click their own pending shoots (maybe to edit?)
+        // Allow Admin to click any.
+        // isOwner check is done in render generally, but good to be safe.
+
+        if (isPending) {
+            // Open modal to Approve/Deny (Admin) or Edit (Agency? - maybe just view for now)
+            setEditingShoot(shoot);
+            setEditingSlot(undefined);
+            setIsModalOpen(true);
+            return;
+        }
+
         if (!isAdmin) return;
 
         if (isBlocking) {
@@ -209,13 +223,23 @@ export default function AvailabilityCalendar({ initialSlots, initialShoots, init
                                         // If Agency & Own: See Shoot.
                                         // If Agency & Other: Do NOT see (unless blocked manually).
 
-                                        if (isAgency && shoot.agency_id !== agencyId) return null;
 
-                                        // Default duration 8h if not specified (or calculated from start time)
-                                        // For visual, let's assume 9am-5pm if strict date, or parse time.
-                                        // DB `shoots` has `shoot_date` datetime? Assuming yes from previous steps.
-                                        // Let's rely on standard day positioning for now.
-                                        // Hack: Just put it at 9am-5pm for visual unless we have specific time data
+                                        // Agency Visibility Logic
+                                        const isOwner = isAgency && shoot.agency_id === agencyId;
+                                        const isOtherAgency = isAgency && !isOwner;
+                                        const isBlockingShoot = !!shoot.is_blocking;
+                                        // Check for pending status - assuming 'status' field is populated
+                                        const isPending = shoot.status === 'Pending';
+
+                                        // 1. Hide Other Agency shoots IF they are NOT blocking (and not pending? Pending from others shouldn't be seen unless blocked? Pending are requests, usually private until approved?)
+                                        // Actually, if Agency A requests, Agency B shouldn't see it until confirmed/blocked.
+                                        if (isOtherAgency && !isBlockingShoot) return null;
+
+                                        // 2. If it IS blocking but belongs to another agency, render as Generic Unavailable
+                                        const renderAsGeneric = isOtherAgency && isBlockingShoot;
+
+                                        // DEFAULT: 8h
+                                        // ... (existing time calc) ...
                                         // Safety check for shoot_date
                                         if (!shoot.shoot_date || typeof shoot.shoot_date !== 'string') {
                                             console.warn('Invalid shoot_date for shoot:', shoot.id, shoot.shoot_date);
@@ -246,7 +270,7 @@ export default function AvailabilityCalendar({ initialSlots, initialShoots, init
                                                 endTime = addMinutes(new Date(startTime), 120).toISOString();
                                             } catch (e) {
                                                 console.error('Error parsing datetime', shoot.shoot_date);
-                                                endTime = new Date().toISOString(); // Fallback to prevent crash
+                                                endTime = new Date().toISOString();
                                             }
                                         }
 
@@ -257,32 +281,36 @@ export default function AvailabilityCalendar({ initialSlots, initialShoots, init
                                         const baseClasses = "absolute left-1.5 right-1.5 rounded-md border p-1.5 text-xs transition-all shadow-sm";
                                         const eventClasses = "bg-indigo-500/20 border-indigo-500/40 text-indigo-200 hover:z-20 hover:bg-indigo-500/30";
                                         const blockClasses = "bg-red-500/20 border-red-500/40 text-red-200 z-20 hover:z-30 hover:bg-red-500/30 striped-bg";
-                                        const classes = isBlocking ? blockClasses : eventClasses;
+                                        const pendingClasses = "bg-amber-500/20 border-amber-500/40 text-amber-200 hover:z-20 hover:bg-amber-500/30 border-dashed"; // Pending style
 
-                                        const cursorClass = isAdmin ? "cursor-pointer hover:border-opacity-100" : "cursor-default";
+                                        const classes = isBlocking ? blockClasses : (isPending ? pendingClasses : eventClasses);
+
+                                        const cursorClass = (isAdmin || (isOwner && isPending)) ? "cursor-pointer hover:border-opacity-100" : "cursor-default";
 
                                         return (
                                             <div
                                                 key={`shoot-${shoot.id}`}
                                                 onClick={(e) => {
                                                     e.stopPropagation();
-                                                    handleShootClick(shoot, isBlocking);
+                                                    if (!renderAsGeneric) {
+                                                        handleShootClick(shoot, isBlocking, isPending);
+                                                    }
                                                 }}
                                                 className={cn(baseClasses, classes, cursorClass)}
                                                 style={getSlotStyle(startTime, endTime)}
-                                                title={isAdmin ? (isBlocking ? "Click to verify available" : "Click to mark unavailable") : shoot.project_title}
+                                                title={renderAsGeneric ? "Unavailable" : (isPending ? "Pending Request" : (isAdmin ? (isBlocking ? "Click to verify available" : "Click to mark unavailable") : shoot.project_title))}
                                             >
                                                 <div className="flex items-center gap-1 font-mono font-bold text-[10px] opacity-70 mb-0.5">
-                                                    {isBlocking ? <X size={10} /> : <Video size={10} />}
-                                                    {isBlocking ? "Blocked Shoot" : "Shoot"}
-                                                    {isAdmin && (
+                                                    {renderAsGeneric ? <X size={10} /> : (isBlocking ? <X size={10} /> : (isPending ? <Clock size={10} /> : <Video size={10} />))}
+                                                    {renderAsGeneric ? "Unavailable" : (isBlocking ? "Blocked Shoot" : (isPending ? "Request" : "Shoot"))}
+                                                    {isAdmin && !renderAsGeneric && !isPending && (
                                                         <div className="ml-auto bg-black/40 text-white rounded p-0.5 opacity-0 group-hover:opacity-100">
                                                             {isBlocking ? <Check size={8} /> : <X size={8} />}
                                                         </div>
                                                     )}
                                                 </div>
                                                 <div className="font-semibold truncate leading-tight">
-                                                    {shoot.project_title}
+                                                    {renderAsGeneric ? "Unavailable" : (shoot.title || shoot.project_title || 'Untitled Request')}
                                                 </div>
                                             </div>
                                         );
@@ -357,7 +385,12 @@ export default function AvailabilityCalendar({ initialSlots, initialShoots, init
                 initialStartTime={selectedTime}
                 initialSlot={editingSlot}
                 initialShoot={editingShoot}
-                mode={editingShoot ? 'edit-shoot' : (editingSlot ? 'edit' : 'block')}
+                mode={
+                    editingShoot
+                        ? (editingShoot.status === 'Pending' ? (isAdmin ? 'approve' : 'request') : 'edit-shoot')
+                        : (editingSlot ? 'edit' : (isAdmin ? 'block' : 'request'))
+                }
+                agencyId={agencyId}
             />
         </div>
     );
