@@ -2097,9 +2097,9 @@ export async function requestShoot(title: string, date: string, start: string, e
         if (existing.length > 0) {
             placeholderClientId = (existing[0] as any).id;
         } else {
-            // Create a hidden placeholder client
+            // Create a hidden placeholder client (only use base schema columns)
             const result = await db.execute(
-                "INSERT INTO clients (name, company_name, status, plan, agency_id) VALUES ('_PENDING_REQUEST', 'Pending Booking Requests', 'Inactive', 'Standard', NULL)"
+                "INSERT INTO clients (name, company_name, status, plan) VALUES ('_PENDING_REQUEST', 'Pending Booking Requests', 'Inactive', 'Standard')"
             );
             placeholderClientId = Number(result.lastInsertRowid);
         }
