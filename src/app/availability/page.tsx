@@ -1,7 +1,7 @@
 import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
 import AvailabilityCalendar from '@/components/availability/AvailabilityCalendar';
-import { getAvailabilitySlots, getAvailabilityRequests } from '@/app/actions';
+import { getAvailabilitySlots, getAvailabilityRequests, getClientsForBooking } from '@/app/actions';
 
 export default async function AvailabilityPage() {
     const session = await auth();
@@ -14,6 +14,7 @@ export default async function AvailabilityPage() {
     // Fetch data
     const { slots, shoots } = await getAvailabilitySlots();
     const requests = await getAvailabilityRequests(isAdmin ? undefined : session.user.agency_id);
+    const clients = await getClientsForBooking(isAgency ? session.user.agency_id : undefined);
 
     return (
         <main className="min-h-screen bg-[var(--bg-root)] p-8">
@@ -28,6 +29,7 @@ export default async function AvailabilityPage() {
                 initialRequests={requests}
                 userRole={userRole}
                 agencyId={session.user.agency_id}
+                clients={clients}
             />
         </main>
     );

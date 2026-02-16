@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { createAvailabilitySlot, updateAvailabilitySlot, updateShootTime, toggleShootBlocking, requestShoot, approveShoot, denyShoot } from '@/app/actions';
-import { X, Clock, Calendar as CalendarIcon, Check, Edit, Video, Unlock, Send, ThumbsUp, ThumbsDown } from 'lucide-react';
+import { createAvailabilitySlot, updateAvailabilitySlot, updateShootTime, toggleShootBlocking, requestShoot, approveShoot, denyShoot, updateShootClient } from '@/app/actions';
+import { X, Clock, Calendar as CalendarIcon, Check, Edit, Video, Unlock, Send, ThumbsUp, ThumbsDown, User } from 'lucide-react';
 import { format, differenceInMinutes, parseISO } from 'date-fns';
 
 interface SlotModalProps {
@@ -9,37 +9,35 @@ interface SlotModalProps {
     initialDate?: Date;
     initialStartTime?: string; // HH:mm
     initialSlot?: { id: number; start_time: string; end_time: string }; // For manual blocks
-    initialShoot?: { id: number; shoot_date: string; start_time?: string; end_time?: string; is_blocking: number; title?: string; project_title?: string; status?: string }; // For shoots
+    initialShoot?: { id: number; shoot_date: string; start_time?: string; end_time?: string; is_blocking: number; title?: string; project_title?: string; status?: string; client_id?: number; client_name?: string }; // For shoots
     mode?: 'create' | 'block' | 'edit' | 'edit-shoot' | 'request' | 'approve';
     agencyId?: number;
+    clients?: { id: number; name: string; company_name: string }[];
 }
 
-export default function SlotModal({ isOpen, onClose, initialDate, initialStartTime, initialSlot, initialShoot, mode = 'create', agencyId }: SlotModalProps) {
+export default function SlotModal({ isOpen, onClose, initialDate, initialStartTime, initialSlot, initialShoot, mode = 'create', agencyId, clients = [] }: SlotModalProps) {
     const [isLoading, setIsLoading] = useState(false);
     const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'));
     const [startTime, setStartTime] = useState('10:00');
     const [duration, setDuration] = useState('2'); // hours
 
-    // New field for request
+    // New fields for request
     const [title, setTitle] = useState('');
+    const [selectedClientId, setSelectedClientId] = useState<string>(''); // '' = no selection, 'new' = new client, number = existing
 
     // Reset state when opening
     useEffect(() => {
         if (isOpen) {
             setTitle(''); // Reset title
+            setSelectedClientId(''); // Reset client selection
             if ((mode === 'edit-shoot' || mode === 'approve') && initialShoot) {
                 // Shoot Data
-                // shoot_date is YYYY-MM-DD (usually)
-                // start_time / end_time might be HH:mm or undefined
-
                 let sTime = initialShoot.start_time || '09:00';
                 const sDate = initialShoot.shoot_date || format(new Date(), 'yyyy-MM-dd');
 
                 if (sDate.includes(' ')) {
-                    // If legacy datetime format in shoot_date
                     try {
                         setDate(sDate.split(' ')[0]);
-                        // If start_time wasn't explicitly set, try to grab from date string
                         if (!initialShoot.start_time) {
                             const parts = sDate.split(' ');
                             if (parts.length > 1) sTime = parts[1].substring(0, 5);
@@ -50,7 +48,7 @@ export default function SlotModal({ isOpen, onClose, initialDate, initialStartTi
                 } else {
                     setDate(sDate);
                 }
-                setStartTime(sTime ? sTime.substring(0, 5) : '09:00'); // ensure HH:mm
+                setStartTime(sTime ? sTime.substring(0, 5) : '09:00');
 
                 // Duration
                 if (initialShoot.start_time && initialShoot.end_time) {
@@ -61,10 +59,15 @@ export default function SlotModal({ isOpen, onClose, initialDate, initialStartTi
                     if ([1, 2, 3, 4, 8].includes(hours)) setDuration(hours.toString());
                     else setDuration('custom');
                 } else {
-                    setDuration('8'); // Default to full day if no times set yet
+                    setDuration('8');
                 }
 
-                // For approve mode, set title if available for display?
+                // Set client selection for edit-shoot mode
+                if (initialShoot.client_id) {
+                    setSelectedClientId(String(initialShoot.client_id));
+                }
+
+                // For approve mode, set title if available
                 if (mode === 'approve' && (initialShoot.title || initialShoot.project_title)) {
                     setTitle(initialShoot.title || initialShoot.project_title || '');
                 }
@@ -98,7 +101,6 @@ export default function SlotModal({ isOpen, onClose, initialDate, initialStartTi
     const isRequest = mode === 'request';
     const isApprove = mode === 'approve';
 
-    // Shoots are blue/violet, Blocks are red, Request is Indigo, Approve is Yellow/Amber
     const accentColor = (isBlock || isEdit) ? 'red' : (isRequest ? 'indigo' : (isApprove ? 'amber' : 'violet'));
 
     let modalTitle = 'New Availability Slot';
@@ -114,8 +116,8 @@ export default function SlotModal({ isOpen, onClose, initialDate, initialStartTi
         buttonText = 'Update Block';
         Icon = Edit;
     } else if (isEditShoot) {
-        modalTitle = 'Edit Shoot Duration';
-        buttonText = 'Update Shoot Time';
+        modalTitle = 'Edit Shoot';
+        buttonText = 'Update Shoot';
         Icon = Video;
     } else if (isRequest) {
         modalTitle = 'Request Shoot';
@@ -134,10 +136,7 @@ export default function SlotModal({ isOpen, onClose, initialDate, initialStartTi
         try {
             // Calculate end time
             const [hours, minutes] = startTime.split(':').map(Number);
-
-            // If custom duration logic needed later, handle here. For now rely on select.
             const durHours = duration === 'custom' ? 2 : Number(duration);
-
             const totalMinutes = hours * 60 + minutes + durHours * 60;
             const endHours = Math.floor(totalMinutes / 60);
             const endMinutes = totalMinutes % 60;
@@ -148,16 +147,20 @@ export default function SlotModal({ isOpen, onClose, initialDate, initialStartTi
 
             if (isRequest) {
                 if (!agencyId) throw new Error('No agency ID found');
-                await requestShoot(title, date, startTime, endTimeStr, agencyId);
+                await requestShoot(title, date, startTime, endTimeStr, agencyId, selectedClientId || undefined);
             } else if (isApprove && initialShoot) {
-                // For approve, we might want to update times if they changed in the modal?
-                // But typically approval updates status.
-                // Let's assume just approve for now, or update time AND approve.
-                // updateShootTime sets times. approveShoot sets status.
                 await updateShootTime(initialShoot.id, startStr, endStr);
                 await approveShoot(initialShoot.id);
+                // Update client if changed
+                if (selectedClientId && Number(selectedClientId) > 0 && Number(selectedClientId) !== initialShoot.client_id) {
+                    await updateShootClient(initialShoot.id, Number(selectedClientId));
+                }
             } else if (isEditShoot && initialShoot) {
                 await updateShootTime(initialShoot.id, startStr, endStr);
+                // Update client if changed
+                if (selectedClientId && Number(selectedClientId) > 0 && Number(selectedClientId) !== initialShoot.client_id) {
+                    await updateShootClient(initialShoot.id, Number(selectedClientId));
+                }
             } else if (isEdit && initialSlot) {
                 await updateAvailabilitySlot(initialSlot.id, startStr, endStr);
             } else {
@@ -174,7 +177,7 @@ export default function SlotModal({ isOpen, onClose, initialDate, initialStartTi
 
     const handleDeny = async () => {
         if (!initialShoot) return;
-        if (confirm('Deny this shoot request? This will verify remove the request.')) {
+        if (confirm('Deny this shoot request? This will remove the request.')) {
             await denyShoot(initialShoot.id);
             onClose();
         }
@@ -182,11 +185,14 @@ export default function SlotModal({ isOpen, onClose, initialDate, initialStartTi
 
     const handleUnblock = async () => {
         if (!initialShoot) return;
-        if (confirm('Unblock this shoot? This will remove the redUnavailable block but keep the shoot event.')) {
+        if (confirm('Unblock this shoot? This will remove the Unavailable block but keep the shoot event.')) {
             await toggleShootBlocking(initialShoot.id, false);
             onClose();
         }
     };
+
+    // Show client selector for: request mode, edit-shoot mode, approve mode
+    const showClientSelector = isRequest || isEditShoot || isApprove;
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
@@ -215,6 +221,29 @@ export default function SlotModal({ isOpen, onClose, initialDate, initialStartTi
                                     className={`w-full bg-[var(--bg-root)] border border-[var(--border-subtle)] rounded-lg py-2.5 px-3 text-sm text-white focus:outline-none focus:border-${accentColor}-500 focus:ring-1 focus:ring-${accentColor}-500 transition-all`}
                                     required
                                 />
+                            </div>
+                        )}
+
+                        {/* Client Selector */}
+                        {showClientSelector && (
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-medium text-[var(--text-secondary)] uppercase flex items-center gap-1">
+                                    <User size={12} />
+                                    Client
+                                </label>
+                                <select
+                                    value={selectedClientId}
+                                    onChange={(e) => setSelectedClientId(e.target.value)}
+                                    className={`w-full bg-[var(--bg-root)] border border-[var(--border-subtle)] rounded-lg py-2.5 px-3 text-sm text-white focus:outline-none focus:border-${accentColor}-500 focus:ring-1 focus:ring-${accentColor}-500 transition-all appearance-none`}
+                                >
+                                    <option value="">— No client assigned —</option>
+                                    {clients.map(client => (
+                                        <option key={client.id} value={String(client.id)}>
+                                            {client.company_name || client.name}
+                                        </option>
+                                    ))}
+                                    {isRequest && <option value="new">+ New Client (will be Pending)</option>}
+                                </select>
                             </div>
                         )}
 

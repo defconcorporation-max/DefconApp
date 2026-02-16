@@ -2082,38 +2082,71 @@ export async function requestAvailabilitySlot(formData: FormData) {
     revalidatePath('/availability');
 }
 
-export async function requestShoot(title: string, date: string, start: string, end: string, agencyId: number) {
+export async function getClientsForBooking(agencyId?: number) {
+    let sql = "SELECT id, name, company_name FROM clients WHERE name != '_PENDING_REQUEST'";
+    const args: any[] = [];
+
+    if (agencyId) {
+        sql += ' AND agency_id = ?';
+        args.push(agencyId);
+    }
+
+    sql += ' ORDER BY company_name ASC';
+    const { rows } = await db.execute({ sql, args });
+    return rows as unknown as { id: number; name: string; company_name: string }[];
+}
+
+export async function requestShoot(title: string, date: string, start: string, end: string, agencyId: number, clientId?: number | string) {
     if (!title || !date || !start || !end || !agencyId) return;
 
     try {
-        // client_id is NOT NULL in the original schema.
-        // Find or create a placeholder client for pending requests.
-        let placeholderClientId: number;
+        let finalClientId: number;
 
-        const { rows: existing } = await db.execute(
-            "SELECT id FROM clients WHERE name = '_PENDING_REQUEST' LIMIT 1"
-        );
-
-        if (existing.length > 0) {
-            placeholderClientId = (existing[0] as any).id;
+        if (clientId && clientId !== 'new' && Number(clientId) > 0) {
+            // Existing client selected
+            finalClientId = Number(clientId);
+        } else if (clientId === 'new') {
+            // Create new client as Pending under this agency
+            const result = await db.execute({
+                sql: "INSERT INTO clients (name, company_name, status, plan, agency_id) VALUES (?, ?, 'Pending', 'Standard', ?)",
+                args: [title, title, agencyId]
+            });
+            finalClientId = Number(result.lastInsertRowid);
         } else {
-            // Create a hidden placeholder client (only use base schema columns)
-            const result = await db.execute(
-                "INSERT INTO clients (name, company_name, status, plan) VALUES ('_PENDING_REQUEST', 'Pending Booking Requests', 'Inactive', 'Standard')"
+            // No client specified - use placeholder
+            const { rows: existing } = await db.execute(
+                "SELECT id FROM clients WHERE name = '_PENDING_REQUEST' LIMIT 1"
             );
-            placeholderClientId = Number(result.lastInsertRowid);
+            if (existing.length > 0) {
+                finalClientId = (existing[0] as any).id;
+            } else {
+                const result = await db.execute(
+                    "INSERT INTO clients (name, company_name, status, plan) VALUES ('_PENDING_REQUEST', 'Pending Booking Requests', 'Inactive', 'Standard')"
+                );
+                finalClientId = Number(result.lastInsertRowid);
+            }
         }
 
         await db.execute({
             sql: `INSERT INTO shoots (client_id, title, shoot_date, start_time, end_time, status, agency_id, is_blocking) 
                   VALUES (?, ?, ?, ?, ?, 'Pending', ?, 0)`,
-            args: [placeholderClientId, title, date, start, end, agencyId]
+            args: [finalClientId, title, date, start, end, agencyId]
         });
         revalidatePath('/availability');
     } catch (error) {
         console.error('Failed to create shoot request:', error);
         throw error;
     }
+}
+
+export async function updateShootClient(shootId: number, clientId: number) {
+    if (!shootId || !clientId) return;
+    await db.execute({
+        sql: 'UPDATE shoots SET client_id = ? WHERE id = ?',
+        args: [clientId, shootId]
+    });
+    revalidatePath('/availability');
+    revalidatePath('/shoots');
 }
 
 export async function approveShoot(id: number) {

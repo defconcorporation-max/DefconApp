@@ -21,9 +21,10 @@ interface AvailabilityCalendarProps {
     initialRequests: AvailabilityRequest[];
     userRole: string;
     agencyId?: number;
+    clients?: { id: number; name: string; company_name: string }[];
 }
 
-export default function AvailabilityCalendar({ initialSlots, initialShoots, initialRequests, userRole, agencyId }: AvailabilityCalendarProps) {
+export default function AvailabilityCalendar({ initialSlots, initialShoots, initialRequests, userRole, agencyId, clients = [] }: AvailabilityCalendarProps) {
     const [currentDate, setCurrentDate] = useState(new Date());
     const [view, setView] = useState<'week' | 'day'>('week');
     const [slots, setSlots] = useState(initialSlots);
@@ -293,10 +294,11 @@ export default function AvailabilityCalendar({ initialSlots, initialShoots, init
 
                                         // Logic:
                                         // 1. Generic (Other's Blocked Shoot) -> Red (Unavailable)
-                                        // 2. Pending -> Amber
-                                        // 3. My Shoot (Blocked or Not) -> Purple (eventClasses) - User said "except when it's a shoot it should be purple"
+                                        // 2. Admin's own blocked shoot -> Red (to show it's blocking)
+                                        // 3. Pending -> Amber
+                                        // 4. My Shoot (Not Blocked) -> Purple
 
-                                        const classesToUse = renderAsGeneric ? blockClasses : (isPending ? pendingClasses : eventClasses);
+                                        const classesToUse = (renderAsGeneric || (isBlocking && !isPending)) ? blockClasses : (isPending ? pendingClasses : eventClasses);
 
                                         const cursorClass = (isAdmin || (isOwner && isPending) || isOwner) ? "cursor-pointer hover:border-opacity-100" : "cursor-default";
 
@@ -407,6 +409,7 @@ export default function AvailabilityCalendar({ initialSlots, initialShoots, init
                         : (editingSlot ? 'edit' : (isAdmin ? 'block' : 'request'))
                 }
                 agencyId={agencyId}
+                clients={clients}
             />
         </div>
     );
