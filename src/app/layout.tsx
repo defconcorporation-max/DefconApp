@@ -79,7 +79,9 @@ export default async function RootLayout({
         {!isPublic && <CommandMenu />}
         {!isPublic && <GlobalQuickCreate isAdmin={isAdmin} clients={clients} agencies={agencies} />}
         <div className={`flex-1 min-w-0 transition-all duration-200 ${!isPublic ? 'md:ml-64' : ''}`}>
-          {children}
+          <div className="animate-in fade-in duration-500 slide-in-from-bottom-2 h-full">
+            {children}
+          </div>
         </div>
       </body>
     </html>

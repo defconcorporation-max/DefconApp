@@ -138,7 +138,7 @@ export default function ClientKanban({ initialClients, initialStages, readOnly =
                 {!isCollapsed && !readOnly && (
                     <button
                         onClick={() => setIsEditingPipeline(!isEditingPipeline)}
-                        className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-colors ${isEditingPipeline ? 'bg-violet-600 text-white' : 'text-gray-400 hover:text-white bg-white/5'}`}
+                        className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-all active:scale-[0.98] ${isEditingPipeline ? 'bg-violet-600 text-white shadow-lg shadow-violet-500/20' : 'text-gray-400 hover:text-white bg-white/5'}`}
                     >
                         <Settings2 size={16} />
                         {isEditingPipeline ? 'Done Editing' : 'Edit Pipeline'}

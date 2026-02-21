@@ -61,7 +61,7 @@ export default function Sidebar({ userRole = '' }: { userRole?: string }) {
             {open && (
                 <div className="fixed inset-0 z-40 md:hidden">
                     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setOpen(false)} />
-                    <aside className="fixed right-0 top-16 bottom-0 w-64 bg-[var(--bg-surface)] border-l border-[var(--border-subtle)] p-6 overflow-y-auto animate-in slide-in-from-right duration-200">
+                    <aside className="fixed right-0 top-16 bottom-0 w-64 bg-[var(--bg-surface)]/70 backdrop-blur-xl border-l border-[var(--border-subtle)] p-6 overflow-y-auto animate-in slide-in-from-right duration-200">
                         <div className="space-y-1">
                             {mainLinks.map((link) => {
                                 const Icon = link.icon;
@@ -115,7 +115,7 @@ export default function Sidebar({ userRole = '' }: { userRole?: string }) {
             )}
 
             {/* Desktop Sidebar */}
-            <aside className="fixed left-0 top-0 bottom-0 w-64 bg-[var(--bg-surface)] border-r border-[var(--border-subtle)] z-40 hidden md:flex flex-col">
+            <aside className="fixed left-0 top-0 bottom-0 w-64 bg-[var(--bg-root)]/70 backdrop-blur-xl border-r border-[var(--border-subtle)] z-40 hidden md:flex flex-col shadow-2xl shadow-black/50">
                 <div className="p-6">
                     <div className="flex items-center gap-3 mb-8">
                         <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
