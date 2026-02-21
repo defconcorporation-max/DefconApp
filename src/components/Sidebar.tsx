@@ -18,22 +18,22 @@ export default function Sidebar({ userRole = '' }: { userRole?: string }) {
 
     const isAdmin = userRole === 'Admin' || userRole === 'Team';
 
-    const allLinks = [
+    const mainLinks = [
         { href: '/', label: 'Dashboard', icon: Home },
         { href: '/clients', label: 'Clients', icon: Users },
         { href: '/projects', label: 'Projects', icon: Briefcase },
         { href: '/shoots', label: 'Shoots', icon: Video },
         { href: '/availability', label: 'Availability', icon: Calendar },
         { href: '/post-production', label: 'Post-Production', icon: Layers },
-
-        { href: '/agencies', label: 'Agencies', icon: Building, adminOnly: true },
-        { href: '/team', label: 'Team', icon: UserPlus, adminOnly: true },
-        { href: '/users', label: 'Users', icon: Shield, adminOnly: true },
-        { href: '/services', label: 'Services', icon: BookOpen, adminOnly: true },
-        { href: '/settings', label: 'Settings', icon: Settings, adminOnly: true },
     ];
 
-    const links = allLinks.filter(link => !link.adminOnly || isAdmin);
+    const adminLinks = [
+        { href: '/agencies', label: 'Agencies', icon: Building },
+        { href: '/team', label: 'Team', icon: UserPlus },
+        { href: '/users', label: 'Users', icon: Shield },
+        { href: '/services', label: 'Services', icon: BookOpen },
+        { href: '/settings', label: 'Settings', icon: Settings },
+    ];
 
     return (
         <>
@@ -63,7 +63,7 @@ export default function Sidebar({ userRole = '' }: { userRole?: string }) {
                     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setOpen(false)} />
                     <aside className="fixed right-0 top-16 bottom-0 w-64 bg-[var(--bg-surface)] border-l border-[var(--border-subtle)] p-6 overflow-y-auto animate-in slide-in-from-right duration-200">
                         <div className="space-y-1">
-                            {links.map((link) => {
+                            {mainLinks.map((link) => {
                                 const Icon = link.icon;
                                 const isActive = pathname ? (pathname === link.href || (link.href !== '/' && pathname.startsWith(link.href))) : false;
 
@@ -82,6 +82,33 @@ export default function Sidebar({ userRole = '' }: { userRole?: string }) {
                                     </Link>
                                 );
                             })}
+
+                            {isAdmin && (
+                                <div className="mt-6 pt-4 border-t border-[var(--border-subtle)] space-y-1">
+                                    <div className="px-3 pb-2 text-[10px] font-bold text-[var(--text-tertiary)] uppercase tracking-wider">
+                                        Workspace
+                                    </div>
+                                    {adminLinks.map((link) => {
+                                        const Icon = link.icon;
+                                        const isActive = pathname ? (pathname === link.href || (link.href !== '/' && pathname.startsWith(link.href))) : false;
+
+                                        return (
+                                            <Link
+                                                key={link.href}
+                                                href={link.href}
+                                                onClick={() => setOpen(false)}
+                                                className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 group ${isActive
+                                                    ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20'
+                                                    : 'text-[var(--text-secondary)] hover:bg-[var(--bg-surface-hover)] hover:text-white'
+                                                    }`}
+                                            >
+                                                <Icon className={`w-4 h-4 ${isActive ? 'text-indigo-400' : 'text-[var(--text-tertiary)] group-hover:text-white'}`} />
+                                                {link.label}
+                                            </Link>
+                                        );
+                                    })}
+                                </div>
+                            )}
                         </div>
                     </aside>
                 </div>
@@ -98,7 +125,7 @@ export default function Sidebar({ userRole = '' }: { userRole?: string }) {
                     </div>
 
                     <div className="space-y-1">
-                        {links.map((link) => {
+                        {mainLinks.map((link) => {
                             const Icon = link.icon;
                             // Safe check for pathname
                             const isActive = pathname ? (pathname === link.href || (link.href !== '/' && pathname.startsWith(link.href))) : false;
@@ -117,6 +144,32 @@ export default function Sidebar({ userRole = '' }: { userRole?: string }) {
                                 </Link>
                             );
                         })}
+
+                        {isAdmin && (
+                            <div className="mt-8 pt-4 border-t border-[var(--border-subtle)] space-y-1">
+                                <div className="px-3 pb-2 text-[10px] font-bold text-[var(--text-tertiary)] uppercase tracking-wider">
+                                    Workspace
+                                </div>
+                                {adminLinks.map((link) => {
+                                    const Icon = link.icon;
+                                    const isActive = pathname ? (pathname === link.href || (link.href !== '/' && pathname.startsWith(link.href))) : false;
+
+                                    return (
+                                        <Link
+                                            key={link.href}
+                                            href={link.href}
+                                            className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 group ${isActive
+                                                ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20'
+                                                : 'text-[var(--text-secondary)] hover:bg-[var(--bg-surface-hover)] hover:text-white'
+                                                }`}
+                                        >
+                                            <Icon className={`w-4 h-4 ${isActive ? 'text-indigo-400' : 'text-[var(--text-tertiary)] group-hover:text-white'}`} />
+                                            {link.label}
+                                        </Link>
+                                    );
+                                })}
+                            </div>
+                        )}
                     </div>
 
                     {/* Beta Feedback Widget */}

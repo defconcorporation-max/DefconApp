@@ -48,6 +48,7 @@ export default function ProjectTabs({
     const tabs = [
         { id: 'overview', label: 'Overview', icon: <LayoutDashboard size={16} /> },
         { id: 'tasks', label: 'Tasks', icon: <CheckSquare size={16} /> },
+        { id: 'shoots', label: 'Shoots', icon: <Video size={16} /> },
         { id: 'financials', label: 'Financials', icon: <DollarSign size={16} /> },
     ];
 
@@ -192,15 +193,13 @@ export default function ProjectTabs({
                                 </button>
                             </div>
                         </div>
+                    </div>
+                )}
 
-                        {/* Merged Schedule Section */}
-                        <div className="border-t border-[var(--border-subtle)] pt-8">
-                            <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
-                                <Video className="text-violet-500" />
-                                Shoot Schedule
-                            </h2>
-                            <ShootManager clientId={project.client_id} shoots={shoots} videosMap={videosMap} projectId={project.id} />
-                        </div>
+                {/* --- SHOOTS TAB --- */}
+                {activeTab === 'shoots' && (
+                    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                        <ShootManager clientId={project.client_id} shoots={shoots} videosMap={videosMap} projectId={project.id} />
                     </div>
                 )}
 

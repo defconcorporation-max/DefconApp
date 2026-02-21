@@ -1,4 +1,4 @@
-import { getClient, getProjects, getSocials, getIdeas, getCommissions, getPayments, getCredentials, getAgencies } from '@/app/actions';
+import { getClient, getProjects, getSocials, getIdeas, getCommissions, getPayments, getCredentials, getAgencies, getShoots, getShootVideos } from '@/app/actions';
 export const dynamic = 'force-dynamic';
 import { getSocialAccounts, getSocialPosts } from '@/app/social-actions';
 import FolderButton from '@/components/FolderButton';
@@ -28,6 +28,13 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
     // Fetch New Social Media Data
     const socialAccounts = await getSocialAccounts(clientId);
     const socialPosts = await getSocialPosts(clientId);
+
+    // Fetch Shoots for un-nested timeline
+    const shoots = await getShoots(clientId);
+    const videosMap: Record<number, any[]> = {};
+    for (const shoot of shoots) {
+        videosMap[shoot.id] = await getShootVideos(shoot.id);
+    }
 
     const session = await auth();
     const isAdmin = session?.user?.role === 'Admin';
@@ -79,6 +86,8 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
                     credentials={credentials}
                     socialAccounts={socialAccounts}
                     socialPosts={socialPosts}
+                    shoots={shoots as any[]}
+                    videosMap={videosMap}
                 />
             </div>
         </main>

@@ -55,30 +55,6 @@ export default async function Home() {
                         Defcon Console
                     </h1>
                 </div>
-                {isAdmin && (
-                    <form action={createClient} className="flex flex-wrap md:flex-nowrap gap-2 items-center bg-[var(--bg-surface)] p-2 rounded-xl border border-[var(--border-subtle)] w-full md:w-auto">
-                        <div className="flex gap-2 w-full md:w-auto">
-                            <input name="name" placeholder="Name" className="bg-transparent border-none text-sm px-3 py-2 md:py-1 focus:outline-none text-white w-full md:w-32 placeholder:text-[var(--text-tertiary)] bg-[var(--bg-root)] md:bg-transparent rounded-lg md:rounded-none border border-[var(--border-subtle)] md:border-none" required />
-                            <input name="company" placeholder="Company" className="bg-transparent border-none text-sm px-3 py-2 md:py-1 focus:outline-none text-white w-full md:w-32 placeholder:text-[var(--text-tertiary)] bg-[var(--bg-root)] md:bg-transparent rounded-lg md:rounded-none border border-[var(--border-subtle)] md:border-none" />
-                        </div>
-
-                        <div className="hidden md:block w-px h-4 bg-[var(--border-subtle)]"></div>
-
-                        <div className="flex gap-2 w-full md:w-auto items-center">
-                            <div className="w-full md:w-32">
-                                <ClientAgencySelect defaultValue="" agencies={agencies} />
-                            </div>
-                            <select name="plan" className="bg-[var(--bg-root)] md:bg-transparent border border-[var(--border-subtle)] md:border-none rounded-lg md:rounded-none text-xs px-3 py-2 md:py-0 text-[var(--text-secondary)] focus:outline-none w-full md:w-24 appearance-none">
-                                <option value="Standard" className="bg-black">Standard</option>
-                                <option value="Gold" className="bg-black">Gold</option>
-                                <option value="Platinum" className="bg-black">Platinum</option>
-                            </select>
-                            <button className="pro-button-primary text-xs py-2 md:py-1.5 px-4 shadow-lg shadow-indigo-500/20 w-full md:w-auto whitespace-nowrap">
-                                Create
-                            </button>
-                        </div>
-                    </form>
-                )}
             </header>
 
             {/* Stats Grid */}

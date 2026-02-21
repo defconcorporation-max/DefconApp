@@ -1,12 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { LayoutDashboard, Folder, Fingerprint, Lightbulb, User, Calendar, DollarSign, CreditCard, Share2 } from 'lucide-react';
+import { LayoutDashboard, Folder, Fingerprint, Lightbulb, User, Calendar, DollarSign, CreditCard, Share2, Video } from 'lucide-react';
 import { Client, Project, SocialLink, Commission, Idea, Payment, Credential, SocialAccount, SocialPost } from '@/types';
 import ProjectManager from '@/components/ProjectManager';
 import SocialLinks from '@/components/SocialLinks';
 import IdeaBox from '@/components/IdeaBox';
-
+import ShootManager from '@/components/ShootManager';
 import CredentialsBox from '@/components/CredentialsBox';
 import SocialPlanner from '@/components/social/SocialPlanner';
 import ConnectAccountBtn from '@/components/social/ConnectAccountBtn';
@@ -21,6 +21,8 @@ interface ClientTabsProps {
     credentials: Credential[];
     socialAccounts: SocialAccount[];
     socialPosts: SocialPost[];
+    shoots?: any[];
+    videosMap?: Record<number, any[]>;
     agencies: { id: number; name: string; color: string }[];
 }
 
@@ -34,6 +36,8 @@ export default function ClientTabs({
     credentials,
     socialAccounts,
     socialPosts,
+    shoots,
+    videosMap,
     agencies
 }: ClientTabsProps) {
     const [activeTab, setActiveTab] = useState('overview');
@@ -41,6 +45,7 @@ export default function ClientTabs({
     const tabs = [
         { id: 'overview', label: 'Overview', icon: <LayoutDashboard size={16} /> },
         { id: 'projects', label: 'Projects', icon: <Folder size={16} /> },
+        { id: 'shoots', label: 'Shoots', icon: <Video size={16} /> },
         { id: 'social', label: 'Social Media', icon: <Share2 size={16} /> },
         { id: 'brand', label: 'Brand & Info', icon: <Fingerprint size={16} /> },
         { id: 'ideas', label: 'Ideas', icon: <Lightbulb size={16} /> },
@@ -117,6 +122,11 @@ export default function ClientTabs({
                 {/* --- PROJECTS TAB --- */}
                 {activeTab === 'projects' && (
                     <ProjectManager clientId={client.id} projects={projects} agencies={agencies} />
+                )}
+
+                {/* --- SHOOTS TAB --- */}
+                {activeTab === 'shoots' && shoots && videosMap && (
+                    <ShootManager clientId={client.id} shoots={shoots} videosMap={videosMap} />
                 )}
 
                 {/* --- SOCIAL MEDIA TAB (NEW) --- */}

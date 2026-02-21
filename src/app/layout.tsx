@@ -6,8 +6,10 @@ export const dynamic = "force-dynamic";
 import "./globals.css";
 import Sidebar from "@/components/Sidebar";
 import CommandMenu from "@/components/CommandMenu";
+import GlobalQuickCreate from "@/components/GlobalQuickCreate";
 import { headers } from "next/headers";
 import { auth } from "@/auth";
+import { getClients, getAgencies } from "@/app/actions";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -37,12 +39,28 @@ export default async function RootLayout({
   // Get user session for role-based sidebar
   const session = isPublic ? null : await auth();
   const userRole = session?.user?.role || '';
+  const isAdmin = userRole === 'Admin' || userRole === 'Team';
+
+  let clients: any[] = [];
+  let agencies: any[] = [];
+
+  if (!isPublic && session) {
+    try {
+      [clients, agencies] = await Promise.all([
+        getClients(),
+        isAdmin ? getAgencies() : Promise.resolve([])
+      ]);
+    } catch (e) {
+      console.error("Layout fetch error", e);
+    }
+  }
 
   return (
     <html lang="en">
       <body className={`${inter.className} bg-[var(--bg-root)] text-[var(--text-primary)] flex`}>
         {!isPublic && <Sidebar userRole={userRole} />}
         {!isPublic && <CommandMenu />}
+        {!isPublic && <GlobalQuickCreate isAdmin={isAdmin} clients={clients} agencies={agencies} />}
         <div className={`flex-1 min-w-0 transition-all duration-200 ${!isPublic ? 'md:ml-64' : ''}`}>
           {children}
         </div>
