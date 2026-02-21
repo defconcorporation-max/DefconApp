@@ -1,14 +1,16 @@
 'use client';
 
 import { useState } from 'react';
-import { LayoutDashboard, CheckSquare, Video, DollarSign, Calendar, ArrowUpRight, Clock, Trash2 } from 'lucide-react';
+import { LayoutDashboard, CheckSquare, Video, DollarSign, Calendar, ArrowUpRight, Clock, Trash2, Layers } from 'lucide-react';
 import { Project, Shoot, ProjectService, Commission, Client, ProjectTask, TaskStage, Service, Settings, TeamMember } from '@/types';
 import ShootManager from '@/components/ShootManager';
 import ProjectTaskManager from '@/components/ProjectTaskManager';
 import { DynamicInvoiceButton as InvoiceButton } from '@/components/InvoiceHelpers';
 import CommissionCalculator from '@/components/CommissionCalculator';
+import EmptyState from '@/components/EmptyState';
 import StatusSelector from '@/components/ProjectStatusSelect';
 import { addProjectService, deleteProjectService, updateProjectDetails } from '@/app/actions';
+import { toast } from 'react-hot-toast';
 import ClientAgencySelect from './ClientAgencySelect';
 
 interface ProjectTabsProps {
@@ -103,8 +105,13 @@ export default function ProjectTabs({
 
                                 {isEditingDetails ? (
                                     <form action={async (formData) => {
-                                        await updateProjectDetails(formData);
-                                        setIsEditingDetails(false);
+                                        try {
+                                            await updateProjectDetails(formData);
+                                            setIsEditingDetails(false);
+                                            toast.success('Project details updated');
+                                        } catch (e) {
+                                            toast.error('Failed to update project details');
+                                        }
                                     }} className="space-y-4 border-t border-[var(--border-subtle)] pt-4 mb-4">
                                         <input type="hidden" name="projectId" value={project.id} />
 
@@ -230,7 +237,14 @@ export default function ProjectTabs({
                                             </div>
                                             <div className="flex items-center gap-4">
                                                 <span className="font-mono text-sm">${service.rate * service.quantity}</span>
-                                                <form action={deleteProjectService}>
+                                                <form action={async (formData) => {
+                                                    try {
+                                                        await deleteProjectService(formData);
+                                                        toast.success('Service removed');
+                                                    } catch (e) {
+                                                        toast.error('Failed to remove service');
+                                                    }
+                                                }}>
                                                     <input type="hidden" name="id" value={service.id} />
                                                     <input type="hidden" name="projectId" value={project.id} />
                                                     <button className="text-gray-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -241,14 +255,27 @@ export default function ProjectTabs({
                                         </div>
                                     ))}
                                     {projectServices.length === 0 && (
-                                        <div className="p-8 text-center text-xs text-gray-500 italic">No services added.</div>
+                                        <div className="p-4">
+                                            <EmptyState
+                                                icon={Layers}
+                                                title="No Services Added"
+                                                description="Add billable services from the catalog below to start tracking your project's financials."
+                                            />
+                                        </div>
                                     )}
                                 </div>
 
                                 {/* Add Service Form */}
                                 <div className="p-4 bg-white/5 border-t border-[var(--border-subtle)]">
                                     <h4 className="text-xs font-bold uppercase text-[var(--text-tertiary)] mb-3">Add Service</h4>
-                                    <form action={addProjectService} className="space-y-3">
+                                    <form action={async (formData) => {
+                                        try {
+                                            await addProjectService(formData);
+                                            toast.success('Service added');
+                                        } catch (e) {
+                                            toast.error('Failed to add service');
+                                        }
+                                    }} className="space-y-3">
                                         <input type="hidden" name="projectId" value={project.id} />
 
                                         {/* Quick Catalog Select */}

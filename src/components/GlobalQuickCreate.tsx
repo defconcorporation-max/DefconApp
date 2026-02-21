@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Plus, Users, Briefcase, Video, X, Calendar as CalendarIcon, User, Layers } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { toast } from 'react-hot-toast';
 
 interface GlobalQuickCreateProps {
     isAdmin: boolean;
@@ -38,7 +39,19 @@ export default function GlobalQuickCreate({ isAdmin, agencies = [], clients = []
             }
         };
         document.addEventListener('keydown', handleKeyDown);
-        return () => document.removeEventListener('keydown', handleKeyDown);
+
+        // Global Event Listener for Command Menu
+        const handleOpenAction = (e: any) => {
+            const action = e.detail;
+            setActiveModal(action);
+            setIsOpen(false); // Close FAB menu if it was open
+        };
+        window.addEventListener('open-quick-create', handleOpenAction);
+
+        return () => {
+            document.removeEventListener('keydown', handleKeyDown);
+            window.removeEventListener('open-quick-create', handleOpenAction);
+        };
     }, []);
 
     // Form states
@@ -66,6 +79,7 @@ export default function GlobalQuickCreate({ isAdmin, agencies = [], clients = []
             const { createClient } = await import('@/app/actions');
             await createClient(formData);
 
+            toast.success('Client created successfully');
             setActiveModal(null);
             setClientName('');
             setClientCompany('');
@@ -73,7 +87,7 @@ export default function GlobalQuickCreate({ isAdmin, agencies = [], clients = []
             router.refresh(); // Refresh current page to show new data
         } catch (error) {
             console.error(error);
-            alert('Failed to create client');
+            toast.error('Failed to create client');
         } finally {
             setIsSubmitting(false);
         }
@@ -92,13 +106,14 @@ export default function GlobalQuickCreate({ isAdmin, agencies = [], clients = []
             const { createProject } = await import('@/app/actions');
             await createProject(formData);
 
+            toast.success('Project created successfully');
             setActiveModal(null);
             setProjectTitle('');
             setProjectClientId('');
             router.refresh();
         } catch (error) {
             console.error(error);
-            alert('Failed to create project');
+            toast.error('Failed to create project');
         } finally {
             setIsSubmitting(false);
         }

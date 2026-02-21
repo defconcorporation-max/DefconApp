@@ -10,6 +10,7 @@ import GlobalQuickCreate from "@/components/GlobalQuickCreate";
 import { headers } from "next/headers";
 import { auth } from "@/auth";
 import { getClients, getAgencies } from "@/app/actions";
+import { Toaster } from "react-hot-toast";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -58,6 +59,22 @@ export default async function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.className} bg-[var(--bg-root)] text-[var(--text-primary)] flex`}>
+        <Toaster
+          position="bottom-right"
+          toastOptions={{
+            style: {
+              background: '#18181b',
+              color: '#fff',
+              border: '1px solid #3f3f46'
+            },
+            success: {
+              iconTheme: {
+                primary: '#10b981',
+                secondary: '#18181b',
+              },
+            },
+          }}
+        />
         {!isPublic && <Sidebar userRole={userRole} />}
         {!isPublic && <CommandMenu />}
         {!isPublic && <GlobalQuickCreate isAdmin={isAdmin} clients={clients} agencies={agencies} />}

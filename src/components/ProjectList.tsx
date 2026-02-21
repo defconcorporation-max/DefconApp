@@ -3,7 +3,8 @@
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { Project } from '@/types';
-import { Clock, Hash, DollarSign, ArrowUpDown, Filter, ChevronDown, ChevronRight } from 'lucide-react';
+import { Clock, Filter, Search, SortDesc, ChevronDown, ChevronRight, Briefcase, ArrowUpDown, Hash, DollarSign } from 'lucide-react';
+import EmptyState from '@/components/EmptyState';
 
 interface EnhancedProject extends Project {
     client_name: string;
@@ -190,7 +191,7 @@ export default function ProjectList({ projects }: ProjectListProps) {
                                     <Link
                                         key={project.id}
                                         href={`/projects/${project.id}`}
-                                        className="bg-[#0A0A0A] border border-[var(--border-subtle)] rounded-xl p-5 hover:border-violet-500/50 hover:bg-violet-500/5 transition-all group relative flex flex-col"
+                                        className="bg-[#0A0A0A] border border-[var(--border-subtle)] rounded-xl p-5 hover:border-violet-500/50 hover:bg-violet-500/5 transition-all group relative flex flex-col hover:-translate-y-1 hover:shadow-lg hover:shadow-violet-500/10 duration-300"
                                     >
                                         {/* Header */}
                                         <div className="flex justify-between items-start mb-2">
@@ -270,8 +271,14 @@ export default function ProjectList({ projects }: ProjectListProps) {
             </div>
 
             {filteredAndSortedProjects.length === 0 && (
-                <div className="text-center py-12 text-[var(--text-secondary)]">
-                    <p>No projects found matching filters.</p>
+                <div className="py-12">
+                    <EmptyState
+                        icon={Briefcase}
+                        title="No Projects Found"
+                        description="There are no projects matching your current filters. Try changing your search or creating a new one."
+                        actionLabel="Create Project"
+                        onAction={() => window.dispatchEvent(new CustomEvent('open-quick-create', { detail: 'project' }))}
+                    />
                 </div>
             )}
         </div>

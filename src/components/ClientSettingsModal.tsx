@@ -1,10 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { updateClient, deleteClient } from '@/app/actions';
+import { deleteClient, updateClient } from '@/app/actions';
 import { useRouter } from 'next/navigation';
 import { Settings, Trash2, X } from 'lucide-react';
 import ClientAgencySelect from './ClientAgencySelect';
+import { toast } from 'react-hot-toast';
 
 interface ClientSettingsModalProps {
     client: { id: number; name: string; company_name: string; plan: string; agency_id?: number };
@@ -21,10 +22,15 @@ export default function ClientSettingsModal({ client, agencies, isOpen, onClose 
 
     const handleDelete = async () => {
         if (confirm('Are you sure you want to delete this client? This action cannot be undone.')) {
-            const formData = new FormData();
-            formData.append('id', client.id.toString());
-            await deleteClient(formData);
-            router.push('/'); // Redirect do dashboard
+            try {
+                const formData = new FormData();
+                formData.append('id', client.id.toString());
+                await deleteClient(formData);
+                toast.success('Client deleted');
+                router.push('/'); // Redirect do dashboard
+            } catch (e) {
+                toast.error('Failed to delete client');
+            }
         }
     };
 
@@ -46,7 +52,15 @@ export default function ClientSettingsModal({ client, agencies, isOpen, onClose 
                 </div>
 
                 <div className="p-6 space-y-6">
-                    <form action={async (formData) => { await updateClient(formData); onClose(); }} className="space-y-4">
+                    <form action={async (formData) => {
+                        try {
+                            await updateClient(formData);
+                            toast.success('Client settings updated');
+                            onClose();
+                        } catch (e) {
+                            toast.error('Failed to update settings');
+                        }
+                    }} className="space-y-4">
                         <input type="hidden" name="id" value={client.id} />
 
                         <div className="space-y-1">

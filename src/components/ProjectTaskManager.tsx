@@ -5,6 +5,7 @@ import { ProjectTask, TaskStage, TeamMember } from '@/types';
 import { Trash2, Plus, Calendar, CheckSquare, User, Briefcase, Filter, X } from 'lucide-react';
 import { useState, useTransition } from 'react';
 import TaskDetailModal from './TaskDetailModal';
+import { toast } from 'react-hot-toast';
 
 export default function ProjectTaskManager({
     projectId,
@@ -28,21 +29,35 @@ export default function ProjectTaskManager({
 
     const handleStageChange = (taskId: number, stageId: number) => {
         startTransition(async () => {
-            await updateTaskStage(taskId, stageId, projectId);
+            try {
+                await updateTaskStage(taskId, stageId, projectId);
+            } catch (e) {
+                toast.error('Failed to change stage');
+            }
         });
     };
 
     const handleAssigneeChange = (taskId: number, assigneeId: string) => {
         const id = assigneeId === "" ? null : Number(assigneeId);
         startTransition(async () => {
-            await updateTaskAssignee(taskId, id, projectId);
+            try {
+                await updateTaskAssignee(taskId, id, projectId);
+                toast.success('Assignee updated');
+            } catch (e) {
+                toast.error('Failed to update assignee');
+            }
         });
     };
 
     const handleDelete = (taskId: number) => {
         if (!confirm('Are you sure you want to delete this task?')) return;
         startTransition(async () => {
-            await deleteProjectTask(taskId, projectId);
+            try {
+                await deleteProjectTask(taskId, projectId);
+                toast.success('Task deleted');
+            } catch (e) {
+                toast.error('Failed to delete task');
+            }
         });
     };
 
@@ -117,7 +132,14 @@ export default function ProjectTaskManager({
             <div className="p-4 space-y-6">
 
                 {/* Add Task Form */}
-                <form action={addProjectTask} className="grid grid-cols-1 md:grid-cols-12 gap-2">
+                <form action={async (formData) => {
+                    try {
+                        await addProjectTask(formData);
+                        toast.success('Deliverable added');
+                    } catch (e) {
+                        toast.error('Failed to add deliverable');
+                    }
+                }} className="grid grid-cols-1 md:grid-cols-12 gap-2">
                     <input type="hidden" name="projectId" value={projectId} />
 
                     <div className="md:col-span-6 relative">

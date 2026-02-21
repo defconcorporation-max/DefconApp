@@ -81,11 +81,12 @@ export default function CommandMenu() {
                     {!loading && (
                         <>
                             <Command.Group heading="Quick Actions" className="text-xs font-medium text-[var(--text-tertiary)] px-2 py-1.5 mb-1">
-                                <Item item={{ id: 'new-client', label: 'Create New Client', type: 'Action', url: '#' }} onSelect={() => runCommand(() => document.getElementById('create-client-input')?.focus())} />
-
+                                <Item item={{ id: 'new-client', label: 'Create New Client', type: 'Action', url: '#' }} onSelect={() => runCommand(() => window.dispatchEvent(new CustomEvent('open-quick-create', { detail: 'client' })))} />
+                                <Item item={{ id: 'new-project', label: 'Create New Project', type: 'Action', url: '#' }} onSelect={() => runCommand(() => window.dispatchEvent(new CustomEvent('open-quick-create', { detail: 'project' })))} />
+                                <Item item={{ id: 'new-shoot', label: 'Request Booking', type: 'Action', url: '#' }} onSelect={() => runCommand(() => router.push('/availability'))} />
                             </Command.Group>
 
-                            <Command.Group heading="Pages" className="text-xs font-medium text-[var(--text-tertiary)] px-2 py-1.5 mb-1">
+                            <Command.Group heading="Pages" className="text-xs font-medium text-[var(--text-tertiary)] px-2 py-1.5 mb-1 mt-2">
                                 {pages.filter(i => i.type === 'Page').map(item => (
                                     <Item key={item.id} item={item} onSelect={() => runCommand(() => router.push(item.url))} />
                                 ))}

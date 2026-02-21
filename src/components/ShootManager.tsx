@@ -3,8 +3,10 @@
 
 import { addShoot, addShootVideo, toggleShootVideo } from '@/app/actions';
 import { Shoot, ShootVideo } from '@/types';
-import { useState, useTransition } from 'react';
-import { ArrowRight } from 'lucide-react';
+import { useState, useTransition, useRef } from 'react';
+import { ArrowRight, Video } from 'lucide-react';
+import { toast } from 'react-hot-toast';
+import EmptyState from '@/components/EmptyState';
 
 // Sub-component for individual shoot card
 function ShootCard({ shoot, videos, clientId }: { shoot: Shoot & { post_prod_status?: string, post_prod_id?: number }, videos: ShootVideo[], clientId: number }) {
@@ -78,7 +80,14 @@ function ShootCard({ shoot, videos, clientId }: { shoot: Shoot & { post_prod_sta
                                 <input
                                     type="checkbox"
                                     checked={video.completed === 1}
-                                    onChange={() => toggleShootVideo(video.id, video.completed, clientId, shoot.id)}
+                                    onChange={async () => {
+                                        try {
+                                            await toggleShootVideo(video.id, video.completed, clientId, shoot.id);
+                                            // Don't spam toasts for checkboxes unless it fails, or do subtle toast
+                                        } catch (e) {
+                                            toast.error('Failed to update status');
+                                        }
+                                    }}
                                     className="w-5 h-5 rounded border-white/20 bg-black/50 checked:bg-violet-500 cursor-pointer"
                                 />
                                 <span className={video.completed === 1 ? 'text-gray-500 line-through' : 'text-gray-200'}>{video.title}</span>
@@ -87,7 +96,14 @@ function ShootCard({ shoot, videos, clientId }: { shoot: Shoot & { post_prod_sta
                         {videos.length === 0 && <p className="text-sm text-gray-500 italic">No videos planned yet.</p>}
                     </div>
 
-                    <form action={addShootVideo} className="flex gap-2">
+                    <form action={async (formData) => {
+                        try {
+                            await addShootVideo(formData);
+                            toast.success('Video added to plan');
+                        } catch (e) {
+                            toast.error('Failed to add video');
+                        }
+                    }} className="flex gap-2">
                         <input type="hidden" name="shootId" value={shoot.id} />
                         <input type="hidden" name="clientId" value={clientId} />
                         <input name="title" placeholder="Add video to shoot plan..." className="bg-black/40 border border-white/10 px-3 py-1.5 rounded text-sm flex-1 focus:outline-none focus:border-violet-500" required />
@@ -116,10 +132,27 @@ export default function ShootManager({ clientId, shoots, videosMap, projectId }:
                         clientId={clientId}
                     />
                 ))}
-                {shoots.length === 0 && <p className="text-gray-500 text-center py-8">No shoots scheduled for this project.</p>}
+                {shoots.length === 0 && (
+                    <div className="py-8">
+                        <EmptyState
+                            icon={Video}
+                            title="No Shoots Scheduled"
+                            description="There are no shoots planned for this project yet."
+                            actionLabel="Schedule Shoot"
+                            onAction={() => document.querySelector<HTMLInputElement>('input[name="date"]')?.focus()}
+                        />
+                    </div>
+                )}
             </div>
 
-            <form action={addShoot} className="border-t border-white/10 pt-6">
+            <form action={async (formData) => {
+                try {
+                    await addShoot(formData);
+                    toast.success('Shoot scheduled effectively');
+                } catch (e) {
+                    toast.error('Failed to schedule shoot');
+                }
+            }} className="border-t border-white/10 pt-6">
                 <h4 className="text-sm font-medium mb-3 text-gray-300">Schedule New Shoot</h4>
                 <input type="hidden" name="clientId" value={clientId} />
                 {projectId && <input type="hidden" name="projectId" value={projectId} />}

@@ -261,7 +261,7 @@ export default function ClientKanban({ initialClients, initialStages, readOnly =
                                         className={`group ${readOnly ? 'cursor-default' : 'cursor-grab active:cursor-grabbing'}`}
                                     >
                                         <Link href={`/clients/${client.id}`} draggable={false}>
-                                            <article className="bg-[#121212] border border-[var(--border-subtle)] rounded-lg p-4 hover:border-violet-500/50 hover:bg-[#181818] transition-all shadow-sm hover:shadow-md">
+                                            <article className="bg-[#121212] border border-[var(--border-subtle)] rounded-lg p-4 hover:border-violet-500/50 hover:bg-[#181818] transition-all shadow-sm hover:shadow-md hover:-translate-y-0.5 hover:shadow-violet-500/10 duration-200">
                                                 <div className="flex justify-between items-start mb-2">
                                                     <h4 className="font-medium text-white truncate pr-2 group-hover:text-violet-200 transition-colors">
                                                         {client.company_name || client.name}

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { createAvailabilitySlot, updateAvailabilitySlot, updateShootTime, toggleShootBlocking, requestShoot, approveShoot, denyShoot, updateShootClient } from '@/app/actions';
 import { X, Clock, Calendar as CalendarIcon, Check, Edit, Video, Unlock, Send, ThumbsUp, ThumbsDown, User } from 'lucide-react';
 import { format, differenceInMinutes, parseISO } from 'date-fns';
+import { toast } from 'react-hot-toast';
 
 interface SlotModalProps {
     isOpen: boolean;
@@ -148,6 +149,7 @@ export default function SlotModal({ isOpen, onClose, initialDate, initialStartTi
             if (isRequest) {
                 if (!agencyId) throw new Error('No agency ID found');
                 await requestShoot(title, date, startTime, endTimeStr, agencyId, selectedClientId || undefined);
+                toast.success('Booking requested successfully!');
             } else if (isApprove && initialShoot) {
                 await updateShootTime(initialShoot.id, startStr, endStr);
                 await approveShoot(initialShoot.id);
@@ -155,21 +157,25 @@ export default function SlotModal({ isOpen, onClose, initialDate, initialStartTi
                 if (selectedClientId && Number(selectedClientId) > 0 && Number(selectedClientId) !== initialShoot.client_id) {
                     await updateShootClient(initialShoot.id, Number(selectedClientId));
                 }
+                toast.success('Shoot approved and scheduled!');
             } else if (isEditShoot && initialShoot) {
                 await updateShootTime(initialShoot.id, startStr, endStr);
                 // Update client if changed
                 if (selectedClientId && Number(selectedClientId) > 0 && Number(selectedClientId) !== initialShoot.client_id) {
                     await updateShootClient(initialShoot.id, Number(selectedClientId));
                 }
+                toast.success('Shoot details updated!');
             } else if (isEdit && initialSlot) {
                 await updateAvailabilitySlot(initialSlot.id, startStr, endStr);
+                toast.success('Unavailability block updated!');
             } else {
                 await createAvailabilitySlot(startStr, endStr);
+                toast.success('Time blocked successfully!');
             }
             onClose();
         } catch (error) {
             console.error('Failed to save slot', error);
-            alert('Failed to save slot');
+            toast.error('Failed to save. Please try again.');
         } finally {
             setIsLoading(false);
         }
@@ -178,16 +184,26 @@ export default function SlotModal({ isOpen, onClose, initialDate, initialStartTi
     const handleDeny = async () => {
         if (!initialShoot) return;
         if (confirm('Deny this shoot request? This will remove the request.')) {
-            await denyShoot(initialShoot.id);
-            onClose();
+            try {
+                await denyShoot(initialShoot.id);
+                toast.success('Shoot request denied');
+                onClose();
+            } catch (err) {
+                toast.error('Failed to deny request');
+            }
         }
     };
 
     const handleUnblock = async () => {
         if (!initialShoot) return;
         if (confirm('Unblock this shoot? This will remove the Unavailable block but keep the shoot event.')) {
-            await toggleShootBlocking(initialShoot.id, false);
-            onClose();
+            try {
+                await toggleShootBlocking(initialShoot.id, false);
+                toast.success('Shoot unblocked');
+                onClose();
+            } catch (err) {
+                toast.error('Failed to unblock shoot');
+            }
         }
     };
 
