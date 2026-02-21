@@ -108,8 +108,11 @@ export default async function ShootPage({ params }: { params: Promise<{ id: stri
 
     return (
         <main className="min-h-screen bg-[var(--bg-root)] p-8">
-            <Link href="/" className="inline-flex items-center text-sm text-[var(--text-tertiary)] hover:text-white mb-6 transition-colors">
-                ← Back to Dashboard
+            <Link
+                href={shoot.project_id ? `/projects/${shoot.project_id}?tab=shoots` : `/clients/${shoot.client_id}`}
+                className="inline-flex items-center text-sm text-[var(--text-tertiary)] hover:text-white mb-6 transition-colors"
+            >
+                ← Back to {shoot.project_title ? `Project: ${shoot.project_title}` : `Client: ${shoot.client_company || shoot.client_name}`}
             </Link>
 
             <div className="max-w-4xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">

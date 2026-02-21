@@ -351,9 +351,10 @@ export async function getShoots(clientId?: number): Promise<Shoot[]> {
 export async function getAllShoots() {
     const agencyId = await getAgencyFilter();
     let sql = `
-        SELECT s.*, c.name as client_name, c.company_name as client_company 
+        SELECT s.*, c.name as client_name, c.company_name as client_company, p.title as project_title 
         FROM shoots s
         JOIN clients c ON s.client_id = c.id
+        LEFT JOIN projects p ON s.project_id = p.id
     `;
     const args: any[] = [];
 

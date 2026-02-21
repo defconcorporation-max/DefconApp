@@ -237,10 +237,17 @@ export default function ProjectList({ projects }: ProjectListProps) {
                                                     ${project.total_value.toLocaleString()}
                                                 </div>
 
-                                                {/* Shoot Progress Bar */}
+                                                {/* Shoot Progress Bar Shortcut */}
                                                 {project.shoot_count > 0 ? (
-                                                    <div className="w-full flex flex-col gap-1">
-                                                        <div className="flex h-1.5 w-full rounded-full overflow-hidden bg-white/10">
+                                                    <Link
+                                                        href={`/projects/${project.id}?tab=shoots`}
+                                                        className="w-full flex flex-col gap-1 group/shoots hover:bg-white/5 p-1 -m-1 rounded transition-colors cursor-pointer"
+                                                        onClick={(e) => e.stopPropagation()}
+                                                    >
+                                                        <div className="flex justify-between items-center mb-0.5 opacity-0 group-hover/shoots:opacity-100 transition-opacity absolute -top-4 right-0 bg-violet-500 text-white text-[9px] px-1.5 py-0.5 rounded shadow">
+                                                            View Shoots
+                                                        </div>
+                                                        <div className="flex h-1.5 w-full rounded-full overflow-hidden bg-white/10 group-hover/shoots:ring-1 ring-violet-500/50 transition-all">
                                                             {project.shoots_done > 0 && (
                                                                 <div style={{ width: `${(project.shoots_done / project.shoot_count) * 100}%` }} className="bg-emerald-500" />
                                                             )}
@@ -251,12 +258,12 @@ export default function ProjectList({ projects }: ProjectListProps) {
                                                                 <div style={{ width: `${(project.shoots_scheduled / project.shoot_count) * 100}%` }} className="bg-white/30" />
                                                             )}
                                                         </div>
-                                                        <div className="flex justify-end gap-2 text-[9px] text-[var(--text-tertiary)] font-mono">
+                                                        <div className="flex justify-end gap-2 text-[9px] text-[var(--text-tertiary)] font-mono group-hover/shoots:text-[var(--text-secondary)] transition-colors">
                                                             {project.shoots_scheduled > 0 && <span>{project.shoots_scheduled} Sched</span>}
                                                             {project.shoots_in_post_prod > 0 && <span className="text-indigo-400">{project.shoots_in_post_prod} Post</span>}
                                                             {project.shoots_done > 0 && <span className="text-emerald-400">{project.shoots_done} Done</span>}
                                                         </div>
-                                                    </div>
+                                                    </Link>
                                                 ) : (
                                                     <span className="text-[10px] text-[var(--text-tertiary)] uppercase tracking-wider">0 Shoots</span>
                                                 )}

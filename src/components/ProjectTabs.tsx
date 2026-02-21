@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { LayoutDashboard, CheckSquare, Video, DollarSign, Calendar, ArrowUpRight, Clock, Trash2, Layers } from 'lucide-react';
 import { Project, Shoot, ProjectService, Commission, Client, ProjectTask, TaskStage, Service, Settings, TeamMember } from '@/types';
 import ShootManager from '@/components/ShootManager';
@@ -44,8 +45,16 @@ export default function ProjectTabs({
     totalValue,
     agencies
 }: ProjectTabsProps) {
-    const [activeTab, setActiveTab] = useState('overview');
+    const searchParams = useSearchParams();
+    const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'overview');
     const [isEditingDetails, setIsEditingDetails] = useState(false);
+
+    useEffect(() => {
+        const tab = searchParams.get('tab');
+        if (tab && ['overview', 'tasks', 'shoots', 'financials'].includes(tab)) {
+            setActiveTab(tab);
+        }
+    }, [searchParams]);
 
     const tabs = [
         { id: 'overview', label: 'Overview', icon: <LayoutDashboard size={16} /> },

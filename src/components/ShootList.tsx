@@ -13,6 +13,8 @@ interface EnhancedShoot extends Shoot {
     agency_color?: string;
     post_prod_status?: string;
     post_prod_id?: number;
+    project_title?: string;
+    project_id?: number;
 }
 
 interface ShootListProps {
@@ -208,8 +210,16 @@ export default function ShootList({ shoots, teamMembers, allAssignments }: Shoot
                                             <ExternalLink size={12} className="opacity-0 group-hover:opacity-100 transition-opacity translate-y-0.5" />
                                         </h3>
                                     </Link>
-                                    <p className="text-sm text-[var(--text-tertiary)] mb-4 flex items-center gap-2">
+                                    <p className="text-sm text-[var(--text-tertiary)] mb-4 flex items-center gap-2 flex-wrap">
                                         For: <Link href={`/clients/${shoot.client_id}`} className="text-[var(--text-secondary)] hover:text-white transition-colors">{shoot.client_name}</Link>
+                                        {shoot.project_title && (
+                                            <>
+                                                <span className="text-[var(--text-tertiary)] opacity-50">•</span>
+                                                <Link href={`/projects/${shoot.project_id}`} className="text-[var(--text-secondary)] hover:text-violet-400 transition-colors bg-violet-500/10 px-1.5 rounded truncate max-w-[150px]">
+                                                    {shoot.project_title}
+                                                </Link>
+                                            </>
+                                        )}
                                     </p>
 
                                     {/* Crew Widget */}
