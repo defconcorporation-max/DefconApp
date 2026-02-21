@@ -3,6 +3,7 @@ import { createAvailabilitySlot, updateAvailabilitySlot, updateShootTime, toggle
 import { X, Clock, Calendar as CalendarIcon, Check, Edit, Video, Unlock, Send, ThumbsUp, ThumbsDown, User } from 'lucide-react';
 import { format, differenceInMinutes, parseISO } from 'date-fns';
 import { toast } from 'react-hot-toast';
+import Link from 'next/link';
 
 interface SlotModalProps {
     isOpen: boolean;
@@ -324,6 +325,15 @@ export default function SlotModal({ isOpen, onClose, initialDate, initialStartTi
                             >
                                 <ThumbsDown size={14} /> Deny
                             </button>
+                        )}
+
+                        {initialShoot && (isEditShoot || isApprove || isBlock) && !isRequest && initialShoot.id && (
+                            <Link
+                                href={`/shoots/${initialShoot.id}`}
+                                className="px-3 py-2 text-xs text-violet-400 hover:text-violet-300 hover:bg-violet-500/10 rounded transition-colors flex items-center gap-1 ml-auto mr-2"
+                            >
+                                View Details
+                            </Link>
                         )}
 
                         <button

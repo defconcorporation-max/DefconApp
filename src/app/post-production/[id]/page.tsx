@@ -1,6 +1,6 @@
 import { getPostProdProject } from '@/app/post-prod-actions';
 import PostProdWorkspace from '@/components/post-prod/PostProdWorkspace';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
 import ShareReviewButton from '@/components/post-prod/ShareReviewButton';
 
@@ -20,7 +20,10 @@ export default async function PostProdProjectPage({ params }: { params: Promise<
                 </Link>
                 <div>
                     <div className="flex items-center gap-3">
-                        <h1 className="text-2xl font-bold">{project.shoot_title}</h1>
+                        <Link href={`/shoots/${project.shoot_id}`} className="hover:text-violet-400 transition-colors flex items-center gap-2 group">
+                            <h1 className="text-2xl font-bold">{project.shoot_title}</h1>
+                            <ExternalLink size={18} className="opacity-0 group-hover:opacity-100 transition-opacity translate-y-0.5" />
+                        </Link>
                         <span className="px-2 py-0.5 bg-indigo-500/20 text-indigo-300 text-xs rounded border border-indigo-500/30">
                             {project.template_name}
                         </span>

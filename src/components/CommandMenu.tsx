@@ -119,17 +119,33 @@ export default function CommandMenu() {
 
 function Item({ item, onSelect }: { item: SearchResult, onSelect: () => void }) {
     let Icon = File;
-    if (item.type === 'Client') Icon = Users;
-    if (item.type === 'Project') Icon = Briefcase;
-    if (item.type === 'Shoot') Icon = Video;
-    if (item.type === 'Action') Icon = Search;
+    let iconColor = 'text-white/70 group-aria-selected:text-white';
+    let iconBg = 'bg-[var(--bg-active)]/50 group-aria-selected:bg-[var(--bg-active)]';
+
+    if (item.type === 'Client') {
+        Icon = Users;
+        iconColor = 'text-blue-400 group-aria-selected:text-blue-300';
+        iconBg = 'bg-blue-500/10 group-aria-selected:bg-blue-500/20';
+    } else if (item.type === 'Project') {
+        Icon = Briefcase;
+        iconColor = 'text-emerald-400 group-aria-selected:text-emerald-300';
+        iconBg = 'bg-emerald-500/10 group-aria-selected:bg-emerald-500/20';
+    } else if (item.type === 'Shoot') {
+        Icon = Video;
+        iconColor = 'text-violet-400 group-aria-selected:text-violet-300';
+        iconBg = 'bg-violet-500/10 group-aria-selected:bg-violet-500/20';
+    } else if (item.type === 'Action') {
+        Icon = Search;
+        iconColor = 'text-amber-400 group-aria-selected:text-amber-300';
+        iconBg = 'bg-amber-500/10 group-aria-selected:bg-amber-500/20';
+    }
 
     return (
         <Command.Item
             onSelect={onSelect}
             className="flex items-center gap-3 px-3 py-2.5 rounded-md text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-surface-hover)] hover:text-white cursor-pointer group aria-selected:bg-[var(--bg-surface-hover)] aria-selected:text-white transition-colors"
         >
-            <div className="flex items-center justify-center w-6 h-6 rounded bg-[var(--bg-active)]/50 group-aria-selected:bg-[var(--bg-active)] text-white/70 group-aria-selected:text-white transition-colors">
+            <div className={`flex items-center justify-center w-6 h-6 rounded transition-colors ${iconBg} ${iconColor}`}>
                 <Icon className="w-3.5 h-3.5" />
             </div>
             <div className="flex-1 flex flex-col">
