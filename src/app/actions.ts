@@ -37,6 +37,7 @@ export async function createClient(formData: FormData) {
     const name = formData.get('name') as string;
     const company = formData.get('company') as string;
     const plan = formData.get('plan') as string;
+    const status = formData.get('status') as string || 'Active';
 
     // Handle Agency Logic
     const rawAgencyId = formData.get('agencyId');
@@ -67,8 +68,8 @@ export async function createClient(formData: FormData) {
     // Use cloud storage or manual folder management in production
 
     await db.execute({
-        sql: 'INSERT INTO clients (name, company_name, plan, folder_path, agency_id) VALUES (?, ?, ?, ?, ?)',
-        args: [name, company, plan, folderPath, finalAgencyId]
+        sql: 'INSERT INTO clients (name, company_name, plan, status, folder_path, agency_id) VALUES (?, ?, ?, ?, ?, ?)',
+        args: [name, company, plan, status, folderPath, finalAgencyId]
     });
 
     try {
@@ -1824,6 +1825,7 @@ export async function updateClient(formData: FormData) {
     const name = formData.get('name') as string;
     const company = formData.get('company') as string;
     const plan = formData.get('plan') as string;
+    const status = formData.get('status') as string || 'Active';
 
     // Handle Agency Logic
     const rawAgencyId = formData.get('agencyId');
@@ -1846,8 +1848,8 @@ export async function updateClient(formData: FormData) {
     }
 
     await db.execute({
-        sql: 'UPDATE clients SET name = ?, company_name = ?, plan = ?, agency_id = ? WHERE id = ?',
-        args: [name, company, plan, finalAgencyId, id]
+        sql: 'UPDATE clients SET name = ?, company_name = ?, plan = ?, status = ?, agency_id = ? WHERE id = ?',
+        args: [name, company, plan, status, finalAgencyId, id]
     });
     revalidatePath(`/clients/${id}`);
     revalidatePath('/');

@@ -1,4 +1,4 @@
-import { getClient, getProjects, getSocials, getIdeas, getCommissions, getPayments, getCredentials, getAgencies, getShoots, getShootVideos } from '@/app/actions';
+import { getClient, getProjects, getSocials, getIdeas, getCommissions, getPayments, getCredentials, getAgencies, getShoots, getShootVideos, getPipelineStages } from '@/app/actions';
 export const dynamic = 'force-dynamic';
 import { getSocialAccounts, getSocialPosts } from '@/app/social-actions';
 import FolderButton from '@/components/FolderButton';
@@ -24,6 +24,7 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
     // Fetch Projects instead of raw shoots
     const projects = await getProjects(clientId);
     const agencies = await getAgencies();
+    const pipelineStages = await getPipelineStages();
 
     // Fetch New Social Media Data
     const socialAccounts = await getSocialAccounts(clientId);
@@ -69,7 +70,7 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
                     <div className="flex items-center gap-3">
                         <FolderButton folderPath={client.folder_path} />
                         <div className="w-px h-4 bg-[var(--border-subtle)]"></div>
-                        <ClientSettingsButton client={client} agencies={agencies} />
+                        <ClientSettingsButton client={client} agencies={agencies} pipelineStages={pipelineStages} />
                     </div>
                 </div>
             </header>

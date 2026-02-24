@@ -8,13 +8,14 @@ import ClientAgencySelect from './ClientAgencySelect';
 import { toast } from 'react-hot-toast';
 
 interface ClientSettingsModalProps {
-    client: { id: number; name: string; company_name: string; plan: string; agency_id?: number };
+    client: { id: number; name: string; company_name: string; plan: string; status?: string; agency_id?: number };
     agencies: { id: number; name: string; color: string }[];
+    pipelineStages: { id: number; label: string; value: string; color: string }[];
     isOpen: boolean;
     onClose: () => void;
 }
 
-export default function ClientSettingsModal({ client, agencies, isOpen, onClose }: ClientSettingsModalProps) {
+export default function ClientSettingsModal({ client, agencies, pipelineStages, isOpen, onClose }: ClientSettingsModalProps) {
     const router = useRouter();
     const [isDeleting, setIsDeleting] = useState(false);
 
@@ -98,6 +99,19 @@ export default function ClientSettingsModal({ client, agencies, isOpen, onClose 
                         </div>
 
                         <div className="space-y-1">
+                            <label className="text-xs text-[var(--text-secondary)] uppercase font-mono">Status / Tag</label>
+                            <select
+                                name="status"
+                                defaultValue={client.status || 'Active'}
+                                className="w-full bg-[var(--bg-root)] border border-[var(--border-subtle)] text-white text-sm rounded px-3 py-2 focus:border-[var(--text-secondary)] outline-none appearance-none"
+                            >
+                                {pipelineStages.map(stage => (
+                                    <option key={stage.id} value={stage.label}>{stage.label}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div className="space-y-1">
                             <label className="text-xs text-[var(--text-secondary)] uppercase font-mono">Agency</label>
                             <ClientAgencySelect
                                 defaultValue={client.agency_id || ''}
@@ -126,7 +140,7 @@ export default function ClientSettingsModal({ client, agencies, isOpen, onClose 
 }
 
 // Helper button component to trigger modal
-export function ClientSettingsButton({ client, agencies }: { client: any, agencies: any[] }) {
+export function ClientSettingsButton({ client, agencies, pipelineStages = [] }: { client: any, agencies: any[], pipelineStages?: any[] }) {
     const [isOpen, setIsOpen] = useState(false);
     return (
         <>
@@ -137,7 +151,7 @@ export function ClientSettingsButton({ client, agencies }: { client: any, agenci
             >
                 <Settings size={20} />
             </button>
-            <ClientSettingsModal client={client} agencies={agencies} isOpen={isOpen} onClose={() => setIsOpen(false)} />
+            <ClientSettingsModal client={client} agencies={agencies} pipelineStages={pipelineStages} isOpen={isOpen} onClose={() => setIsOpen(false)} />
         </>
     );
 }
