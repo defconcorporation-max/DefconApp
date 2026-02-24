@@ -1,4 +1,4 @@
-import { getProjectById, getProjectShoots, getTeamMembers, getClient, getProjectTasks, getTaskStages, getShootVideos, getAgencies } from '@/app/actions';
+import { getProjectById, getProjectShoots, getTeamMembers, getClient, getProjectTasks, getTaskStages, getShootVideos, getAgencies, getProjectPostProdWorkflows } from '@/app/actions';
 import { Project, Shoot, ProjectTask, TaskStage, Client } from '@/types';
 import Link from 'next/link';
 import { ArrowLeft, Calendar, Activity, Video } from 'lucide-react';
@@ -47,8 +47,8 @@ export default async function ProjectDetailsPage({ params }: { params: Promise<{
     const completedTasks = tasks.filter(t => t.is_completed).length;
     const taskProgress = totalTasks === 0 ? 0 : Math.round((completedTasks / totalTasks) * 100);
 
-    // Aggregate all videos for Post Production module
-    const allVideos = shoots.flatMap(shoot => (videosMap[shoot.id] || []).map(v => ({ ...v, shoot_title: shoot.title, shoot_id: shoot.id })));
+    // Aggregate Post Production modules
+    const postProdWorkflows = await getProjectPostProdWorkflows(projectId);
 
     return (
         <main className="min-h-screen p-8 bg-[var(--bg-root)] text-white pb-20">
@@ -152,33 +152,32 @@ export default async function ProjectDetailsPage({ params }: { params: Promise<{
                             <Layers size={16} className="text-pink-400" /> Post-Production Status
                         </h3>
                         <div className="pr-2">
-                            {allVideos.length === 0 ? (
+                            {postProdWorkflows.length === 0 ? (
                                 <div className="text-sm text-[var(--text-tertiary)] text-center py-10 bg-[#0A0A0A] rounded-xl border border-[var(--border-subtle)]">
-                                    No videos found across this project's shoots.
+                                    No post-production workflows active for this project's shoots.
                                 </div>
                             ) : (
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    {allVideos.map(video => (
-                                        <Link key={video.id} href={`/shoots/${video.shoot_id}`} className="bg-[#0A0A0A] border border-[var(--border-subtle)] rounded-xl p-4 hover:border-violet-500/50 transition-colors group">
-                                            <div className="flex justify-between items-start mb-2">
-                                                <div>
-                                                    <h4 className="font-bold text-white text-sm group-hover:text-violet-300 transition-colors">{video.title || 'Untitled Video'}</h4>
-                                                    <p className="text-xs text-[var(--text-tertiary)] mt-1">{video.shoot_title}</p>
-                                                </div>
-                                                <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${video.edit_status === 'Ready' ? 'bg-emerald-500/10 text-emerald-400' :
-                                                        video.edit_status === 'Review' ? 'bg-yellow-500/10 text-yellow-400' :
-                                                            video.edit_status === 'Revisions' ? 'bg-red-500/10 text-red-400' :
-                                                                video.edit_status === 'Final' ? 'bg-indigo-500/10 text-indigo-400' :
-                                                                    'bg-white/10 text-[var(--text-tertiary)]'
-                                                    }`}>
-                                                    {video.edit_status || 'Draft'}
-                                                </span>
+                                <div className="grid grid-cols-1 gap-4">
+                                    {postProdWorkflows.map(workflow => (
+                                        <Link key={workflow.id} href={`/post-production/${workflow.id}`} className="bg-[#0A0A0A] border border-[var(--border-subtle)] rounded-xl p-4 hover:border-violet-500/50 transition-colors group flex justify-between items-center">
+                                            <div>
+                                                <h4 className="font-bold text-white text-sm group-hover:text-violet-300 transition-colors">{workflow.shoot_title || 'Untitled Shoot'}</h4>
+                                                <p className="text-xs text-[var(--text-tertiary)] mt-1">Template: {workflow.template_name}</p>
                                             </div>
-                                            {video.notes && (
-                                                <p className="text-xs text-[var(--text-secondary)] line-clamp-2 mt-3 pt-3 border-t border-[var(--border-subtle)]">
-                                                    {video.notes}
-                                                </p>
-                                            )}
+                                            <div className="flex flex-col items-end gap-2">
+                                                <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${workflow.status === 'Completed' ? 'bg-emerald-500/10 text-emerald-400' :
+                                                        workflow.status === 'In Progress' ? 'bg-indigo-500/10 text-indigo-400' :
+                                                            'bg-white/10 text-[var(--text-tertiary)]'
+                                                    }`}>
+                                                    {workflow.status}
+                                                </span>
+                                                <div className="flex items-center gap-2">
+                                                    <div className="h-1.5 w-24 bg-gray-700 rounded-full overflow-hidden">
+                                                        <div className="h-full bg-violet-500 transition-all duration-500" style={{ width: `${workflow.progress}%` }}></div>
+                                                    </div>
+                                                    <span className="text-xs text-[var(--text-tertiary)]">{workflow.progress}%</span>
+                                                </div>
+                                            </div>
                                         </Link>
                                     ))}
                                 </div>

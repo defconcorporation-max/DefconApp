@@ -2256,10 +2256,10 @@ export async function getShootVolumeData() {
     // Get last 12 months shoots
     const query = `
         SELECT 
-            strftime('%Y-%m', created_at) as month,
+            strftime('%Y-%m', shoot_date) as month,
             COUNT(id) as count
         FROM shoots
-        WHERE created_at >= date('now', '-12 months')
+        WHERE shoot_date >= date('now', '-12 months')
         GROUP BY month
         ORDER BY month ASC
     `;
@@ -2373,4 +2373,34 @@ export async function markNotificationAsRead(id: number) {
         args: [id]
     });
     // Let client handle revalidation or state update
+}
+
+// --- PROJECT POST PROD WORKFLOWS ---
+export async function getProjectPostProdWorkflows(projectId: number) {
+    const query = `
+        SELECT 
+            p.*, 
+            s.title as shoot_title, 
+            t.name as template_name
+        FROM post_prod_projects p
+        JOIN shoots s ON p.shoot_id = s.id
+        JOIN post_prod_templates t ON p.template_id = t.id
+        WHERE s.project_id = ?
+        ORDER BY p.created_at DESC
+    `;
+    const { rows: projects } = await db.execute({ sql: query, args: [projectId] });
+
+    // Progress calculation
+    const workflows = await Promise.all(projects.map(async (p: any) => {
+        const { rows: tasks } = await db.execute({
+            sql: 'SELECT count(*) as total, sum(is_completed) as completed FROM post_prod_tasks WHERE project_id = ?',
+            args: [p.id]
+        });
+        const stats = tasks[0] as any;
+        const progress = stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0;
+
+        return { ...p, progress };
+    }));
+
+    return workflows;
 }

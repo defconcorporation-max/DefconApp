@@ -18,9 +18,24 @@ export async function GET() {
             )
         `);
 
+        console.log('--- Creating settings table on Vercel ---');
+        await turso.execute(`
+            CREATE TABLE IF NOT EXISTS settings (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                tax_tps_rate REAL DEFAULT 5.0,
+                tax_tvq_rate REAL DEFAULT 9.975
+            )
+        `);
+
+        // Seed settings if empty
+        const { rows } = await turso.execute('SELECT count(*) as count FROM settings');
+        if (rows[0].count === 0) {
+            await turso.execute('INSERT INTO settings (id, tax_tps_rate, tax_tvq_rate) VALUES (1, 5.0, 9.975)');
+        }
+
         return NextResponse.json({
             success: true,
-            message: 'Notifications table created. Analytics dashboard should no longer crash.'
+            message: 'Notifications AND Settings tables created/verified. Settings page should no longer crash.'
         });
     } catch (error) {
         console.error('Migration failed:', error);
