@@ -32,8 +32,9 @@ export async function POST(request: Request) {
             });
         } catch (e: any) {
             if (e?.message?.includes('private') || e?.message?.includes('public access')) {
-                // Store is private — upload without specifying access
-                blob = await put(`${folder}/${Date.now()}-${file.name}`, file, {});
+                blob = await put(`${folder}/${Date.now()}-${file.name}`, file, {
+                    access: 'private',
+                });
             } else {
                 throw e;
             }
