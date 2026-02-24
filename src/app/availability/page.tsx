@@ -2,6 +2,8 @@ import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
 import AvailabilityCalendar from '@/components/availability/AvailabilityCalendar';
 import { getAvailabilitySlots, getAvailabilityRequests, getClientsForBooking } from '@/app/actions';
+import Link from 'next/link';
+import { Share2 } from 'lucide-react';
 
 export default async function AvailabilityPage() {
     const session = await auth();
@@ -18,9 +20,18 @@ export default async function AvailabilityPage() {
 
     return (
         <main className="min-h-screen bg-[var(--bg-root)] p-8">
-            <header className="mb-8">
-                <h1 className="text-3xl font-medium text-white tracking-tight">Availability & Booking</h1>
-                <p className="text-[var(--text-secondary)]">Manage studio time and creative sessions.</p>
+            <header className="mb-8 flex items-center justify-between">
+                <div>
+                    <h1 className="text-3xl font-medium text-white tracking-tight">Availability &amp; Booking</h1>
+                    <p className="text-[var(--text-secondary)]">Manage studio time and creative sessions.</p>
+                </div>
+                <Link
+                    href="/availability/share"
+                    target="_blank"
+                    className="px-4 py-2 text-sm border border-[var(--border-subtle)] rounded-full hover:bg-white/5 transition-colors flex items-center gap-2 text-[var(--text-secondary)]"
+                >
+                    <Share2 size={16} /> Share Availability
+                </Link>
             </header>
 
             <AvailabilityCalendar
