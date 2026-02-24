@@ -116,13 +116,17 @@ export async function updateActorProfilePicture(actorId: number, url: string) {
 // ── Client associations ──
 
 export async function getActorClients(actorId: number) {
-    const { rows } = await db.execute({
-        sql: `SELECT c.id, c.name, c.company_name FROM actor_clients ac
-              JOIN clients c ON ac.client_id = c.id
-              WHERE ac.actor_id = ?`,
-        args: [actorId]
-    });
-    return rows as any[];
+    try {
+        const { rows } = await db.execute({
+            sql: `SELECT c.id, c.name, c.company_name FROM actor_clients ac
+                  JOIN clients c ON ac.client_id = c.id
+                  WHERE ac.actor_id = ?`,
+            args: [actorId]
+        });
+        return rows as any[];
+    } catch {
+        return [];
+    }
 }
 
 export async function addActorClient(actorId: number, clientId: number) {

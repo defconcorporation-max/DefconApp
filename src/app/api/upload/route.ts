@@ -28,7 +28,7 @@ export async function POST(request: Request) {
             access: 'private',
         });
 
-        return NextResponse.json({ url: blob.downloadUrl || blob.url, success: true });
+        return NextResponse.json({ url: blob.url, success: true });
     } catch (error: any) {
         console.error('Upload error:', error);
         return NextResponse.json({
