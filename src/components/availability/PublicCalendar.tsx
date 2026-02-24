@@ -11,7 +11,7 @@ interface TimeBlock {
 
 const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 const DAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-const HOURS = Array.from({ length: 12 }, (_, i) => i + 8); // 8AM - 7PM
+const HOURS = Array.from({ length: 12 }, (_, i) => i + 8); // 8AM - 7PM (ends at 8PM)
 
 function buildHourMap(blocks: TimeBlock[]) {
     const map = new Map<string, Set<number>>();
@@ -28,7 +28,7 @@ function toDateKey(d: Date) {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-export default function PublicCalendar({ availableBlocks, busyBlocks }: { availableBlocks: TimeBlock[]; busyBlocks: TimeBlock[] }) {
+export default function PublicCalendar({ busyBlocks }: { busyBlocks: TimeBlock[] }) {
     const now = new Date();
     const [currentDate, setCurrentDate] = useState(new Date(now.getFullYear(), now.getMonth(), 1));
     const [view, setView] = useState<'month' | 'week'>('month');
@@ -37,8 +37,7 @@ export default function PublicCalendar({ availableBlocks, busyBlocks }: { availa
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
 
-    // Maps: date → set of hours
-    const availableMap = buildHourMap(availableBlocks);
+    // Map: date → set of busy hours
     const busyMap = buildHourMap(busyBlocks);
 
     // Navigation
@@ -55,7 +54,6 @@ export default function PublicCalendar({ availableBlocks, busyBlocks }: { availa
             const d = new Date(selectedWeekStart);
             d.setDate(d.getDate() - 7);
             setSelectedWeekStart(d);
-            // If we navigated to a different month, update month view too
             setCurrentDate(new Date(d.getFullYear(), d.getMonth(), 1));
         }
     };
@@ -78,15 +76,16 @@ export default function PublicCalendar({ availableBlocks, busyBlocks }: { availa
     const getDayStatus = (day: number) => {
         const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
         const date = new Date(year, month, day);
+
+        // Treat as past. If today, check if the entire working day is past 8PM.
         const isPast = date < new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        const availHours = availableMap.get(dateKey)?.size || 0;
+
         const busyHours = busyMap.get(dateKey)?.size || 0;
 
         if (isPast) return 'past';
-        if (availHours === 0 && busyHours === 0) return 'none'; // No availability set
-        if (busyHours > 0 && availHours === 0) return 'full';   // Only booked, no open slots
-        if (busyHours > 0 && availHours > 0) return 'partial';  // Mix of available & booked
-        return 'free'; // Has available slots, nothing booked
+        if (busyHours >= HOURS.length) return 'full';   // Completely booked
+        if (busyHours > 0) return 'partial';            // Mix of available & booked
+        return 'free'; // Fully available
     };
 
     const handleDayClick = (day: number) => {
@@ -168,10 +167,6 @@ export default function PublicCalendar({ availableBlocks, busyBlocks }: { availa
                         <div className="w-3 h-3 rounded-sm bg-red-500/30 border border-red-500/40" />
                         <span className="text-gray-400">Booked</span>
                     </div>
-                    <div className="flex items-center gap-1.5">
-                        <div className="w-3 h-3 rounded-sm bg-white/5 border border-white/10" />
-                        <span className="text-gray-400">No availability set</span>
-                    </div>
                 </div>
 
                 {/* ──── Month View ──── */}
@@ -189,7 +184,8 @@ export default function PublicCalendar({ availableBlocks, busyBlocks }: { availa
                                 const status = getDayStatus(day);
                                 const isToday = day === now.getDate() && month === now.getMonth() && year === now.getFullYear();
                                 const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                                const availHours = availableMap.get(dateKey)?.size || 0;
+                                const busyHours = busyMap.get(dateKey)?.size || 0;
+                                const availHours = HOURS.length - busyHours;
 
                                 return (
                                     <button
@@ -205,7 +201,7 @@ export default function PublicCalendar({ availableBlocks, busyBlocks }: { availa
                                             }`}>
                                             {day}
                                         </span>
-                                        {status !== 'past' && status !== 'none' && (
+                                        {status !== 'past' && (
                                             <div className="absolute bottom-2 left-2 right-2">
                                                 <div className={`h-1.5 rounded-full ${status === 'full' ? 'bg-red-500/60' :
                                                         status === 'partial' ? 'bg-yellow-500/60' :
@@ -255,7 +251,6 @@ export default function PublicCalendar({ availableBlocks, busyBlocks }: { availa
                                     </div>
                                     {weekDays.map((day, di) => {
                                         const dateKey = toDateKey(day);
-                                        const isAvailable = availableMap.has(dateKey) && availableMap.get(dateKey)!.has(hour);
                                         const isBusy = busyMap.has(dateKey) && busyMap.get(dateKey)!.has(hour);
                                         const isPast = day < new Date(now.getFullYear(), now.getMonth(), now.getDate());
                                         const isPastHour = day.toDateString() === now.toDateString() && hour < now.getHours();
@@ -265,10 +260,8 @@ export default function PublicCalendar({ availableBlocks, busyBlocks }: { availa
                                             cellClass += 'bg-white/[0.02]'; // Past
                                         } else if (isBusy) {
                                             cellClass += 'bg-red-500/15'; // Booked
-                                        } else if (isAvailable) {
-                                            cellClass += 'bg-green-500/15'; // Available
                                         } else {
-                                            cellClass += 'bg-white/[0.02]'; // No availability set
+                                            cellClass += 'bg-green-500/15'; // Default Available
                                         }
 
                                         return <div key={di} className={cellClass} />;
