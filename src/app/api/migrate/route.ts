@@ -104,6 +104,53 @@ export async function GET() {
         `);
         results.push('✓ pipeline_stages table');
 
+        // ── Client Feedback (Post-Production Reviews) ──
+        await turso.execute(`
+            CREATE TABLE IF NOT EXISTS client_feedback (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                project_id INTEGER NOT NULL,
+                feedback TEXT NOT NULL,
+                is_resolved BOOLEAN DEFAULT 0,
+                admin_comment TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(project_id) REFERENCES post_prod_projects(id) ON DELETE CASCADE
+            )
+        `);
+        results.push('✓ client_feedback table');
+
+        // ── Actors ──
+        await turso.execute(`
+            CREATE TABLE IF NOT EXISTS actors (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                phone TEXT,
+                email TEXT,
+                availability TEXT,
+                potential_conflicts TEXT,
+                remuneration_per_shoot REAL DEFAULT 0,
+                instagram TEXT,
+                facebook TEXT,
+                tiktok TEXT,
+                additional_info TEXT,
+                location TEXT,
+                portfolio_urls TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+        results.push('✓ actors table');
+
+        // ── Actor-Client assignments ──
+        await turso.execute(`
+            CREATE TABLE IF NOT EXISTS actor_clients (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                actor_id INTEGER NOT NULL,
+                client_id INTEGER NOT NULL,
+                FOREIGN KEY(actor_id) REFERENCES actors(id) ON DELETE CASCADE,
+                FOREIGN KEY(client_id) REFERENCES clients(id) ON DELETE CASCADE
+            )
+        `);
+        results.push('✓ actor_clients table');
+
         // ── Add agency_id to clients (safe) ──
         try {
             await turso.execute('ALTER TABLE clients ADD COLUMN agency_id INTEGER');

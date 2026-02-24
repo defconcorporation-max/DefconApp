@@ -1,12 +1,17 @@
 import { getPostProdProject } from '@/app/post-prod-actions';
+import { getProjectFeedback } from '@/app/review-actions';
 import PostProdWorkspace from '@/components/post-prod/PostProdWorkspace';
+import FeedbackPanel from '@/components/post-prod/FeedbackPanel';
 import { ArrowLeft, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
 import ShareReviewButton from '@/components/post-prod/ShareReviewButton';
 
 export default async function PostProdProjectPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
-    const data = await getPostProdProject(Number(id));
+    const [data, feedback] = await Promise.all([
+        getPostProdProject(Number(id)),
+        getProjectFeedback(Number(id)),
+    ]);
 
     if (!data) return <div>Project not found</div>;
 
@@ -40,6 +45,7 @@ export default async function PostProdProjectPage({ params }: { params: Promise<
                 </div>
             </div>
 
+            <FeedbackPanel feedback={feedback} projectId={project.id} />
             <PostProdWorkspace project={project} tasks={tasks} versions={versions} />
         </main>
     );

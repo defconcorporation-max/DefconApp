@@ -27,6 +27,7 @@ export default function Sidebar({ userRole = '' }: { userRole?: string }) {
         { href: '/shoots', label: 'Shoots', icon: Video },
         { href: '/availability', label: 'Availability', icon: Calendar },
         { href: '/post-production', label: 'Post-Production', icon: Layers },
+        { href: '/actors', label: 'Actors', icon: UserPlus },
     ];
 
     const adminLinks = [
