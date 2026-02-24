@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
 
-interface BusyBlock {
+interface TimeBlock {
     date: string; // YYYY-MM-DD
     startHour: number;
     endHour: number;
@@ -13,7 +13,22 @@ const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'Ju
 const DAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const HOURS = Array.from({ length: 12 }, (_, i) => i + 8); // 8AM - 7PM
 
-export default function PublicCalendar({ busyBlocks }: { busyBlocks: BusyBlock[] }) {
+function buildHourMap(blocks: TimeBlock[]) {
+    const map = new Map<string, Set<number>>();
+    for (const b of blocks) {
+        if (!map.has(b.date)) map.set(b.date, new Set());
+        for (let h = b.startHour; h < b.endHour; h++) {
+            map.get(b.date)!.add(h);
+        }
+    }
+    return map;
+}
+
+function toDateKey(d: Date) {
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+export default function PublicCalendar({ availableBlocks, busyBlocks }: { availableBlocks: TimeBlock[]; busyBlocks: TimeBlock[] }) {
     const now = new Date();
     const [currentDate, setCurrentDate] = useState(new Date(now.getFullYear(), now.getMonth(), 1));
     const [view, setView] = useState<'month' | 'week'>('month');
@@ -22,24 +37,35 @@ export default function PublicCalendar({ busyBlocks }: { busyBlocks: BusyBlock[]
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
 
-    // Build busy map: "YYYY-MM-DD" → Set of busy hours
-    const busyMap = new Map<string, Set<number>>();
-    for (const block of busyBlocks) {
-        if (!busyMap.has(block.date)) busyMap.set(block.date, new Set());
-        for (let h = block.startHour; h < block.endHour; h++) {
-            busyMap.get(block.date)!.add(h);
-        }
-    }
+    // Maps: date → set of hours
+    const availableMap = buildHourMap(availableBlocks);
+    const busyMap = buildHourMap(busyBlocks);
 
-    const toDateKey = (d: Date) =>
-        `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-
+    // Navigation
     const prevMonth = () => setCurrentDate(new Date(year, month - 1, 1));
     const nextMonth = () => setCurrentDate(new Date(year, month + 1, 1));
     const goToday = () => {
         setCurrentDate(new Date(now.getFullYear(), now.getMonth(), 1));
         setSelectedWeekStart(null);
         setView('month');
+    };
+
+    const prevWeek = () => {
+        if (selectedWeekStart) {
+            const d = new Date(selectedWeekStart);
+            d.setDate(d.getDate() - 7);
+            setSelectedWeekStart(d);
+            // If we navigated to a different month, update month view too
+            setCurrentDate(new Date(d.getFullYear(), d.getMonth(), 1));
+        }
+    };
+    const nextWeek = () => {
+        if (selectedWeekStart) {
+            const d = new Date(selectedWeekStart);
+            d.setDate(d.getDate() + 7);
+            setSelectedWeekStart(d);
+            setCurrentDate(new Date(d.getFullYear(), d.getMonth(), 1));
+        }
     };
 
     // ── Month View ──
@@ -53,20 +79,18 @@ export default function PublicCalendar({ busyBlocks }: { busyBlocks: BusyBlock[]
         const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
         const date = new Date(year, month, day);
         const isPast = date < new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        const isWeekend = date.getDay() === 0 || date.getDay() === 6;
-        const busyHours = busyMap.get(dateKey);
-        const busyCount = busyHours ? busyHours.size : 0;
+        const availHours = availableMap.get(dateKey)?.size || 0;
+        const busyHours = busyMap.get(dateKey)?.size || 0;
 
         if (isPast) return 'past';
-        if (isWeekend) return 'weekend';
-        if (busyCount >= 8) return 'full';
-        if (busyCount > 0) return 'partial';
-        return 'free';
+        if (availHours === 0 && busyHours === 0) return 'none'; // No availability set
+        if (busyHours > 0 && availHours === 0) return 'full';   // Only booked, no open slots
+        if (busyHours > 0 && availHours > 0) return 'partial';  // Mix of available & booked
+        return 'free'; // Has available slots, nothing booked
     };
 
     const handleDayClick = (day: number) => {
         const date = new Date(year, month, day);
-        // Find Monday of that week
         const dayOfWeek = (date.getDay() + 6) % 7;
         const monday = new Date(date);
         monday.setDate(date.getDate() - dayOfWeek);
@@ -86,7 +110,6 @@ export default function PublicCalendar({ busyBlocks }: { busyBlocks: BusyBlock[]
 
     return (
         <main className="min-h-screen bg-[#050505] text-white">
-            {/* Header */}
             <header className="bg-black/80 backdrop-blur-md border-b border-white/10 px-6 py-4 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                     <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center font-bold text-sm">D</div>
@@ -98,7 +121,6 @@ export default function PublicCalendar({ busyBlocks }: { busyBlocks: BusyBlock[]
             </header>
 
             <div className="max-w-4xl mx-auto px-4 md:px-6 py-8">
-                {/* Title */}
                 <div className="text-center mb-8">
                     <h1 className="text-2xl md:text-3xl font-bold mb-2">Studio Availability</h1>
                     <p className="text-gray-400 text-sm">Click any day to see the hourly breakdown.</p>
@@ -107,13 +129,16 @@ export default function PublicCalendar({ busyBlocks }: { busyBlocks: BusyBlock[]
                 {/* Navigation */}
                 <div className="flex items-center justify-between mb-6">
                     <div className="flex items-center gap-2">
-                        <button onClick={prevMonth} className="p-2 hover:bg-white/10 rounded-lg transition-colors">
+                        <button onClick={view === 'week' ? prevWeek : prevMonth} className="p-2 hover:bg-white/10 rounded-lg transition-colors">
                             <ChevronLeft size={20} />
                         </button>
-                        <h2 className="text-lg font-bold min-w-[180px] text-center">
-                            {MONTH_NAMES[month]} {year}
+                        <h2 className="text-lg font-bold min-w-[200px] text-center">
+                            {view === 'week' && selectedWeekStart
+                                ? `${selectedWeekStart.getDate()} ${MONTH_NAMES[selectedWeekStart.getMonth()].slice(0, 3)} – ${weekDays[6]?.getDate()} ${MONTH_NAMES[weekDays[6]?.getMonth()].slice(0, 3)} ${weekDays[6]?.getFullYear()}`
+                                : `${MONTH_NAMES[month]} ${year}`
+                            }
                         </h2>
-                        <button onClick={nextMonth} className="p-2 hover:bg-white/10 rounded-lg transition-colors">
+                        <button onClick={view === 'week' ? nextWeek : nextMonth} className="p-2 hover:bg-white/10 rounded-lg transition-colors">
                             <ChevronRight size={20} />
                         </button>
                     </div>
@@ -141,22 +166,22 @@ export default function PublicCalendar({ busyBlocks }: { busyBlocks: BusyBlock[]
                     </div>
                     <div className="flex items-center gap-1.5">
                         <div className="w-3 h-3 rounded-sm bg-red-500/30 border border-red-500/40" />
-                        <span className="text-gray-400">Fully Booked</span>
+                        <span className="text-gray-400">Booked</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                        <div className="w-3 h-3 rounded-sm bg-white/5 border border-white/10" />
+                        <span className="text-gray-400">No availability set</span>
                     </div>
                 </div>
 
-                {/* Month View */}
+                {/* ──── Month View ──── */}
                 {view === 'month' && (
                     <div className="bg-[#0A0A0A] border border-white/10 rounded-2xl overflow-hidden">
-                        {/* Day headers */}
                         <div className="grid grid-cols-7 border-b border-white/10">
                             {DAY_NAMES.map(d => (
-                                <div key={d} className="text-center py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">
-                                    {d}
-                                </div>
+                                <div key={d} className="text-center py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">{d}</div>
                             ))}
                         </div>
-                        {/* Day cells */}
                         <div className="grid grid-cols-7">
                             {calendarDays.map((day, i) => {
                                 if (day === null) return <div key={i} className="h-20 border-b border-r border-white/5" />;
@@ -164,33 +189,33 @@ export default function PublicCalendar({ busyBlocks }: { busyBlocks: BusyBlock[]
                                 const status = getDayStatus(day);
                                 const isToday = day === now.getDate() && month === now.getMonth() && year === now.getFullYear();
                                 const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                                const busyHours = busyMap.get(dateKey)?.size || 0;
+                                const availHours = availableMap.get(dateKey)?.size || 0;
 
                                 return (
                                     <button
                                         key={i}
                                         onClick={() => status !== 'past' && handleDayClick(day)}
                                         disabled={status === 'past'}
-                                        className={`h-20 border-b border-r border-white/5 p-2 text-left transition-colors relative group ${status === 'past' ? 'opacity-30 cursor-default' :
-                                                status === 'weekend' ? 'bg-white/[0.02] cursor-pointer hover:bg-white/[0.05]' :
-                                                    'cursor-pointer hover:bg-white/[0.08]'
+                                        className={`h-20 border-b border-r border-white/5 p-2 text-left transition-colors relative ${status === 'past' ? 'opacity-30 cursor-default' :
+                                                'cursor-pointer hover:bg-white/[0.08]'
                                             }`}
                                     >
-                                        <span className={`text-sm font-medium ${isToday ? 'w-7 h-7 rounded-full bg-indigo-600 flex items-center justify-center text-white' :
+                                        <span className={`text-sm font-medium inline-flex items-center justify-center ${isToday ? 'w-7 h-7 rounded-full bg-indigo-600 text-white' :
                                                 status === 'past' ? 'text-gray-600' : 'text-white'
                                             }`}>
                                             {day}
                                         </span>
-                                        {status !== 'past' && status !== 'weekend' && (
+                                        {status !== 'past' && status !== 'none' && (
                                             <div className="absolute bottom-2 left-2 right-2">
-                                                <div className={`h-1.5 rounded-full ${status === 'full' ? 'bg-red-500/50' :
-                                                        status === 'partial' ? 'bg-yellow-500/50' :
-                                                            'bg-green-500/30'
-                                                    }`}>
-                                                    {status === 'partial' && (
-                                                        <div className="h-full rounded-full bg-yellow-500/80" style={{ width: `${Math.min(100, (busyHours / 10) * 100)}%` }} />
-                                                    )}
-                                                </div>
+                                                <div className={`h-1.5 rounded-full ${status === 'full' ? 'bg-red-500/60' :
+                                                        status === 'partial' ? 'bg-yellow-500/60' :
+                                                            'bg-green-500/50'
+                                                    }`} />
+                                            </div>
+                                        )}
+                                        {status !== 'past' && availHours > 0 && (
+                                            <div className="absolute top-2 right-2 text-[9px] text-green-400/70 font-mono">
+                                                {availHours}h
                                             </div>
                                         )}
                                     </button>
@@ -200,52 +225,57 @@ export default function PublicCalendar({ busyBlocks }: { busyBlocks: BusyBlock[]
                     </div>
                 )}
 
-                {/* Week View (hourly detail) */}
+                {/* ──── Week View (hourly detail) ──── */}
                 {view === 'week' && selectedWeekStart && (
-                    <div className="bg-[#0A0A0A] border border-white/10 rounded-2xl overflow-hidden">
-                        {/* Week header */}
-                        <div className="grid gap-0" style={{ gridTemplateColumns: '50px repeat(7, 1fr)' }}>
-                            <div className="border-b border-r border-white/10 p-2" />
-                            {weekDays.map((day, i) => {
-                                const isToday = day.toDateString() === now.toDateString();
-                                const isWeekend = day.getDay() === 0 || day.getDay() === 6;
-                                return (
-                                    <div key={i} className={`text-center py-3 border-b border-white/10 ${isToday ? 'bg-indigo-500/10' : ''}`}>
-                                        <div className={`text-xs font-bold uppercase ${isWeekend ? 'text-gray-600' : 'text-gray-400'}`}>
-                                            {DAY_NAMES[(day.getDay() + 6) % 7]}
+                    <div className="bg-[#0A0A0A] border border-white/10 rounded-2xl overflow-hidden overflow-x-auto">
+                        <div className="min-w-[600px]">
+                            {/* Week header */}
+                            <div className="grid gap-0" style={{ gridTemplateColumns: '50px repeat(7, 1fr)' }}>
+                                <div className="border-b border-r border-white/10 p-2" />
+                                {weekDays.map((day, i) => {
+                                    const isToday = day.toDateString() === now.toDateString();
+                                    return (
+                                        <div key={i} className={`text-center py-3 border-b border-white/10 ${isToday ? 'bg-indigo-500/10' : ''}`}>
+                                            <div className="text-xs font-bold uppercase text-gray-400">
+                                                {DAY_NAMES[(day.getDay() + 6) % 7]}
+                                            </div>
+                                            <div className={`text-lg font-bold ${isToday ? 'text-indigo-400' : 'text-white'}`}>
+                                                {day.getDate()}
+                                            </div>
                                         </div>
-                                        <div className={`text-lg font-bold ${isToday ? 'text-indigo-400' : isWeekend ? 'text-gray-600' : 'text-white'
-                                            }`}>
-                                            {day.getDate()}
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-
-                        {/* Hourly grid */}
-                        {HOURS.map(hour => (
-                            <div key={hour} className="grid gap-0" style={{ gridTemplateColumns: '50px repeat(7, 1fr)' }}>
-                                <div className="text-right pr-2 text-[10px] text-gray-600 font-mono py-2 border-r border-white/5">
-                                    {hour.toString().padStart(2, '0')}:00
-                                </div>
-                                {weekDays.map((day, di) => {
-                                    const dateKey = toDateKey(day);
-                                    const isBusy = busyMap.has(dateKey) && busyMap.get(dateKey)!.has(hour);
-                                    const isPast = day < now && day.toDateString() !== now.toDateString();
-                                    const isPastHour = day.toDateString() === now.toDateString() && hour < now.getHours();
-                                    const isWeekend = day.getDay() === 0 || day.getDay() === 6;
-
-                                    let cellClass = 'h-10 border-b border-r border-white/5 transition-colors ';
-                                    if (isPast || isPastHour) cellClass += 'bg-white/[0.02]';
-                                    else if (isWeekend) cellClass += 'bg-white/[0.03]';
-                                    else if (isBusy) cellClass += 'bg-red-500/15';
-                                    else cellClass += 'bg-green-500/8 hover:bg-green-500/15';
-
-                                    return <div key={di} className={cellClass} />;
+                                    );
                                 })}
                             </div>
-                        ))}
+
+                            {/* Hourly grid */}
+                            {HOURS.map(hour => (
+                                <div key={hour} className="grid gap-0" style={{ gridTemplateColumns: '50px repeat(7, 1fr)' }}>
+                                    <div className="text-right pr-2 text-[10px] text-gray-600 font-mono py-2 border-r border-white/5">
+                                        {hour.toString().padStart(2, '0')}:00
+                                    </div>
+                                    {weekDays.map((day, di) => {
+                                        const dateKey = toDateKey(day);
+                                        const isAvailable = availableMap.has(dateKey) && availableMap.get(dateKey)!.has(hour);
+                                        const isBusy = busyMap.has(dateKey) && busyMap.get(dateKey)!.has(hour);
+                                        const isPast = day < new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                                        const isPastHour = day.toDateString() === now.toDateString() && hour < now.getHours();
+
+                                        let cellClass = 'h-10 border-b border-r border-white/5 transition-colors ';
+                                        if (isPast || isPastHour) {
+                                            cellClass += 'bg-white/[0.02]'; // Past
+                                        } else if (isBusy) {
+                                            cellClass += 'bg-red-500/15'; // Booked
+                                        } else if (isAvailable) {
+                                            cellClass += 'bg-green-500/15'; // Available
+                                        } else {
+                                            cellClass += 'bg-white/[0.02]'; // No availability set
+                                        }
+
+                                        return <div key={di} className={cellClass} />;
+                                    })}
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 )}
 
