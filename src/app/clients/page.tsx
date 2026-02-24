@@ -1,4 +1,4 @@
-import { getClients } from '@/app/actions';
+import { getClients, getPipelineStages } from '@/app/actions';
 import Link from 'next/link';
 import { ArrowRight, Users, ExternalLink } from 'lucide-react';
 import { auth } from '@/auth';
@@ -11,6 +11,21 @@ export default async function ClientsPage() {
     const isAdmin = userRole === 'Admin' || userRole === 'Team';
 
     const clients = await getClients();
+    const stages = await getPipelineStages();
+
+    const getBadgeClasses = (status: string) => {
+        const stage = stages.find(s => s.label.toLowerCase() === (status || 'Active').toLowerCase());
+        const bg = stage?.color || 'bg-gray-500';
+        switch (bg) {
+            case 'bg-emerald-500': return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
+            case 'bg-orange-500': return 'bg-orange-500/10 text-orange-400 border-orange-500/20';
+            case 'bg-blue-500': return 'bg-blue-500/10 text-blue-400 border-blue-500/20';
+            case 'bg-violet-500': return 'bg-violet-500/10 text-violet-400 border-violet-500/20';
+            case 'bg-yellow-500': return 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20';
+            case 'bg-red-500': return 'bg-red-500/10 text-red-400 border-red-500/20';
+            default: return 'bg-gray-500/10 text-gray-400 border-gray-500/20';
+        }
+    };
 
     return (
         <main className="min-h-screen p-4 md:p-8 pt-20 md:pt-8 pb-20">
@@ -37,11 +52,8 @@ export default async function ClientsPage() {
                                 <div className="w-10 h-10 rounded-lg bg-indigo-500/10 flex items-center justify-center text-indigo-400 font-bold text-lg group-hover:scale-110 transition-transform duration-300">
                                     {client.company_name.charAt(0)}
                                 </div>
-                                <div className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider border ${client.status === 'Active'
-                                    ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                                    : 'bg-[var(--bg-root)] text-[var(--text-tertiary)] border-[var(--border-subtle)]'
-                                    }`}>
-                                    {client.status}
+                                <div className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider border ${getBadgeClasses(client.status)}`}>
+                                    {client.status || 'Active'}
                                 </div>
                             </div>
 
