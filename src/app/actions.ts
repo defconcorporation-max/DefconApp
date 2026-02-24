@@ -910,6 +910,25 @@ export async function savePipelineStage(stage: Partial<PipelineStage>) {
     revalidatePath('/');
 }
 
+export async function addPipelineStage(formData: FormData) {
+    const label = formData.get('label') as string;
+    const color = formData.get('color') as string || 'gray';
+    if (!label) return;
+
+    // Normalize value from label (lowercase, replace spaces with underscores)
+    const value = label.toLowerCase().replace(/\s+/g, '_');
+
+    const resultRes = await db.execute('SELECT MAX(order_index) as maxOrder FROM pipeline_stages');
+    const result = resultRes.rows[0] as unknown as { maxOrder: number };
+    const nextOrder = (result?.maxOrder ?? -1) + 1;
+
+    await db.execute({
+        sql: 'INSERT INTO pipeline_stages (label, value, color, order_index) VALUES (?, ?, ?, ?)',
+        args: [label, value, color, nextOrder]
+    });
+    revalidatePath('/');
+}
+
 export async function reorderPipelineStages(stages: PipelineStage[]) {
     // Check for transaction support or batch
     const statements = stages.map((s, i) => ({

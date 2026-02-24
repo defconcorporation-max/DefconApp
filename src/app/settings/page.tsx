@@ -1,8 +1,9 @@
-import { getSettings, getTaskStages } from '@/app/actions';
+import { getSettings, getTaskStages, getPipelineStages } from '@/app/actions';
 import { getPostProdTemplates } from '@/app/post-prod-actions';
 import SettingsForm from '@/components/SettingsForm';
 import TaskStageManager from '@/components/TaskStageManager';
 import WorkflowManager from '@/components/settings/WorkflowManager';
+import PipelineStagesManager from '@/components/settings/PipelineStagesManager';
 import SalesPlaybookWrapper from '@/components/settings/SalesPlaybookWrapper';
 import Link from 'next/link';
 import { auth } from '@/auth';
@@ -19,6 +20,7 @@ export default async function Page() {
     const settings = await getSettings();
     const stages = await getTaskStages();
     const templates = await getPostProdTemplates();
+    const pipelineStages = await getPipelineStages();
 
     return (
         <div className="flex">
@@ -44,6 +46,7 @@ export default async function Page() {
                     </div>
 
                     <WorkflowManager templates={templates} />
+                    <PipelineStagesManager stages={pipelineStages} />
                     <TaskStageManager stages={stages} />
                     <SettingsForm settings={settings || { tax_tps_rate: 5.0, tax_tvq_rate: 9.975 }} />
                 </div>
