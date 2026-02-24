@@ -2,9 +2,10 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Users, Briefcase, Video, CreditCard, Settings, Command, Layers, UserPlus, BookOpen, Building, Calendar, Shield } from 'lucide-react';
+import { Home, Users, Briefcase, Video, CreditCard, Settings, Command, Layers, UserPlus, BookOpen, Building, Calendar, Shield, Activity } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import BetaFeedbackWidget from './BetaFeedbackWidget';
+import NotificationBell from './NotificationBell';
 
 export default function Sidebar({ userRole = '' }: { userRole?: string }) {
     const pathname = usePathname();
@@ -28,6 +29,7 @@ export default function Sidebar({ userRole = '' }: { userRole?: string }) {
     ];
 
     const adminLinks = [
+        { href: '/analytics', label: 'Analytics', icon: Activity },
         { href: '/agencies', label: 'Agencies', icon: Building },
         { href: '/team', label: 'Team', icon: UserPlus },
         { href: '/users', label: 'Users', icon: Shield },
@@ -45,16 +47,19 @@ export default function Sidebar({ userRole = '' }: { userRole?: string }) {
                     </div>
                     <span className="font-bold text-lg tracking-tight text-white">Defcon</span>
                 </div>
-                <button
-                    onClick={() => setOpen(!open)}
-                    className="p-2 text-white hover:bg-white/10 rounded-md transition-colors"
-                >
-                    {open ? (
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 18 18" /></svg>
-                    ) : (
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="4" x2="20" y1="12" y2="12" /><line x1="4" x2="20" y1="6" y2="6" /><line x1="4" x2="20" y1="18" y2="18" /></svg>
-                    )}
-                </button>
+                <div className="flex items-center gap-2">
+                    <NotificationBell userRole={userRole} />
+                    <button
+                        onClick={() => setOpen(!open)}
+                        className="p-2 text-white hover:bg-white/10 rounded-md transition-colors"
+                    >
+                        {open ? (
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 18 18" /></svg>
+                        ) : (
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="4" x2="20" y1="12" y2="12" /><line x1="4" x2="20" y1="6" y2="6" /><line x1="4" x2="20" y1="18" y2="18" /></svg>
+                        )}
+                    </button>
+                </div>
             </header>
 
             {/* Mobile Drawer */}
@@ -117,11 +122,14 @@ export default function Sidebar({ userRole = '' }: { userRole?: string }) {
             {/* Desktop Sidebar */}
             <aside className="fixed left-0 top-0 bottom-0 w-64 bg-[#09090b]/40 backdrop-blur-2xl border-r border-white/5 z-40 hidden md:flex flex-col shadow-[4px_0_24px_rgba(0,0,0,0.5)]">
                 <div className="p-6">
-                    <div className="flex items-center gap-3 mb-8">
-                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
-                            <span className="font-bold text-white text-lg">D</span>
+                    <div className="flex items-center justify-between mb-8">
+                        <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+                                <span className="font-bold text-white text-lg">D</span>
+                            </div>
+                            <span className="font-bold text-lg tracking-tight text-white">Defcon</span>
                         </div>
-                        <span className="font-bold text-lg tracking-tight text-white">Defcon</span>
+                        <NotificationBell userRole={userRole} />
                     </div>
 
                     <div className="space-y-1">

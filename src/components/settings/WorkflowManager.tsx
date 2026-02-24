@@ -23,7 +23,7 @@ export default function WorkflowManager({ templates }: { templates: PostProdTemp
 
     const startEditing = (template: PostProdTemplate) => {
         setFormName(template.name);
-        setFormTasks([...template.tasks]);
+        setFormTasks([...(template.tasks || [])]);
         setEditingId(template.id);
         setIsCreating(true);
     };
@@ -155,15 +155,15 @@ export default function WorkflowManager({ templates }: { templates: PostProdTemp
                                 </div>
                             </div>
                             <div className="space-y-1">
-                                {template.tasks.slice(0, 3).map((task, i) => (
+                                {(template.tasks || []).slice(0, 3).map((task, i) => (
                                     <div key={i} className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
                                         <div className="w-1.5 h-1.5 rounded-full bg-indigo-500/50" />
                                         <span className="truncate">{task}</span>
                                     </div>
                                 ))}
-                                {template.tasks.length > 3 && (
+                                {(template.tasks || []).length > 3 && (
                                     <p className="text-xs text-[var(--text-tertiary)] pl-3.5 mt-1">
-                                        +{template.tasks.length - 3} more steps
+                                        +{(template.tasks || []).length - 3} more steps
                                     </p>
                                 )}
                             </div>

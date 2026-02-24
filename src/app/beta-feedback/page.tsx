@@ -27,15 +27,15 @@ export default async function BetaFeedbackPage() {
                     <div
                         key={feedback.id}
                         className={`p-4 rounded-lg border flex flex-col md:flex-row gap-4 justify-between items-start transition-all ${feedback.is_resolved
-                                ? 'bg-[var(--bg-surface)]/30 border-[var(--border-subtle)] opacity-60'
-                                : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] md:hover:border-[var(--text-tertiary)]'
+                            ? 'bg-[var(--bg-surface)]/30 border-[var(--border-subtle)] opacity-60'
+                            : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] md:hover:border-[var(--text-tertiary)]'
                             }`}
                     >
                         <div className="flex-1 space-y-2">
                             <div className="flex items-center gap-2 mb-1">
                                 <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border uppercase tracking-wide ${feedback.is_resolved
-                                        ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                                        : 'bg-orange-500/10 text-orange-400 border-orange-500/20'
+                                    ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                                    : 'bg-orange-500/10 text-orange-400 border-orange-500/20'
                                     }`}>
                                     {feedback.is_resolved ? 'Resolved' : 'Open'}
                                 </span>
@@ -60,10 +60,7 @@ export default async function BetaFeedbackPage() {
 
                         <div className="flex items-center gap-2 w-full md:w-auto mt-2 md:mt-0 pt-2 md:pt-0 border-t md:border-t-0 border-[var(--border-subtle)]">
                             {!feedback.is_resolved && (
-                                <form action={async () => {
-                                    'use server';
-                                    await resolveBetaFeedback(feedback.id);
-                                }}>
+                                <form action={resolveBetaFeedback.bind(null, feedback.id)}>
                                     <button
                                         type="submit"
                                         className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20 rounded text-xs font-medium transition-colors w-full md:w-auto justify-center"
@@ -75,10 +72,8 @@ export default async function BetaFeedbackPage() {
                                 </form>
                             )}
 
-                            <form action={async () => {
-                                'use server';
-                                await deleteBetaFeedback(feedback.id);
-                            }}>
+                            <form action={deleteBetaFeedback}>
+                                <input type="hidden" name="id" value={feedback.id} />
                                 <button
                                     type="submit"
                                     className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 rounded text-xs font-medium transition-colors w-full md:w-auto justify-center"

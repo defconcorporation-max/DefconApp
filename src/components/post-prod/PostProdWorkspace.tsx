@@ -77,7 +77,7 @@ export default function PostProdWorkspace({ project, tasks, versions }: Props) {
                     <div className="flex justify-between items-center">
                         {versions.length > 0 ? (
                             <a href={versions[0].video_url} target="_blank" rel="noopener noreferrer">
-                                <Button variant="outline" size="sm" className="border-indigo-500/30 text-indigo-400 hover:bg-indigo-500/10">
+                                <Button variant="secondary" size="sm" className="border-indigo-500/30 text-indigo-400 hover:bg-indigo-500/10">
                                     <Download size={16} className="mr-2" />
                                     Download v{versions[0].version_number}
                                 </Button>

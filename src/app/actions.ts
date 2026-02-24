@@ -2247,3 +2247,130 @@ export async function getClientPortalData(clientId: number) {
         projects: projectsRes.rows as unknown as Project[]
     };
 }
+
+// --- ANALYTICS SERVER ACTIONS (ADMIN ONLY) ---
+export async function getShootVolumeData() {
+    const session = await auth();
+    if (!session || session.user?.role !== 'Admin') throw new Error("Unauthorized");
+
+    // Get last 12 months shoots
+    const query = `
+        SELECT 
+            strftime('%Y-%m', created_at) as month,
+            COUNT(id) as count
+        FROM shoots
+        WHERE created_at >= date('now', '-12 months')
+        GROUP BY month
+        ORDER BY month ASC
+    `;
+    const result = await db.execute(query);
+    return result.rows as unknown as { month: string, count: number }[];
+}
+
+export async function getProjectOriginData() {
+    const session = await auth();
+    if (!session || session.user?.role !== 'Admin') throw new Error("Unauthorized");
+
+    const query = `
+        SELECT 
+            CASE WHEN agency_id IS NULL THEN 'Direct' ELSE a.name END as name,
+            COUNT(p.id) as value
+        FROM projects p
+        LEFT JOIN agencies a ON p.agency_id = a.id
+        GROUP BY name
+        ORDER BY value DESC
+    `;
+    const result = await db.execute(query);
+    return result.rows as unknown as { name: string, value: number }[];
+}
+
+export async function getProjectCompletionData() {
+    const session = await auth();
+    if (!session || session.user?.role !== 'Admin') throw new Error("Unauthorized");
+
+    const query = `
+        SELECT 
+            status as name,
+            COUNT(id) as value
+        FROM projects
+        GROUP BY name
+    `;
+    const result = await db.execute(query);
+    return result.rows as unknown as { name: string, value: number }[];
+}
+
+// --- PUBLIC BOOKING & NOTIFICATIONS ---
+
+export async function submitPublicBooking(formData: FormData) {
+    const name = formData.get('name') as string;
+    const email = formData.get('email') as string;
+    const phone = formData.get('phone') as string;
+    const date = formData.get('date') as string;
+    const description = formData.get('description') as string;
+
+    if (!name || !email || !date || !description) return { error: "Missing required fields." };
+
+    try {
+        // 1. Ensure `_PENDING_REQUEST` client exists
+        let clientRes = await db.execute({
+            sql: 'SELECT id FROM clients WHERE name = ?',
+            args: ['_PENDING_REQUEST']
+        });
+
+        let clientId;
+        if (clientRes.rows.length === 0) {
+            const insertClient = await db.execute({
+                sql: "INSERT INTO clients (name, company_name, status) VALUES (?, ?, ?)",
+                args: ['_PENDING_REQUEST', 'Public Portals', 'Active']
+            });
+            clientId = insertClient.lastInsertRowid;
+        } else {
+            clientId = clientRes.rows[0].id;
+        }
+
+        // 2. Insert into shoots
+        const shortDesc = description.length > 20 ? description.substring(0, 20) + '...' : description;
+        const insertShoot = await db.execute({
+            sql: "INSERT INTO shoots (client_id, title, shoot_date, status) VALUES (?, ?, ?, ?)",
+            args: [Number(clientId), `Pending: ${name} - ${shortDesc}`, date, 'Planned']
+        });
+
+        // 3. Create Notification for Admins
+        await db.execute({
+            sql: "INSERT INTO notifications (type, message, link) VALUES (?, ?, ?)",
+            args: ['booking_request', `New public booking request from ${name} for ${date}`, `/availability`]
+        });
+
+        revalidatePath('/availability');
+        return { success: true };
+    } catch (e) {
+        console.error("Failed to submit public booking:", e);
+        return { error: "An error occurred while submitting." };
+    }
+}
+
+export async function getUnreadNotifications() {
+    const session = await auth();
+    // Only Admin or Team should see these
+    if (!session || (session.user?.role !== 'Admin' && session.user?.role !== 'Team')) return [];
+
+    const query = `
+        SELECT * FROM notifications 
+        WHERE is_read = 0 
+        ORDER BY created_at DESC 
+        LIMIT 5
+    `;
+    const result = await db.execute(query);
+    return result.rows as any[];
+}
+
+export async function markNotificationAsRead(id: number) {
+    const session = await auth();
+    if (!session || (session.user?.role !== 'Admin' && session.user?.role !== 'Team')) return;
+
+    await db.execute({
+        sql: "UPDATE notifications SET is_read = 1 WHERE id = ?",
+        args: [id]
+    });
+    // Let client handle revalidation or state update
+}

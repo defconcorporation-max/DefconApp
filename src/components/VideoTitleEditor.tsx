@@ -34,7 +34,7 @@ export default function VideoTitleEditor({
     };
 
     return (
-        <form ref={formRef} action={updateShootVideoTitle} className="flex-1">
+        <form ref={formRef} action={updateShootVideoTitle.bind(null, videoId, title, clientId, shootId)} className="flex-1">
             <input type="hidden" name="id" value={videoId} />
             <input type="hidden" name="clientId" value={clientId} />
             <input type="hidden" name="shootId" value={shootId} />

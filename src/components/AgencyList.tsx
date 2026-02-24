@@ -5,7 +5,6 @@ import { useState } from 'react';
 import { createAgency, deleteAgency } from '@/app/actions';
 import { Plus, Trash2, Building, Users, DollarSign } from 'lucide-react';
 import Link from 'next/link';
-import { formatCurrency } from '@/lib/utils'; // Assuming standard util
 
 interface AgencyStat {
     id: number;

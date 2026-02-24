@@ -36,7 +36,7 @@ export default function NotesEditor({
     };
 
     return (
-        <form ref={formRef} action={updateShootVideoNotes} className="flex-1">
+        <form ref={formRef} action={updateShootVideoNotes.bind(null, noteId, content, clientId, shootId)} className="flex-1">
             <input type="hidden" name="id" value={noteId} />
             <input type="hidden" name="videoId" value={videoId} />
             <input type="hidden" name="clientId" value={clientId} />

@@ -103,3 +103,12 @@ CREATE TABLE IF NOT EXISTS team_availability (
     note TEXT,
     FOREIGN KEY(member_id) REFERENCES team_members(id) ON DELETE CASCADE
 );
+
+CREATE TABLE IF NOT EXISTS notifications (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    type TEXT NOT NULL,
+    message TEXT NOT NULL,
+    link TEXT,
+    is_read BOOLEAN DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
