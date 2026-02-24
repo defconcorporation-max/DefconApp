@@ -1358,7 +1358,7 @@ export async function updatePostProdStatus(id: number, status: string) {
 export async function getSettings() {
     try {
         const { rows } = await db.execute('SELECT * FROM settings WHERE id = 1');
-        return (rows[0] as unknown as { id: number, tax_tps_rate: number, tax_tvq_rate: number });
+        return (rows[0] || { id: 1, tax_tps_rate: 5.0, tax_tvq_rate: 9.975 }) as any;
     } catch (e) {
         console.error("Failed to fetch settings:", e);
         return { id: 1, tax_tps_rate: 5.0, tax_tvq_rate: 9.975 };
@@ -1512,8 +1512,13 @@ export async function getProjectTasks(projectId: number): Promise<any[]> {
 }
 
 export async function getTaskStages(): Promise<any[]> {
-    const { rows } = await db.execute('SELECT * FROM task_stages ORDER BY position ASC, id ASC');
-    return rows as unknown as any[];
+    try {
+        const { rows } = await db.execute('SELECT * FROM task_stages ORDER BY position ASC, id ASC');
+        return rows as unknown as any[];
+    } catch (e) {
+        console.error("Failed to fetch task stages:", e);
+        return [];
+    }
 }
 
 export async function addProjectTask(formData: FormData) {

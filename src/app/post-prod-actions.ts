@@ -7,11 +7,16 @@ import { PostProdProject, PostProdTask, PostProdTemplate, PostProdVersion } from
 // --- TEMPLATES ---
 
 export async function getPostProdTemplates(): Promise<PostProdTemplate[]> {
-    const { rows } = await db.execute('SELECT * FROM post_prod_templates');
-    return rows.map((r: any) => ({
-        ...r,
-        tasks: JSON.parse(r.default_tasks)
-    })) as PostProdTemplate[];
+    try {
+        const { rows } = await db.execute('SELECT * FROM post_prod_templates');
+        return rows.map((r: any) => ({
+            ...r,
+            tasks: JSON.parse(r.default_tasks || '[]')
+        })) as PostProdTemplate[];
+    } catch (e) {
+        console.error("Failed to fetch post prod templates:", e);
+        return [];
+    }
 }
 
 export async function createPostProdTemplate(name: string, tasks: string[]) {
