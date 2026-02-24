@@ -130,3 +130,50 @@ export async function removeActorClient(actorId: number, clientId: number) {
     });
     revalidatePath(`/actors/${actorId}`);
 }
+
+// ── Portfolio media ──
+
+export async function getActorPortfolio(actorId: number) {
+    try {
+        const { rows } = await db.execute({
+            sql: 'SELECT * FROM actor_portfolio WHERE actor_id = ? ORDER BY created_at DESC',
+            args: [actorId]
+        });
+        return rows as any[];
+    } catch {
+        return [];
+    }
+}
+
+export async function addPortfolioItem(actorId: number, url: string, fileType: string, fileName: string) {
+    try {
+        await db.execute(`
+            CREATE TABLE IF NOT EXISTS actor_portfolio (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                actor_id INTEGER NOT NULL,
+                url TEXT NOT NULL,
+                file_type TEXT NOT NULL,
+                file_name TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(actor_id) REFERENCES actors(id) ON DELETE CASCADE
+            )
+        `);
+    } catch { }
+
+    await db.execute({
+        sql: 'INSERT INTO actor_portfolio (actor_id, url, file_type, file_name) VALUES (?, ?, ?, ?)',
+        args: [actorId, url, fileType, fileName]
+    });
+    revalidatePath(`/actors/${actorId}`);
+    revalidatePath(`/actors/${actorId}/share`);
+}
+
+export async function deletePortfolioItem(id: number) {
+    const { rows } = await db.execute({ sql: 'SELECT actor_id FROM actor_portfolio WHERE id = ?', args: [id] });
+    await db.execute({ sql: 'DELETE FROM actor_portfolio WHERE id = ?', args: [id] });
+    if (rows[0]) {
+        const actorId = rows[0].actor_id;
+        revalidatePath(`/actors/${actorId}`);
+        revalidatePath(`/actors/${actorId}/share`);
+    }
+}

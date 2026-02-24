@@ -1,10 +1,11 @@
-import { getActor, getActorClients, updateActor, deleteActor, addActorClient, removeActorClient } from '@/app/actor-actions';
+import { getActor, getActorClients, getActorPortfolio, updateActor, deleteActor, addActorClient, removeActorClient } from '@/app/actor-actions';
 import { getClients } from '@/app/actions';
 import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, MapPin, DollarSign, Instagram, Share2, Trash2 } from 'lucide-react';
 import ActorActions from '@/components/ActorActions';
+import PortfolioUploader from '@/components/PortfolioUploader';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,10 +16,11 @@ export default async function ActorDetailPage({ params }: { params: Promise<{ id
     const { id } = await params;
     const actorId = Number(id);
 
-    const [actor, actorClients, allClients] = await Promise.all([
+    const [actor, actorClients, allClients, portfolio] = await Promise.all([
         getActor(actorId),
         getActorClients(actorId),
         getClients(),
+        getActorPortfolio(actorId),
     ]);
 
     if (!actor) return (
@@ -29,8 +31,6 @@ export default async function ActorDetailPage({ params }: { params: Promise<{ id
             </div>
         </div>
     );
-
-    const portfolioItems = actor.portfolio_urls ? actor.portfolio_urls.split(',').filter((u: string) => u.trim()) : [];
 
     return (
         <main className="min-h-screen p-6">
@@ -124,11 +124,6 @@ export default async function ActorDetailPage({ params }: { params: Promise<{ id
                             </div>
                         </div>
 
-                        <div className="space-y-1">
-                            <label className="text-xs text-[var(--text-secondary)] uppercase font-mono">Portfolio URLs (comma-separated)</label>
-                            <textarea name="portfolio_urls" defaultValue={actor.portfolio_urls} rows={2} className="pro-input w-full resize-none" placeholder="https://youtube.com/..., https://drive.google.com/..." />
-                        </div>
-
                         <div className="flex justify-between pt-2">
                             <ActorActions actorId={actor.id} />
                             <button type="submit" className="px-4 py-2 bg-white text-black text-sm font-medium rounded hover:bg-gray-200 transition-colors">
@@ -138,24 +133,10 @@ export default async function ActorDetailPage({ params }: { params: Promise<{ id
                     </form>
                 </div>
 
-                {/* Right Sidebar: Portfolio + Clients */}
+                {/* Right Sidebar: Portfolio Upload + Clients */}
                 <div className="space-y-6">
-                    {/* Portfolio Preview */}
-                    <div className="bg-[#0A0A0A] border border-[var(--border-subtle)] rounded-xl p-5">
-                        <h3 className="text-sm font-bold text-white mb-3 uppercase tracking-wider">Portfolio</h3>
-                        {portfolioItems.length === 0 ? (
-                            <p className="text-xs text-[var(--text-tertiary)] italic">No portfolio items added yet.</p>
-                        ) : (
-                            <div className="space-y-2">
-                                {portfolioItems.map((url: string, i: number) => (
-                                    <a key={i} href={url.trim()} target="_blank" rel="noopener"
-                                        className="block text-xs text-indigo-400 hover:text-indigo-300 truncate hover:underline transition-colors">
-                                        {url.trim()}
-                                    </a>
-                                ))}
-                            </div>
-                        )}
-                    </div>
+                    {/* Portfolio Upload */}
+                    <PortfolioUploader actorId={actorId} portfolio={portfolio} />
 
                     {/* Clients Worked With */}
                     <div className="bg-[#0A0A0A] border border-[var(--border-subtle)] rounded-xl p-5">

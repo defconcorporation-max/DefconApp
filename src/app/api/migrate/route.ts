@@ -151,6 +151,20 @@ export async function GET() {
         `);
         results.push('✓ actor_clients table');
 
+        // ── Actor Portfolio (uploaded media) ──
+        await turso.execute(`
+            CREATE TABLE IF NOT EXISTS actor_portfolio (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                actor_id INTEGER NOT NULL,
+                url TEXT NOT NULL,
+                file_type TEXT NOT NULL,
+                file_name TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(actor_id) REFERENCES actors(id) ON DELETE CASCADE
+            )
+        `);
+        results.push('✓ actor_portfolio table');
+
         // ── Add agency_id to clients (safe) ──
         try {
             await turso.execute('ALTER TABLE clients ADD COLUMN agency_id INTEGER');

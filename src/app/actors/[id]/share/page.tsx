@@ -1,23 +1,24 @@
-import { getActor } from '@/app/actor-actions';
-import { Users, MapPin, ExternalLink } from 'lucide-react';
+import { getActor, getActorPortfolio } from '@/app/actor-actions';
+import { MapPin, Users, Image, Film } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
 /**
  * Public shareable actor profile page.
- * Shows only the name and portfolio — no private info.
+ * Shows only the name, location, and uploaded portfolio — no private info.
  */
 export default async function ShareActorPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
-    const actor = await getActor(Number(id));
+    const [actor, portfolio] = await Promise.all([
+        getActor(Number(id)),
+        getActorPortfolio(Number(id)),
+    ]);
 
     if (!actor) return (
         <div className="min-h-screen bg-black flex items-center justify-center text-white">
             <h1 className="text-2xl font-bold">Profile Not Found</h1>
         </div>
     );
-
-    const portfolioItems = actor.portfolio_urls ? actor.portfolio_urls.split(',').filter((u: string) => u.trim()) : [];
 
     return (
         <main className="min-h-screen bg-[#050505] text-white">
@@ -42,44 +43,32 @@ export default async function ShareActorPage({ params }: { params: Promise<{ id:
                     )}
                 </div>
 
-                {/* Portfolio */}
-                {portfolioItems.length > 0 && (
+                {/* Portfolio — Uploaded Media */}
+                {portfolio.length > 0 ? (
                     <section>
                         <h2 className="text-xl font-bold mb-6 text-center">Portfolio</h2>
-                        <div className="grid grid-cols-1 gap-4">
-                            {portfolioItems.map((url: string, i: number) => {
-                                const trimUrl = url.trim();
-                                const isYoutube = trimUrl.includes('youtube.com') || trimUrl.includes('youtu.be');
-                                const isVimeo = trimUrl.includes('vimeo.com');
-
-                                if (isYoutube || isVimeo) {
-                                    // Embed video
-                                    let embedUrl = trimUrl;
-                                    if (isYoutube) {
-                                        const videoId = trimUrl.match(/(?:v=|youtu\.be\/)([^&]+)/)?.[1];
-                                        embedUrl = `https://www.youtube.com/embed/${videoId}`;
-                                    }
-                                    return (
-                                        <div key={i} className="aspect-video rounded-xl overflow-hidden border border-white/10">
-                                            <iframe src={embedUrl} className="w-full h-full" allowFullScreen />
-                                        </div>
-                                    );
-                                }
-
-                                // Regular link
-                                return (
-                                    <a key={i} href={trimUrl} target="_blank" rel="noopener"
-                                        className="flex items-center gap-3 p-4 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 transition-colors group">
-                                        <ExternalLink size={18} className="text-violet-400 group-hover:scale-110 transition-transform" />
-                                        <span className="text-sm text-gray-300 group-hover:text-white truncate">{trimUrl}</span>
-                                    </a>
-                                );
-                            })}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {portfolio.map((item: any) => (
+                                <div key={item.id} className="rounded-xl overflow-hidden border border-white/10 bg-black">
+                                    {item.file_type === 'image' ? (
+                                        <img
+                                            src={item.url}
+                                            alt={item.file_name || 'Portfolio'}
+                                            className="w-full h-64 object-cover hover:scale-105 transition-transform duration-300"
+                                        />
+                                    ) : (
+                                        <video
+                                            src={item.url}
+                                            controls
+                                            className="w-full h-64 object-cover"
+                                            poster=""
+                                        />
+                                    )}
+                                </div>
+                            ))}
                         </div>
                     </section>
-                )}
-
-                {portfolioItems.length === 0 && (
+                ) : (
                     <div className="text-center py-12 text-gray-500">
                         <Users size={48} className="mx-auto mb-4 opacity-30" />
                         <p>No portfolio items available yet.</p>
