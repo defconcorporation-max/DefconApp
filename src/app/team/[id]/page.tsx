@@ -51,7 +51,7 @@ export default async function TeamMemberPage({ params }: { params: Promise<{ id:
                     {/* Contact Info */}
                     <div className="bg-[#0A0A0A] border border-[var(--border-subtle)] p-6 rounded-2xl">
                         <h3 className="font-bold mb-4 flex items-center gap-2"><Briefcase size={16} /> Profile Details</h3>
-                        <form action={updateTeamMember} className="space-y-4">
+                        <form action={updateTeamMember} key={`${member.id}-${member.color}`} className="space-y-4">
                             <input type="hidden" name="id" value={member.id} />
 
                             <div className="space-y-1">
