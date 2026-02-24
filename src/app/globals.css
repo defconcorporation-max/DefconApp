@@ -4,20 +4,30 @@
 
 :root {
   /* The Monolith Palette - Pale Night Edition */
-  --bg-root: #18181b; /* Zinc-900 - Significantly lighter than black */
-  --bg-surface: #27272a; /* Zinc-800 - distinct gray cards */
-  --bg-surface-hover: #313135; /* Custom mid-tone */
+  --bg-root: #18181b;
+  /* Zinc-900 - Significantly lighter than black */
+  --bg-surface: #27272a;
+  /* Zinc-800 - distinct gray cards */
+  --bg-surface-hover: #313135;
+  /* Custom mid-tone */
 
-  --border-subtle: #3f3f46; /* Zinc-700 - Higher contrast borders */
-  --border-focus: #52525b; /* Zinc-600 */
+  --border-subtle: #3f3f46;
+  /* Zinc-700 - Higher contrast borders */
+  --border-focus: #52525b;
+  /* Zinc-600 */
 
-  --text-primary: #fafafa; /* Zinc-50 - Bright White */
-  --text-secondary: #d4d4d8; /* Zinc-300 - High legibility secondary */
-  --text-tertiary: #a1a1aa; /* Zinc-400 - Readable tertiary */
+  --text-primary: #fafafa;
+  /* Zinc-50 - Bright White */
+  --text-secondary: #d4d4d8;
+  /* Zinc-300 - High legibility secondary */
+  --text-tertiary: #a1a1aa;
+  /* Zinc-400 - Readable tertiary */
 
   --accent-primary: #ffffff;
-  --accent-blue: #60a5fa; /* Lighter Blue */
-  --accent-violet: #a78bfa; /* Lighter Violet */
+  --accent-blue: #60a5fa;
+  /* Lighter Blue */
+  --accent-violet: #a78bfa;
+  /* Lighter Violet */
 }
 
 body {
@@ -29,18 +39,6 @@ body {
   /* Technical Font Features & Advance Ligatures */
 }
 
-/* Subtle Noise Texture */
-body::before {
-  content: "";
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.03'/%3E%3C/svg%3E");
-  pointer-events: none;
-  z-index: 9999;
-}
 
 /* Utilities */
 .pro-container {
@@ -50,20 +48,24 @@ body::before {
 }
 
 .pro-card {
-  background-color: rgba(39, 39, 42, 0.4); /* Zinc-800 transparent */
+  background-color: rgba(39, 39, 42, 0.4);
+  /* Zinc-800 transparent */
   backdrop-filter: blur(16px);
   border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 8px; /* Slightly softer corners for premium feel */
+  border-radius: 8px;
+  /* Slightly softer corners for premium feel */
   transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
   position: relative;
   overflow: hidden;
-  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.05), 0 4px 6px -1px rgba(0, 0, 0, 0.1); 
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.05), 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
 .pro-card:hover {
   background-color: rgba(39, 39, 42, 0.6);
-  border-color: rgba(139, 92, 246, 0.3); /* Violet glowing border */
-  box-shadow: 0 8px 24px -8px rgba(0, 0, 0, 0.5), 0 0 20px rgba(139, 92, 246, 0.1); /* Violet glow */
+  border-color: rgba(139, 92, 246, 0.3);
+  /* Violet glowing border */
+  box-shadow: 0 8px 24px -8px rgba(0, 0, 0, 0.5), 0 0 20px rgba(139, 92, 246, 0.1);
+  /* Violet glow */
   transform: translateY(-2px);
 }
 
@@ -71,12 +73,14 @@ body::before {
   background-color: rgba(39, 39, 42, 0.5);
   backdrop-filter: blur(16px);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  padding: 1.5rem; /* Bigger padding (p-6 equivalent) */
-  border-radius: 12px; /* Bigger radius */
+  padding: 1.5rem;
+  /* Bigger padding (p-6 equivalent) */
+  border-radius: 12px;
+  /* Bigger radius */
   position: relative;
   overflow: hidden;
   transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
-  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.1), 0 10px 15px -3px rgba(0, 0, 0, 0.2); 
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.1), 0 10px 15px -3px rgba(0, 0, 0, 0.2);
 }
 
 .pro-dashboard-card:hover {
@@ -197,6 +201,7 @@ h3 {
 /* Base tailwind layer overrides for animations */
 @layer utilities {
   .animate-in {
-    animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1); /* Smoother out-quad */
+    animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+    /* Smoother out-quad */
   }
 }
