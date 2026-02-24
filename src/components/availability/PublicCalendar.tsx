@@ -284,14 +284,6 @@ export default function PublicCalendar({ busyBlocks }: { busyBlocks: TimeBlock[]
                     </div>
                 )}
 
-                {/* Contact CTA */}
-                <div className="mt-12 text-center bg-white/5 border border-white/10 rounded-2xl p-8">
-                    <h2 className="text-xl font-bold mb-2">Want to book a session?</h2>
-                    <p className="text-gray-400 text-sm mb-4">Click any available green slot on the calendar or contact us directly.</p>
-                    <a href="mailto:contact@defconvisual.com" className="inline-flex px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-medium rounded-full transition-colors shadow-lg shadow-indigo-500/20">
-                        Email Us
-                    </a>
-                </div>
             </div>
 
             {/* Booking Modal */}
