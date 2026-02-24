@@ -58,7 +58,10 @@ export default async function RootLayout({
 
   return (
     <html lang="en">
-      <body className={`${inter.className} bg-[var(--bg-root)] text-[var(--text-primary)] flex`}>
+      <body className={`${inter.className} bg-[#09090b] text-[var(--text-primary)] flex overflow-x-hidden min-h-screen relative`}>
+        {/* Ambient Background Glows */}
+        <div className="fixed top-[-20%] left-[-10%] w-[50%] h-[50%] rounded-full bg-violet-900/20 blur-[120px] pointer-events-none z-0" />
+        <div className="fixed bottom-[-20%] right-[-10%] w-[50%] h-[50%] rounded-full bg-indigo-900/20 blur-[120px] pointer-events-none z-0" />
         <Toaster
           position="bottom-right"
           toastOptions={{
@@ -78,7 +81,7 @@ export default async function RootLayout({
         {!isPublic && <Sidebar userRole={userRole} />}
         {!isPublic && <CommandMenu />}
         {!isPublic && <GlobalQuickCreate isAdmin={isAdmin} clients={clients} agencies={agencies} />}
-        <div className={`flex-1 min-w-0 transition-all duration-200 ${!isPublic ? 'md:ml-64' : ''}`}>
+        <div className={`flex-1 min-w-0 transition-all duration-200 z-10 relative ${!isPublic ? 'md:ml-64' : ''}`}>
           <div className="animate-in fade-in duration-500 slide-in-from-bottom-2 h-full">
             {children}
           </div>

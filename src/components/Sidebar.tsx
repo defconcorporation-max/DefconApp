@@ -115,7 +115,7 @@ export default function Sidebar({ userRole = '' }: { userRole?: string }) {
             )}
 
             {/* Desktop Sidebar */}
-            <aside className="fixed left-0 top-0 bottom-0 w-64 bg-[var(--bg-root)]/70 backdrop-blur-xl border-r border-[var(--border-subtle)] z-40 hidden md:flex flex-col shadow-2xl shadow-black/50">
+            <aside className="fixed left-0 top-0 bottom-0 w-64 bg-[#09090b]/40 backdrop-blur-2xl border-r border-white/5 z-40 hidden md:flex flex-col shadow-[4px_0_24px_rgba(0,0,0,0.5)]">
                 <div className="p-6">
                     <div className="flex items-center gap-3 mb-8">
                         <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
