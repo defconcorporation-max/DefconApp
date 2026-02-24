@@ -2,8 +2,9 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Users, Briefcase, Video, CreditCard, Settings, Command, Layers, UserPlus, BookOpen, Building, Calendar, Shield, Activity } from 'lucide-react';
+import { Home, Users, Briefcase, Video, CreditCard, Settings, Command, Layers, UserPlus, BookOpen, Building, Calendar, Shield, Activity, LogOut } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { signOut } from 'next-auth/react';
 import BetaFeedbackWidget from './BetaFeedbackWidget';
 import NotificationBell from './NotificationBell';
 
@@ -114,6 +115,15 @@ export default function Sidebar({ userRole = '' }: { userRole?: string }) {
                                     })}
                                 </div>
                             )}
+                            <div className="mt-6 pt-4 border-t border-[var(--border-subtle)]">
+                                <button
+                                    onClick={() => signOut({ callbackUrl: '/login' })}
+                                    className="flex items-center gap-3 px-3 py-2 w-full rounded-md text-sm font-medium transition-all duration-200 text-red-400 hover:bg-red-500/10 border border-transparent hover:border-red-500/20"
+                                >
+                                    <LogOut className="w-4 h-4" />
+                                    Sign Out
+                                </button>
+                            </div>
                         </div>
                     </aside>
                 </div>
@@ -200,6 +210,13 @@ export default function Sidebar({ userRole = '' }: { userRole?: string }) {
                         <Command className="w-3 h-3" />
                         <span>Quick Search...</span>
                         <span className="ml-auto text-[10px] opacity-50">⌘K</span>
+                    </button>
+                    <button
+                        onClick={() => signOut({ callbackUrl: '/login' })}
+                        className="flex items-center gap-2 w-full px-3 py-2 mt-2 rounded-md bg-red-500/10 border border-red-500/20 text-xs text-red-400 hover:bg-red-500/20 hover:border-red-500/30 transition-colors text-left"
+                    >
+                        <LogOut className="w-3 h-3" />
+                        <span>Sign Out</span>
                     </button>
                 </div>
             </aside>
