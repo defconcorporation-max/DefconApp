@@ -139,6 +139,14 @@ export async function GET() {
         `);
         results.push('✓ actors table');
 
+        // Add profile_picture column (safe)
+        try {
+            await turso.execute('ALTER TABLE actors ADD COLUMN profile_picture TEXT');
+            results.push('✓ actors.profile_picture column added');
+        } catch {
+            results.push('· actors.profile_picture already exists');
+        }
+
         // ── Actor-Client assignments ──
         await turso.execute(`
             CREATE TABLE IF NOT EXISTS actor_clients (

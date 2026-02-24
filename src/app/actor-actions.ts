@@ -103,6 +103,16 @@ export async function deleteActor(id: number) {
     revalidatePath('/actors');
 }
 
+export async function updateActorProfilePicture(actorId: number, url: string) {
+    await db.execute({
+        sql: 'UPDATE actors SET profile_picture = ? WHERE id = ?',
+        args: [url, actorId]
+    });
+    revalidatePath('/actors');
+    revalidatePath(`/actors/${actorId}`);
+    revalidatePath(`/actors/${actorId}/share`);
+}
+
 // ── Client associations ──
 
 export async function getActorClients(actorId: number) {

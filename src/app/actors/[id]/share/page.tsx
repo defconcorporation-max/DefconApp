@@ -1,11 +1,11 @@
 import { getActor, getActorPortfolio } from '@/app/actor-actions';
-import { MapPin, Users, Image, Film } from 'lucide-react';
+import { MapPin, Users } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
 /**
  * Public shareable actor profile page.
- * Shows only the name, location, and uploaded portfolio — no private info.
+ * Shows only name, profile picture, location, and portfolio — no private info.
  */
 export default async function ShareActorPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
@@ -23,55 +23,66 @@ export default async function ShareActorPage({ params }: { params: Promise<{ id:
     return (
         <main className="min-h-screen bg-[#050505] text-white">
             {/* Minimal Header */}
-            <header className="bg-black/80 backdrop-blur-md border-b border-white/10 px-8 py-4 flex items-center gap-3">
-                <div className="w-8 h-8 bg-violet-600 rounded-lg flex items-center justify-center font-bold">D</div>
+            <header className="bg-black/80 backdrop-blur-md border-b border-white/10 px-6 py-3 flex items-center gap-3">
+                <div className="w-7 h-7 bg-violet-600 rounded-lg flex items-center justify-center font-bold text-sm">D</div>
                 <span className="font-bold tracking-wider text-sm">DEFCON VISUAL</span>
-                <span className="text-xs text-gray-500 ml-2">Actor Profile</span>
             </header>
 
-            <div className="max-w-3xl mx-auto p-8">
-                {/* Actor Card */}
-                <div className="text-center mb-12">
-                    <div className="w-24 h-24 rounded-full bg-violet-500/10 flex items-center justify-center text-violet-400 font-bold text-4xl mx-auto mb-4">
-                        {actor.name.charAt(0)}
-                    </div>
-                    <h1 className="text-3xl font-bold">{actor.name}</h1>
-                    {actor.location && (
-                        <div className="flex items-center justify-center gap-1 text-gray-400 mt-2">
-                            <MapPin size={16} /> {actor.location}
+            {/* Profile Header */}
+            <div className="max-w-lg mx-auto px-6 pt-10 pb-6 text-center border-b border-white/5">
+                {/* Profile Picture */}
+                <div className="w-28 h-28 rounded-full mx-auto mb-4 overflow-hidden border-2 border-white/10 shadow-2xl">
+                    {actor.profile_picture ? (
+                        <img src={actor.profile_picture} alt={actor.name} className="w-full h-full object-cover" />
+                    ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-violet-500/20 to-indigo-500/20 flex items-center justify-center text-violet-400 font-bold text-4xl">
+                            {actor.name.charAt(0)}
                         </div>
                     )}
                 </div>
 
-                {/* Portfolio — Uploaded Media */}
+                <h1 className="text-2xl font-bold">{actor.name}</h1>
+                {actor.location && (
+                    <div className="flex items-center justify-center gap-1 text-gray-400 mt-1.5 text-sm">
+                        <MapPin size={14} /> {actor.location}
+                    </div>
+                )}
+
+                {/* Stats */}
+                <div className="flex items-center justify-center gap-8 mt-6 text-sm">
+                    <div className="text-center">
+                        <div className="font-bold text-white text-lg">{portfolio.length}</div>
+                        <div className="text-gray-500 text-xs uppercase tracking-wider">Posts</div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Portfolio Grid — Instagram style */}
+            <div className="max-w-lg mx-auto">
                 {portfolio.length > 0 ? (
-                    <section>
-                        <h2 className="text-xl font-bold mb-6 text-center">Portfolio</h2>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {portfolio.map((item: any) => (
-                                <div key={item.id} className="rounded-xl overflow-hidden border border-white/10 bg-black">
-                                    {item.file_type === 'image' ? (
-                                        <img
-                                            src={item.url}
-                                            alt={item.file_name || 'Portfolio'}
-                                            className="w-full h-64 object-cover hover:scale-105 transition-transform duration-300"
-                                        />
-                                    ) : (
-                                        <video
-                                            src={item.url}
-                                            controls
-                                            className="w-full h-64 object-cover"
-                                            poster=""
-                                        />
-                                    )}
-                                </div>
-                            ))}
-                        </div>
-                    </section>
+                    <div className="grid grid-cols-3 gap-0.5">
+                        {portfolio.map((item: any) => (
+                            <div key={item.id} className="aspect-square overflow-hidden bg-[#111] relative group">
+                                {item.file_type === 'image' ? (
+                                    <img
+                                        src={item.url}
+                                        alt={item.file_name || 'Portfolio'}
+                                        className="w-full h-full object-cover group-hover:opacity-80 transition-opacity"
+                                    />
+                                ) : (
+                                    <video
+                                        src={item.url}
+                                        className="w-full h-full object-cover"
+                                        controls
+                                    />
+                                )}
+                            </div>
+                        ))}
+                    </div>
                 ) : (
-                    <div className="text-center py-12 text-gray-500">
-                        <Users size={48} className="mx-auto mb-4 opacity-30" />
-                        <p>No portfolio items available yet.</p>
+                    <div className="text-center py-16 text-gray-500">
+                        <Users size={48} className="mx-auto mb-4 opacity-20" />
+                        <p className="text-sm">No portfolio items yet.</p>
                     </div>
                 )}
             </div>
