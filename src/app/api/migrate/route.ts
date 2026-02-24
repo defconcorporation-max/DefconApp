@@ -173,6 +173,23 @@ export async function GET() {
         `);
         results.push('✓ actor_portfolio table');
 
+        // ── Public Shoot Requests ──
+        await turso.execute(`
+            CREATE TABLE IF NOT EXISTS public_shoot_requests (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                company_name TEXT NOT NULL,
+                email TEXT NOT NULL,
+                project_type TEXT NOT NULL,
+                shoot_date TEXT NOT NULL,
+                start_time TEXT NOT NULL,
+                end_time TEXT NOT NULL,
+                additional_info TEXT,
+                status TEXT DEFAULT 'Pending',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+        results.push('✓ public_shoot_requests table');
+
         // ── Add agency_id to clients (safe) ──
         try {
             await turso.execute('ALTER TABLE clients ADD COLUMN agency_id INTEGER');

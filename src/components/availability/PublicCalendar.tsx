@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
+import PublicBookingModal from './PublicBookingModal';
+import { Toaster, toast } from 'react-hot-toast';
 
 interface TimeBlock {
     date: string; // YYYY-MM-DD
@@ -33,6 +35,9 @@ export default function PublicCalendar({ busyBlocks }: { busyBlocks: TimeBlock[]
     const [currentDate, setCurrentDate] = useState(new Date(now.getFullYear(), now.getMonth(), 1));
     const [view, setView] = useState<'month' | 'week'>('month');
     const [selectedWeekStart, setSelectedWeekStart] = useState<Date | null>(null);
+
+    // Modal state
+    const [bookingSlot, setBookingSlot] = useState<{ date: Date, startHour: number } | null>(null);
 
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
@@ -193,19 +198,19 @@ export default function PublicCalendar({ busyBlocks }: { busyBlocks: TimeBlock[]
                                         onClick={() => status !== 'past' && handleDayClick(day)}
                                         disabled={status === 'past'}
                                         className={`h-20 border-b border-r border-white/5 p-2 text-left transition-colors relative ${status === 'past' ? 'opacity-30 cursor-default' :
-                                                'cursor-pointer hover:bg-white/[0.08]'
+                                            'cursor-pointer hover:bg-white/[0.08]'
                                             }`}
                                     >
                                         <span className={`text-sm font-medium inline-flex items-center justify-center ${isToday ? 'w-7 h-7 rounded-full bg-indigo-600 text-white' :
-                                                status === 'past' ? 'text-gray-600' : 'text-white'
+                                            status === 'past' ? 'text-gray-600' : 'text-white'
                                             }`}>
                                             {day}
                                         </span>
                                         {status !== 'past' && (
                                             <div className="absolute bottom-2 left-2 right-2">
                                                 <div className={`h-1.5 rounded-full ${status === 'full' ? 'bg-red-500/60' :
-                                                        status === 'partial' ? 'bg-yellow-500/60' :
-                                                            'bg-green-500/50'
+                                                    status === 'partial' ? 'bg-yellow-500/60' :
+                                                        'bg-green-500/50'
                                                     }`} />
                                             </div>
                                         )}
@@ -255,16 +260,23 @@ export default function PublicCalendar({ busyBlocks }: { busyBlocks: TimeBlock[]
                                         const isPast = day < new Date(now.getFullYear(), now.getMonth(), now.getDate());
                                         const isPastHour = day.toDateString() === now.toDateString() && hour < now.getHours();
 
-                                        let cellClass = 'h-10 border-b border-r border-white/5 transition-colors ';
+                                        let cellClass = 'h-10 w-full border-b border-r border-white/5 transition-colors focus:outline-none ';
                                         if (isPast || isPastHour) {
-                                            cellClass += 'bg-white/[0.02]'; // Past
+                                            cellClass += 'bg-white/[0.02] cursor-default'; // Past
                                         } else if (isBusy) {
-                                            cellClass += 'bg-red-500/15'; // Booked
+                                            cellClass += 'bg-red-500/15 cursor-default'; // Booked
                                         } else {
-                                            cellClass += 'bg-green-500/15'; // Default Available
+                                            cellClass += 'bg-green-500/15 cursor-pointer hover:bg-green-500/30'; // Default Available
                                         }
 
-                                        return <div key={di} className={cellClass} />;
+                                        return (
+                                            <button
+                                                key={di}
+                                                disabled={isPast || isPastHour || !!isBusy}
+                                                onClick={() => setBookingSlot({ date: day, startHour: hour })}
+                                                className={cellClass}
+                                            />
+                                        );
                                     })}
                                 </div>
                             ))}
@@ -275,12 +287,26 @@ export default function PublicCalendar({ busyBlocks }: { busyBlocks: TimeBlock[]
                 {/* Contact CTA */}
                 <div className="mt-12 text-center bg-white/5 border border-white/10 rounded-2xl p-8">
                     <h2 className="text-xl font-bold mb-2">Want to book a session?</h2>
-                    <p className="text-gray-400 text-sm mb-4">Contact us to schedule your next shoot.</p>
+                    <p className="text-gray-400 text-sm mb-4">Click any available green slot on the calendar or contact us directly.</p>
                     <a href="mailto:contact@defconvisual.com" className="inline-flex px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-medium rounded-full transition-colors shadow-lg shadow-indigo-500/20">
-                        Get in Touch
+                        Email Us
                     </a>
                 </div>
             </div>
+
+            {/* Booking Modal */}
+            {bookingSlot && (
+                <PublicBookingModal
+                    date={bookingSlot.date}
+                    startHour={bookingSlot.startHour}
+                    onClose={() => setBookingSlot(null)}
+                    onSuccess={() => {
+                        setBookingSlot(null);
+                        toast.success('Booking request submitted! We will contact you shortly.', { style: { background: '#333', color: '#fff' } });
+                    }}
+                />
+            )}
+            <Toaster position="bottom-right" />
         </main>
     );
 }
