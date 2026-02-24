@@ -47,6 +47,9 @@ export default async function ProjectDetailsPage({ params }: { params: Promise<{
     const completedTasks = tasks.filter(t => t.is_completed).length;
     const taskProgress = totalTasks === 0 ? 0 : Math.round((completedTasks / totalTasks) * 100);
 
+    // Aggregate all videos for Post Production module
+    const allVideos = shoots.flatMap(shoot => (videosMap[shoot.id] || []).map(v => ({ ...v, shoot_title: shoot.title, shoot_id: shoot.id })));
+
     return (
         <main className="min-h-screen p-8 bg-[var(--bg-root)] text-white pb-20">
             <header className="mb-8">
@@ -140,6 +143,46 @@ export default async function ProjectDetailsPage({ params }: { params: Promise<{
                         {/* Task Manager */}
                         <div className="pro-dashboard-card p-6 rounded-2xl flex flex-col min-h-[400px]">
                             <ProjectTaskManager projectId={project.id} tasks={tasks} stages={stages} teamMembers={teamMembers} />
+                        </div>
+                    </div>
+
+                    {/* Bottom Row: Post Production Tracking */}
+                    <div className="pro-dashboard-card p-6 rounded-2xl flex flex-col">
+                        <h3 className="text-sm font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-6 flex items-center gap-2">
+                            <Layers size={16} className="text-pink-400" /> Post-Production Status
+                        </h3>
+                        <div className="pr-2">
+                            {allVideos.length === 0 ? (
+                                <div className="text-sm text-[var(--text-tertiary)] text-center py-10 bg-[#0A0A0A] rounded-xl border border-[var(--border-subtle)]">
+                                    No videos found across this project's shoots.
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {allVideos.map(video => (
+                                        <Link key={video.id} href={`/shoots/${video.shoot_id}`} className="bg-[#0A0A0A] border border-[var(--border-subtle)] rounded-xl p-4 hover:border-violet-500/50 transition-colors group">
+                                            <div className="flex justify-between items-start mb-2">
+                                                <div>
+                                                    <h4 className="font-bold text-white text-sm group-hover:text-violet-300 transition-colors">{video.title || 'Untitled Video'}</h4>
+                                                    <p className="text-xs text-[var(--text-tertiary)] mt-1">{video.shoot_title}</p>
+                                                </div>
+                                                <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${video.edit_status === 'Ready' ? 'bg-emerald-500/10 text-emerald-400' :
+                                                        video.edit_status === 'Review' ? 'bg-yellow-500/10 text-yellow-400' :
+                                                            video.edit_status === 'Revisions' ? 'bg-red-500/10 text-red-400' :
+                                                                video.edit_status === 'Final' ? 'bg-indigo-500/10 text-indigo-400' :
+                                                                    'bg-white/10 text-[var(--text-tertiary)]'
+                                                    }`}>
+                                                    {video.edit_status || 'Draft'}
+                                                </span>
+                                            </div>
+                                            {video.notes && (
+                                                <p className="text-xs text-[var(--text-secondary)] line-clamp-2 mt-3 pt-3 border-t border-[var(--border-subtle)]">
+                                                    {video.notes}
+                                                </p>
+                                            )}
+                                        </Link>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
