@@ -164,128 +164,125 @@ export default function DashboardCalendar({ shoots, clients = [] }: CalendarProp
         }
     };
 
-    // Modal Component
-    const Modal = () => (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="bg-[#0A0A0A] border border-[var(--border-subtle)] rounded-lg w-full max-w-md shadow-2xl animate-in fade-in zoom-in-95 duration-200">
-                <div className="p-4 border-b border-[var(--border-subtle)] flex justify-between items-center">
-                    <h3 className="text-white font-medium">{editingShoot ? 'Edit Shoot' : 'Schedule Shoot'}</h3>
-                    <button onClick={() => setIsModalOpen(false)} className="text-[var(--text-tertiary)] hover:text-white">✕</button>
-                </div>
-                <form action={handleFormSubmit} className="p-4 space-y-4">
-                    {editingShoot && <input type="hidden" name="id" value={editingShoot.id} />}
-                    <div className="space-y-1">
-                        <label className="text-xs text-[var(--text-secondary)]">Client</label>
-                        <select
-                            name="clientId"
-                            defaultValue={editingShoot?.client_id}
-                            onChange={(e) => {
-                                // Fetch projects for this client
-                                const cid = Number(e.target.value);
-                                getProjects(cid).then(projs => setAvailableProjects(projs));
-                            }}
-                            className="w-full bg-[var(--bg-root)] border border-[var(--border-subtle)] text-white text-sm rounded px-2 py-2 focus:border-[var(--text-secondary)] outline-none"
-                            required
-                        >
-                            <option value="" className="bg-[#111] text-white">-- Select Client --</option>
-                            {clients.map(c => (
-                                <option key={c.id} value={c.id} className="bg-[#111] text-white">{c.company_name || c.name}</option>
-                            ))}
-                        </select>
-                    </div>
-
-                    {/* Project Select - New */}
-                    <div className="space-y-1">
-                        <label className="text-xs text-[var(--text-secondary)]">Project (Optional)</label>
-                        <select
-                            name="projectId"
-                            defaultValue={editingShoot?.project_id || ''}
-                            className="w-full bg-[var(--bg-root)] border border-[var(--border-subtle)] text-white text-sm rounded px-2 py-2 focus:border-[var(--text-secondary)] outline-none"
-                        >
-                            <option value="" className="bg-[#111] text-white">-- No Project --</option>
-                            {availableProjects.map(p => (
-                                <option key={p.id} value={p.id} className="bg-[#111] text-white">{p.title}</option>
-                            ))}
-                        </select>
-                    </div>
-
-                    <div className="space-y-1">
-                        <label className="text-xs text-[var(--text-secondary)]">Shoot Title</label>
-                        <input name="title" type="text" defaultValue={editingShoot?.title} placeholder="e.g. Brand Video Shoot" className="pro-input w-full" required />
-                    </div>
-
-                    {/* Color Picker */}
-                    <div className="space-y-2">
-                        <label className="text-xs text-[var(--text-secondary)]">Event Color</label>
-                        <div className="flex gap-3">
-                            {COLORS.map(c => (
-                                <label key={c.value} className="cursor-pointer relative">
-                                    <input
-                                        type="radio"
-                                        name="color"
-                                        value={c.value}
-                                        checked={selectedColor === c.value}
-                                        onChange={() => setSelectedColor(c.value)}
-                                        className="sr-only"
-                                    />
-                                    <div className={`w-6 h-6 rounded-full ${c.dot} ${selectedColor === c.value ? 'ring-2 ring-white ring-offset-2 ring-offset-black' : 'opacity-70 hover:opacity-100'}`}></div>
-                                </label>
-                            ))}
-                        </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-1">
-                            <label className="text-xs text-[var(--text-secondary)]">Date</label>
-                            <input name="date" type="date" defaultValue={selectedDate} className="pro-input w-full" required />
-                        </div>
-                        <div className="space-y-1">
-                            <label className="text-xs text-[var(--text-secondary)]">Start Time</label>
-                            <select
-                                name="startTime"
-                                defaultValue={editingShoot?.start_time || selectedTime}
-                                className="w-full bg-[var(--bg-root)] border border-[var(--border-subtle)] text-white text-sm rounded px-2 py-2 focus:border-[var(--text-secondary)] outline-none"
-                            >
-                                {timeSlots.map(time => (
-                                    <option key={time} value={time} className="bg-[#111] text-white">{time}</option>
-                                ))}
-                            </select>
-                        </div>
-                    </div>
-                    <div className="space-y-1">
-                        <label className="text-xs text-[var(--text-secondary)]">End Time (Optional)</label>
-                        <select
-                            name="endTime"
-                            defaultValue={editingShoot?.end_time || ''}
-                            className="w-full bg-[var(--bg-root)] border border-[var(--border-subtle)] text-white text-sm rounded px-2 py-2 focus:border-[var(--text-secondary)] outline-none"
-                        >
-                            <option value="" className="bg-[#111] text-white">-- No End Time --</option>
-                            {timeSlots.map(time => (
-                                <option key={time} value={time} className="bg-[#111] text-white">{time}</option>
-                            ))}
-                        </select>
-                    </div>
-                    <div className="pt-2 flex justify-between items-center gap-2">
-                        {editingShoot ? (
-                            <button type="button" onClick={handleDelete} className="px-3 py-1.5 text-sm text-red-500 hover:text-red-400 hover:bg-red-500/10 rounded transition-colors">Delete</button>
-                        ) : (
-                            <div></div>
-                        )}
-                        <div className="flex gap-2">
-                            <button type="button" onClick={() => setIsModalOpen(false)} className="px-3 py-1.5 text-sm text-[var(--text-secondary)] hover:text-white">Cancel</button>
-                            <button type="submit" className="pro-button text-sm px-4 py-1.5 bg-white text-black hover:bg-gray-200">
-                                {editingShoot ? 'Save Changes' : 'Schedule'}
-                            </button>
-                        </div>
-                    </div>
-                </form>
-            </div>
-        </div>
-    );
-
     return (
         <section className={`mb-12 transition-all duration-300 relative ${isCollapsed ? 'mb-8' : ''}`}>
-            {isModalOpen && <Modal />}
+            {isModalOpen && (
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                    <div className="bg-[#0A0A0A] border border-[var(--border-subtle)] rounded-lg w-full max-w-md shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+                        <div className="p-4 border-b border-[var(--border-subtle)] flex justify-between items-center">
+                            <h3 className="text-white font-medium">{editingShoot ? 'Edit Shoot' : 'Schedule Shoot'}</h3>
+                            <button onClick={() => setIsModalOpen(false)} className="text-[var(--text-tertiary)] hover:text-white">✕</button>
+                        </div>
+                        <form action={handleFormSubmit} className="p-4 space-y-4">
+                            {editingShoot && <input type="hidden" name="id" value={editingShoot.id} />}
+                            <div className="space-y-1">
+                                <label className="text-xs text-[var(--text-secondary)]">Client</label>
+                                <select
+                                    name="clientId"
+                                    defaultValue={editingShoot?.client_id}
+                                    onChange={(e) => {
+                                        // Fetch projects for this client
+                                        const cid = Number(e.target.value);
+                                        getProjects(cid).then(projs => setAvailableProjects(projs));
+                                    }}
+                                    className="w-full bg-[var(--bg-root)] border border-[var(--border-subtle)] text-white text-sm rounded px-2 py-2 focus:border-[var(--text-secondary)] outline-none"
+                                    required
+                                >
+                                    <option value="" className="bg-[#111] text-white">-- Select Client --</option>
+                                    {clients.map(c => (
+                                        <option key={c.id} value={c.id} className="bg-[#111] text-white">{c.company_name || c.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            {/* Project Select - New */}
+                            <div className="space-y-1">
+                                <label className="text-xs text-[var(--text-secondary)]">Project (Optional)</label>
+                                <select
+                                    name="projectId"
+                                    defaultValue={editingShoot?.project_id || ''}
+                                    className="w-full bg-[var(--bg-root)] border border-[var(--border-subtle)] text-white text-sm rounded px-2 py-2 focus:border-[var(--text-secondary)] outline-none"
+                                >
+                                    <option value="" className="bg-[#111] text-white">-- No Project --</option>
+                                    {availableProjects.map(p => (
+                                        <option key={p.id} value={p.id} className="bg-[#111] text-white">{p.title}</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div className="space-y-1">
+                                <label className="text-xs text-[var(--text-secondary)]">Shoot Title</label>
+                                <input name="title" type="text" defaultValue={editingShoot?.title} placeholder="e.g. Brand Video Shoot" className="pro-input w-full" required />
+                            </div>
+
+                            {/* Color Picker */}
+                            <div className="space-y-2">
+                                <label className="text-xs text-[var(--text-secondary)]">Event Color</label>
+                                <div className="flex gap-3">
+                                    {COLORS.map(c => (
+                                        <label key={c.value} className="cursor-pointer relative">
+                                            <input
+                                                type="radio"
+                                                name="color"
+                                                value={c.value}
+                                                checked={selectedColor === c.value}
+                                                onChange={() => setSelectedColor(c.value)}
+                                                className="sr-only"
+                                            />
+                                            <div className={`w-6 h-6 rounded-full ${c.dot} ${selectedColor === c.value ? 'ring-2 ring-white ring-offset-2 ring-offset-black' : 'opacity-70 hover:opacity-100'}`}></div>
+                                        </label>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-1">
+                                    <label className="text-xs text-[var(--text-secondary)]">Date</label>
+                                    <input name="date" type="date" defaultValue={selectedDate} className="pro-input w-full" required />
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-xs text-[var(--text-secondary)]">Start Time</label>
+                                    <select
+                                        name="startTime"
+                                        defaultValue={editingShoot?.start_time || selectedTime}
+                                        className="w-full bg-[var(--bg-root)] border border-[var(--border-subtle)] text-white text-sm rounded px-2 py-2 focus:border-[var(--text-secondary)] outline-none"
+                                    >
+                                        {timeSlots.map(time => (
+                                            <option key={time} value={time} className="bg-[#111] text-white">{time}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+                            <div className="space-y-1">
+                                <label className="text-xs text-[var(--text-secondary)]">End Time (Optional)</label>
+                                <select
+                                    name="endTime"
+                                    defaultValue={editingShoot?.end_time || ''}
+                                    className="w-full bg-[var(--bg-root)] border border-[var(--border-subtle)] text-white text-sm rounded px-2 py-2 focus:border-[var(--text-secondary)] outline-none"
+                                >
+                                    <option value="" className="bg-[#111] text-white">-- No End Time --</option>
+                                    {timeSlots.map(time => (
+                                        <option key={time} value={time} className="bg-[#111] text-white">{time}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="pt-2 flex justify-between items-center gap-2">
+                                {editingShoot ? (
+                                    <button type="button" onClick={handleDelete} className="px-3 py-1.5 text-sm text-red-500 hover:text-red-400 hover:bg-red-500/10 rounded transition-colors">Delete</button>
+                                ) : (
+                                    <div></div>
+                                )}
+                                <div className="flex gap-2">
+                                    <button type="button" onClick={() => setIsModalOpen(false)} className="px-3 py-1.5 text-sm text-[var(--text-secondary)] hover:text-white">Cancel</button>
+                                    <button type="submit" className="pro-button text-sm px-4 py-1.5 bg-white text-black hover:bg-gray-200">
+                                        {editingShoot ? 'Save Changes' : 'Schedule'}
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
 
             <div className="flex justify-between items-center mb-6">
                 <div className="flex items-center gap-4">
