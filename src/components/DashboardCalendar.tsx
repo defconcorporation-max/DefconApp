@@ -187,9 +187,9 @@ export default function DashboardCalendar({ shoots, clients = [] }: CalendarProp
                             className="w-full bg-[var(--bg-root)] border border-[var(--border-subtle)] text-white text-sm rounded px-2 py-2 focus:border-[var(--text-secondary)] outline-none"
                             required
                         >
-                            <option value="">-- Select Client --</option>
+                            <option value="" className="bg-[#111] text-white">-- Select Client --</option>
                             {clients.map(c => (
-                                <option key={c.id} value={c.id}>{c.company_name || c.name}</option>
+                                <option key={c.id} value={c.id} className="bg-[#111] text-white">{c.company_name || c.name}</option>
                             ))}
                         </select>
                     </div>
@@ -202,9 +202,9 @@ export default function DashboardCalendar({ shoots, clients = [] }: CalendarProp
                             defaultValue={editingShoot?.project_id || ''}
                             className="w-full bg-[var(--bg-root)] border border-[var(--border-subtle)] text-white text-sm rounded px-2 py-2 focus:border-[var(--text-secondary)] outline-none"
                         >
-                            <option value="">-- No Project --</option>
+                            <option value="" className="bg-[#111] text-white">-- No Project --</option>
                             {availableProjects.map(p => (
-                                <option key={p.id} value={p.id}>{p.title}</option>
+                                <option key={p.id} value={p.id} className="bg-[#111] text-white">{p.title}</option>
                             ))}
                         </select>
                     </div>
@@ -247,7 +247,7 @@ export default function DashboardCalendar({ shoots, clients = [] }: CalendarProp
                                 className="w-full bg-[var(--bg-root)] border border-[var(--border-subtle)] text-white text-sm rounded px-2 py-2 focus:border-[var(--text-secondary)] outline-none"
                             >
                                 {timeSlots.map(time => (
-                                    <option key={time} value={time}>{time}</option>
+                                    <option key={time} value={time} className="bg-[#111] text-white">{time}</option>
                                 ))}
                             </select>
                         </div>
@@ -259,9 +259,9 @@ export default function DashboardCalendar({ shoots, clients = [] }: CalendarProp
                             defaultValue={editingShoot?.end_time || ''}
                             className="w-full bg-[var(--bg-root)] border border-[var(--border-subtle)] text-white text-sm rounded px-2 py-2 focus:border-[var(--text-secondary)] outline-none"
                         >
-                            <option value="">-- No End Time --</option>
+                            <option value="" className="bg-[#111] text-white">-- No End Time --</option>
                             {timeSlots.map(time => (
-                                <option key={time} value={time}>{time}</option>
+                                <option key={time} value={time} className="bg-[#111] text-white">{time}</option>
                             ))}
                         </select>
                     </div>
