@@ -1356,8 +1356,13 @@ export async function updatePostProdStatus(id: number, status: string) {
 }
 
 export async function getSettings() {
-    const { rows } = await db.execute('SELECT * FROM settings WHERE id = 1');
-    return (rows[0] as unknown as { id: number, tax_tps_rate: number, tax_tvq_rate: number });
+    try {
+        const { rows } = await db.execute('SELECT * FROM settings WHERE id = 1');
+        return (rows[0] as unknown as { id: number, tax_tps_rate: number, tax_tvq_rate: number });
+    } catch (e) {
+        console.error("Failed to fetch settings:", e);
+        return { id: 1, tax_tps_rate: 5.0, tax_tvq_rate: 9.975 };
+    }
 }
 
 export async function updateSettings(formData: FormData) {
@@ -2253,50 +2258,66 @@ export async function getShootVolumeData() {
     const session = await auth();
     if (!session || session.user?.role !== 'Admin') throw new Error("Unauthorized");
 
-    // Get last 12 months shoots
-    const query = `
-        SELECT 
-            strftime('%Y-%m', shoot_date) as month,
-            COUNT(id) as count
-        FROM shoots
-        WHERE shoot_date >= date('now', '-12 months')
-        GROUP BY month
-        ORDER BY month ASC
-    `;
-    const result = await db.execute(query);
-    return result.rows as unknown as { month: string, count: number }[];
+    try {
+        // Get last 12 months shoots
+        const query = `
+            SELECT 
+                strftime('%Y-%m', shoot_date) as month,
+                COUNT(id) as count
+            FROM shoots
+            WHERE shoot_date >= date('now', '-12 months')
+            GROUP BY month
+            ORDER BY month ASC
+        `;
+        const result = await db.execute(query);
+        return result.rows as unknown as { month: string, count: number }[];
+    } catch (e) {
+        console.error("Failed to fetch shoot volume data:", e);
+        return [];
+    }
 }
 
 export async function getProjectOriginData() {
     const session = await auth();
     if (!session || session.user?.role !== 'Admin') throw new Error("Unauthorized");
 
-    const query = `
-        SELECT 
-            CASE WHEN agency_id IS NULL THEN 'Direct' ELSE a.name END as name,
-            COUNT(p.id) as value
-        FROM projects p
-        LEFT JOIN agencies a ON p.agency_id = a.id
-        GROUP BY name
-        ORDER BY value DESC
-    `;
-    const result = await db.execute(query);
-    return result.rows as unknown as { name: string, value: number }[];
+    try {
+        const query = `
+            SELECT 
+                CASE WHEN c.agency_id IS NULL THEN 'Direct' ELSE a.name END as name,
+                COUNT(p.id) as value
+            FROM projects p
+            JOIN clients c ON p.client_id = c.id
+            LEFT JOIN agencies a ON c.agency_id = a.id
+            GROUP BY 1
+            ORDER BY value DESC
+        `;
+        const result = await db.execute(query);
+        return result.rows as unknown as { name: string, value: number }[];
+    } catch (e) {
+        console.error("Failed to fetch project origin data:", e);
+        return [];
+    }
 }
 
 export async function getProjectCompletionData() {
     const session = await auth();
     if (!session || session.user?.role !== 'Admin') throw new Error("Unauthorized");
 
-    const query = `
-        SELECT 
-            status as name,
-            COUNT(id) as value
-        FROM projects
-        GROUP BY name
-    `;
-    const result = await db.execute(query);
-    return result.rows as unknown as { name: string, value: number }[];
+    try {
+        const query = `
+            SELECT 
+                status as name,
+                COUNT(id) as value
+            FROM projects
+            GROUP BY name
+        `;
+        const result = await db.execute(query);
+        return result.rows as unknown as { name: string, value: number }[];
+    } catch (e) {
+        console.error("Failed to fetch project completion data:", e);
+        return [];
+    }
 }
 
 // --- PUBLIC BOOKING & NOTIFICATIONS ---
