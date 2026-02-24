@@ -3,8 +3,7 @@ import { getPostProdTemplates } from '@/app/post-prod-actions';
 import SettingsForm from '@/components/SettingsForm';
 import TaskStageManager from '@/components/TaskStageManager';
 import WorkflowManager from '@/components/settings/WorkflowManager';
-import nextDynamic from 'next/dynamic';
-const SalesPlaybookButton = nextDynamic(() => import('@/components/settings/SalesPlaybookButton'), { ssr: false });
+import SalesPlaybookWrapper from '@/components/settings/SalesPlaybookWrapper';
 import Link from 'next/link';
 import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
@@ -41,7 +40,7 @@ export default async function Page() {
                             <h3 className="text-lg font-bold text-white mb-2 group-hover:text-violet-400">Agencies</h3>
                             <p className="text-sm text-[var(--text-secondary)]">Manage client agencies and their color codes.</p>
                         </Link>
-                        <SalesPlaybookButton />
+                        <SalesPlaybookWrapper />
                     </div>
 
                     <WorkflowManager templates={templates} />
