@@ -5,10 +5,9 @@ export const dynamic = 'force-dynamic';
 
 export async function POST(request: Request) {
     try {
-        // Check if Blob token is configured
         if (!process.env.BLOB_READ_WRITE_TOKEN) {
             return NextResponse.json({
-                error: 'BLOB_READ_WRITE_TOKEN is not configured. Go to Vercel Dashboard → Storage → Create Blob Store to set it up.',
+                error: 'BLOB_READ_WRITE_TOKEN is not configured. Go to Vercel Dashboard → Storage → Create Blob Store.',
                 success: false
             }, { status: 500 });
         }
@@ -21,22 +20,30 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'No file provided', success: false }, { status: 400 });
         }
 
-        // Validate file size (max 10MB)
         if (file.size > 10 * 1024 * 1024) {
             return NextResponse.json({ error: 'File too large (max 10MB)', success: false }, { status: 400 });
         }
 
-        // Upload to Vercel Blob
-        const blob = await put(`${folder}/${Date.now()}-${file.name}`, file, {
-            access: 'public',
-        });
+        // Try public access first, fall back to no access specification
+        let blob;
+        try {
+            blob = await put(`${folder}/${Date.now()}-${file.name}`, file, {
+                access: 'public',
+            });
+        } catch (e: any) {
+            if (e?.message?.includes('private') || e?.message?.includes('public access')) {
+                // Store is private — upload without specifying access
+                blob = await put(`${folder}/${Date.now()}-${file.name}`, file, {});
+            } else {
+                throw e;
+            }
+        }
 
         return NextResponse.json({ url: blob.url, success: true });
     } catch (error: any) {
         console.error('Upload error:', error);
         const message = error?.message || String(error);
 
-        // Provide helpful error messages
         if (message.includes('BLOB_READ_WRITE_TOKEN') || message.includes('token')) {
             return NextResponse.json({
                 error: 'Vercel Blob is not configured. Go to Vercel Dashboard → Storage → Create Blob Store.',
