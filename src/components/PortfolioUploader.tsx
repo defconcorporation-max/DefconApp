@@ -52,9 +52,10 @@ export function ProfilePictureUploader({ actorId, currentPicture, actorName }: {
             setPicture(result.url);
             toast.success('Profile picture updated');
             router.refresh();
-        } catch (err) {
-            toast.error('Upload failed');
-            setError('Upload failed. Check your Vercel Blob configuration.');
+        } catch (err: any) {
+            const msg = err?.message || String(err);
+            toast.error(msg);
+            setError(msg);
         } finally {
             setUploading(false);
         }
@@ -131,9 +132,10 @@ export default function PortfolioUploader({ actorId, portfolio: initialPortfolio
             }
             if (!error) toast.success('Upload complete');
             router.refresh();
-        } catch (err) {
-            toast.error('Upload failed');
-            setError('Upload failed. Check your Vercel Blob configuration.');
+        } catch (err: any) {
+            const msg = err?.message || String(err);
+            toast.error(msg);
+            setError(msg);
         } finally {
             setUploading(false);
         }
@@ -159,8 +161,8 @@ export default function PortfolioUploader({ actorId, portfolio: initialPortfolio
             {/* Upload Button */}
             <div
                 className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all mb-6 ${dragOver
-                        ? 'border-violet-500 bg-violet-500/10'
-                        : 'border-[var(--border-subtle)] hover:border-violet-500/40 hover:bg-white/5'
+                    ? 'border-violet-500 bg-violet-500/10'
+                    : 'border-[var(--border-subtle)] hover:border-violet-500/40 hover:bg-white/5'
                     }`}
                 onClick={() => fileInputRef.current?.click()}
                 onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
