@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react';
 import { updateClientStatus, savePipelineStage, reorderPipelineStages, deletePipelineStage } from '@/app/actions';
 import Link from 'next/link';
 import { Client, PipelineStage } from '@/types';
-import { GripVertical, Plus, Trash2, Edit2, Check, X, Settings2 } from 'lucide-react';
+import { GripVertical, Plus, Trash2, Edit2, Check, X, Settings2, ChevronDown } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 
 export default function ClientKanban({ initialClients, initialStages, readOnly = false }: { initialClients: Client[], initialStages: PipelineStage[], readOnly?: boolean }) {
     const [clients, setClients] = useState<Client[]>(initialClients);
@@ -38,6 +39,7 @@ export default function ClientKanban({ initialClients, initialStages, readOnly =
         e.preventDefault();
         if (draggedClientId === null) return;
 
+        const client = clients.find(c => c.id === draggedClientId);
         const updatedClients = clients.map(client => {
             if (client.id === draggedClientId) {
                 return { ...client, status: newStatus };
@@ -48,6 +50,18 @@ export default function ClientKanban({ initialClients, initialStages, readOnly =
         setClients(updatedClients); // Optimistic update
         await updateClientStatus(draggedClientId, newStatus);
         setDraggedClientId(null);
+        const stageName = stages.find(s => s.value === newStatus)?.label || newStatus;
+        toast.success(`Moved ${client?.company_name || 'client'} → ${stageName}`);
+    };
+
+    // Mobile stage change (dropdown for touch devices)
+    const handleMobileStageChange = async (clientId: number, newStatus: string) => {
+        const client = clients.find(c => c.id === clientId);
+        const updatedClients = clients.map(c => c.id === clientId ? { ...c, status: newStatus } : c);
+        setClients(updatedClients);
+        await updateClientStatus(clientId, newStatus);
+        const stageName = stages.find(s => s.value === newStatus)?.label || newStatus;
+        toast.success(`Moved ${client?.company_name || 'client'} → ${stageName}`);
     };
 
     // Pipeline Editing
@@ -70,6 +84,7 @@ export default function ClientKanban({ initialClients, initialStages, readOnly =
             value: newStage.value,
             color: newStage.color
         });
+        toast.success('New stage added');
     };
 
     const handleUpdateStage = async (stageId: number, newLabel: string, newColor: string, closeEdit: boolean) => {
@@ -84,10 +99,10 @@ export default function ClientKanban({ initialClients, initialStages, readOnly =
     };
 
     const handleDeleteStage = async (stageId: number) => {
-        console.log('Deleting stage', stageId);
-        // Removed confirm dialog to fix blocking issue
+        const stageName = stages.find(s => s.id === stageId)?.label || 'Stage';
         setStages(stages.filter(s => s.id !== stageId));
         await deletePipelineStage(stageId);
+        toast.success(`Deleted "${stageName}"`);
     };
 
     // Drag and Drop for Stages (Reordering)
@@ -278,9 +293,26 @@ export default function ClientKanban({ initialClients, initialStages, readOnly =
                                                     <span className="text-[10px] uppercase tracking-wider text-[var(--text-tertiary)] bg-white/5 px-1.5 py-0.5 rounded border border-white/5">
                                                         {client.plan}
                                                     </span>
-                                                    <span className="text-[10px] text-gray-500 font-mono opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    {/* Desktop: show ID on hover */}
+                                                    <span className="text-[10px] text-gray-500 font-mono opacity-0 group-hover:opacity-100 transition-opacity hidden md:inline">
                                                         ID: {client.id}
                                                     </span>
+                                                    {/* Mobile: show stage dropdown */}
+                                                    {!readOnly && (
+                                                        <select
+                                                            className="md:hidden bg-transparent border border-[var(--border-subtle)] rounded text-[10px] text-[var(--text-secondary)] px-1 py-0.5 appearance-none cursor-pointer"
+                                                            value={client.status || 'Active'}
+                                                            onClick={(e) => e.preventDefault()}
+                                                            onChange={(e) => {
+                                                                e.preventDefault();
+                                                                handleMobileStageChange(client.id, e.target.value);
+                                                            }}
+                                                        >
+                                                            {stages.map(s => (
+                                                                <option key={s.id} value={s.value}>{s.label}</option>
+                                                            ))}
+                                                        </select>
+                                                    )}
                                                 </div>
                                             </article>
                                         </Link>

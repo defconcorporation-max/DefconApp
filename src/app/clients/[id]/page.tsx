@@ -14,34 +14,36 @@ import { auth } from '@/auth';
 export default async function ClientPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
     const clientId = Number(id);
-    const client = await getClient(clientId);
-    const socials = await getSocials(clientId); // Legacy simple links
-    const ideas = await getIdeas(clientId);
-    const commissions = await getCommissions(clientId);
-    const payments = await getPayments(clientId);
-    const credentials = await getCredentials(clientId);
 
-    // Fetch Projects instead of raw shoots
-    const projects = await getProjects(clientId);
-    const agencies = await getAgencies();
-    const pipelineStages = await getPipelineStages();
+    // Parallel fetch — all independent queries run at the same time
+    const [client, socials, ideas, commissions, payments, credentials, projects, agencies, pipelineStages, socialAccounts, socialPosts, shoots, session] = await Promise.all([
+        getClient(clientId),
+        getSocials(clientId),
+        getIdeas(clientId),
+        getCommissions(clientId),
+        getPayments(clientId),
+        getCredentials(clientId),
+        getProjects(clientId),
+        getAgencies(),
+        getPipelineStages(),
+        getSocialAccounts(clientId),
+        getSocialPosts(clientId),
+        getShoots(clientId),
+        auth(),
+    ]);
 
-    // Fetch New Social Media Data
-    const socialAccounts = await getSocialAccounts(clientId);
-    const socialPosts = await getSocialPosts(clientId);
-
-    // Fetch Shoots for un-nested timeline
-    const shoots = await getShoots(clientId);
-    const videosMap: Record<number, any[]> = {};
-    for (const shoot of shoots) {
-        videosMap[shoot.id] = await getShootVideos(shoot.id);
-    }
-
-    const session = await auth();
     const isAdmin = session?.user?.role === 'Admin';
 
-
     if (!client) return <div>Client not found</div>;
+
+    // Fetch videos per shoot (depends on shoots result)
+    const videosMap: Record<number, any[]> = {};
+    const videoResults = await Promise.all(
+        shoots.map((shoot: any) => getShootVideos(shoot.id))
+    );
+    shoots.forEach((shoot: any, i: number) => {
+        videosMap[shoot.id] = videoResults[i];
+    });
 
     return (
         <main className="min-h-screen pb-20">

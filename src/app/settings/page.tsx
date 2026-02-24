@@ -17,10 +17,12 @@ export default async function Page() {
     if (!session) redirect('/login');
     const role = session.user?.role;
     if (role !== 'Admin' && role !== 'Team') redirect('/');
-    const settings = await getSettings();
-    const stages = await getTaskStages();
-    const templates = await getPostProdTemplates();
-    const pipelineStages = await getPipelineStages();
+    const [settings, stages, templates, pipelineStages] = await Promise.all([
+        getSettings(),
+        getTaskStages(),
+        getPostProdTemplates(),
+        getPipelineStages(),
+    ]);
 
     return (
         <div className="flex">

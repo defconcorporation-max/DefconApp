@@ -29,13 +29,15 @@ export default async function ShootPage({ params }: { params: Promise<{ id: stri
         );
     }
 
-    const clients = await getClients();
-    const videos = await getShootVideos(shootId);
-    const notes = await getShootVideoNotes(shootId);
-    const projects = await getProjects(shoot.client_id);
-    const templates = await getPostProdTemplates();
-    const assignments = await getShootAssignments(shootId);
-    const allMembers = await getTeamMembers();
+    const [clients, videos, notes, projects, templates, assignments, allMembers] = await Promise.all([
+        getClients(),
+        getShootVideos(shootId),
+        getShootVideoNotes(shootId),
+        getProjects(shoot.client_id),
+        getPostProdTemplates(),
+        getShootAssignments(shootId),
+        getTeamMembers(),
+    ]);
 
     // Helper for Time Slots
     const START_HOUR = 7;

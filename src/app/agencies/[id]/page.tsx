@@ -2,22 +2,21 @@ import { getAgencyById, getAgencyClients, getPipelineStages } from '@/app/action
 import { Client } from '@/types';
 import Link from 'next/link';
 import { ArrowLeft, Building, Users } from 'lucide-react';
+import { getDotColor } from '@/lib/colors';
 
 export const dynamic = 'force-dynamic';
 
 export default async function AgencyDetailsPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
     const agencyId = Number(id);
-    const agency = await getAgencyById(agencyId);
-    const clients = await getAgencyClients(agencyId);
-    const stages = await getPipelineStages();
+
+    const [agency, clients, stages] = await Promise.all([
+        getAgencyById(agencyId),
+        getAgencyClients(agencyId),
+        getPipelineStages(),
+    ]);
 
     if (!agency) return <div className="p-8 text-white">Agency not found</div>;
-
-    const getDotColor = (status: string) => {
-        const stage = stages.find(s => s.label.toLowerCase() === (status || 'Active').toLowerCase());
-        return stage?.color || 'bg-gray-500';
-    };
 
     const totalClients = clients.length;
     // Calculate basic project count stats
@@ -68,7 +67,7 @@ export default async function AgencyDetailsPage({ params }: { params: Promise<{ 
 
                                     <div className="flex items-center gap-2 text-xs text-[var(--text-secondary)] mb-4">
                                         <div className="flex items-center gap-1">
-                                            <span className={`w-1.5 h-1.5 rounded-full ${getDotColor(client.status)}`}></span>
+                                            <span className={`w-1.5 h-1.5 rounded-full ${getDotColor(stages, client.status)}`}></span>
                                             {client.status || 'Active'}
                                         </div>
                                     </div>
