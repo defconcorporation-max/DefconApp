@@ -179,7 +179,7 @@ export default function ClientTabs({
 
                 {/* --- IDEAS TAB --- */}
                 {activeTab === 'ideas' && (
-                    <IdeaBox clientId={client.id} ideas={ideas} />
+                    <IdeaBox clientId={client.id} ideas={ideas} clientName={client.company_name || client.name} />
                 )}
 
             </div>

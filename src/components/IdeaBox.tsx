@@ -3,9 +3,13 @@
 
 import { addIdea, updateIdeaStatus } from '@/app/actions';
 import { useState } from 'react';
+import { Sparkles, Loader2, Plus, RefreshCw, X } from 'lucide-react';
 
-export default function IdeaBox({ clientId, ideas }: { clientId: number, ideas: any[] }) {
+export default function IdeaBox({ clientId, ideas, clientName }: { clientId: number, ideas: any[], clientName?: string }) {
     const [expandedIds, setExpandedIds] = useState<number[]>([]);
+    const [aiIdea, setAiIdea] = useState<{ title: string, description: string } | null>(null);
+    const [isGenerating, setIsGenerating] = useState(false);
+    const [isAdding, setIsAdding] = useState(false);
 
     const activeIdeas = ideas.filter(i => i.status !== 'Archived');
     const archivedIdeas = ideas.filter(i => i.status === 'Archived');
@@ -20,12 +24,94 @@ export default function IdeaBox({ clientId, ideas }: { clientId: number, ideas: 
         await updateIdeaStatus(id, newStatus, clientId);
     };
 
+    const generateAiIdea = async () => {
+        setIsGenerating(true);
+        setAiIdea(null);
+        try {
+            const existingTitles = activeIdeas.map(i => i.title);
+            const res = await fetch('/api/generate-idea', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ clientName: clientName || 'this client', existingIdeas: existingTitles }),
+            });
+            const data = await res.json();
+            if (data.error) {
+                console.error('AI error:', data.error);
+                return;
+            }
+            setAiIdea(data);
+        } catch (error) {
+            console.error('Failed to generate idea:', error);
+        } finally {
+            setIsGenerating(false);
+        }
+    };
+
+    const handleAddAiIdea = async () => {
+        if (!aiIdea) return;
+        setIsAdding(true);
+        const formData = new FormData();
+        formData.set('clientId', String(clientId));
+        formData.set('title', aiIdea.title);
+        formData.set('description', aiIdea.description);
+        await addIdea(formData);
+        setAiIdea(null);
+        setIsAdding(false);
+    };
+
     return (
         <div className="glass-panel p-6 rounded-2xl">
             <div className="flex justify-between items-center mb-6">
                 <h3 className="text-xl font-bold neo-gradient-text">Idea Box</h3>
-                <span className="text-xs text-gray-400 bg-white/5 px-2 py-1 rounded-full">{activeIdeas.length} Active</span>
+                <div className="flex items-center gap-2">
+                    <button
+                        onClick={generateAiIdea}
+                        disabled={isGenerating}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white text-xs font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-violet-500/20"
+                    >
+                        {isGenerating ? (
+                            <><Loader2 size={14} className="animate-spin" /> Generating...</>
+                        ) : (
+                            <><Sparkles size={14} /> Generate with AI</>
+                        )}
+                    </button>
+                    <span className="text-xs text-gray-400 bg-white/5 px-2 py-1 rounded-full">{activeIdeas.length} Active</span>
+                </div>
             </div>
+
+            {/* AI Generated Idea Preview */}
+            {aiIdea && (
+                <div className="mb-6 p-4 rounded-xl border border-violet-500/30 bg-violet-500/5 animate-in fade-in slide-in-from-top-2 duration-300">
+                    <div className="flex items-center gap-2 mb-3">
+                        <Sparkles size={14} className="text-violet-400" />
+                        <span className="text-xs font-bold text-violet-400 uppercase tracking-wider">AI Suggestion</span>
+                    </div>
+                    <h4 className="text-white font-semibold text-lg mb-1">{aiIdea.title}</h4>
+                    <p className="text-sm text-gray-400 mb-4">{aiIdea.description}</p>
+                    <div className="flex gap-2">
+                        <button
+                            onClick={handleAddAiIdea}
+                            disabled={isAdding}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium transition-colors disabled:opacity-50"
+                        >
+                            <Plus size={14} /> {isAdding ? 'Adding...' : 'Add to List'}
+                        </button>
+                        <button
+                            onClick={generateAiIdea}
+                            disabled={isGenerating}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs font-medium transition-colors disabled:opacity-50"
+                        >
+                            <RefreshCw size={14} className={isGenerating ? 'animate-spin' : ''} /> Regenerate
+                        </button>
+                        <button
+                            onClick={() => setAiIdea(null)}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white text-xs transition-colors ml-auto"
+                        >
+                            <X size={14} /> Dismiss
+                        </button>
+                    </div>
+                </div>
+            )}
 
             {/* Add Idea Form */}
             <form action={addIdea} className="mb-8">
