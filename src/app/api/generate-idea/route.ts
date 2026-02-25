@@ -15,11 +15,19 @@ export async function POST(req: NextRequest) {
             : contentType === 'organic-educational' ? 'du contenu organique éducatif'
                 : contentType === 'organic-viral' ? 'du contenu organique viral'
                     : 'une vidéo';
+        const adFramework = contentType === 'ad' ? `
+STRUCTURE POUR LA PUB: La vidéo doit suivre cette structure générale (mais reformule à chaque fois de façon ORIGINALE et UNIQUE, ne copie JAMAIS mot pour mot) :
+1. ACCROCHE — Interpelle le viewer avec son désir/problème ("Tu veux faire X ?", "T'en as marre de Y ?", "Imagine si tu pouvais Z...")
+2. PRÉSENTATION — Présente qui est le client ("Nous on est...", "Chez [nom]...", "On est une équipe de...")
+3. VALEUR — Montre ce qu'ils font concrètement ("On fait X, Y, Z", "Notre spécialité c'est...", "On t'accompagne pour...")
+4. CALL TO ACTION — Pousse à l'action ("Remplis le formulaire", "Contacte-nous", "Écris-nous", "On s'occupe de toi")
+Chaque pub doit être DIFFÉRENTE dans le wording. Sois créatif et naturel, comme si quelqu'un parlait face caméra.
+` : '';
 
         let prompt = `Tu es un directeur créatif dans une agence de production vidéo. Génère UNE idée de contenu vidéo créative et fraîche pour un client appelé "${clientName}".
 
 Le type de contenu demandé est : ${contentTypeLabel}.
-${tone ? `Le ton et l'humeur souhaités : ${tone}.` : ''}
+${adFramework}${tone ? `Le ton et l'humeur souhaités : ${tone}.` : ''}
 
 ${existingTitles ? `Le client a déjà ces idées, alors propose quelque chose de DIFFÉRENT :\n${existingTitles}\n` : ''}
 
@@ -32,7 +40,7 @@ Réponds dans ce format JSON exact (pas de markdown, pas de code fences) :
             prompt = `Tu es un directeur créatif et scénariste dans une agence de production vidéo. Génère UNE idée de contenu vidéo créative pour un client appelé "${clientName}", AVEC un script complet.
 
 Le type de contenu demandé est : ${contentTypeLabel}.
-${tone ? `Le ton et l'humeur souhaités : ${tone}.` : ''}
+${adFramework}${tone ? `Le ton et l'humeur souhaités : ${tone}.` : ''}
 
 ${existingTitles ? `Le client a déjà ces idées, alors propose quelque chose de DIFFÉRENT :\n${existingTitles}\n` : ''}
 
