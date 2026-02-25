@@ -1,4 +1,4 @@
-import { getShootVolumeData, getProjectOriginData, getProjectCompletionData } from '@/app/actions';
+import { getShootVolumeData, getProjectOriginData, getProjectCompletionData, getMonthlyRevenueData, getTopClientsData } from '@/app/actions';
 import AnalyticsCharts from '@/components/AnalyticsCharts';
 import { Activity } from 'lucide-react';
 
@@ -8,6 +8,8 @@ export default async function AnalyticsPage() {
     const volumeData = await getShootVolumeData();
     const originData = await getProjectOriginData();
     const completionData = await getProjectCompletionData();
+    const revenueData = await getMonthlyRevenueData();
+    const topClientsData = await getTopClientsData();
 
     return (
         <main className="min-h-screen p-8 bg-[var(--bg-root)] text-white pb-20">
@@ -28,6 +30,8 @@ export default async function AnalyticsPage() {
                     volumeData={volumeData}
                     originData={originData}
                     completionData={completionData}
+                    revenueData={revenueData}
+                    topClientsData={topClientsData}
                 />
             </div>
         </main>

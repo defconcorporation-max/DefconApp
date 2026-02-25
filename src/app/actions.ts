@@ -2346,6 +2346,58 @@ export async function getProjectCompletionData() {
     }
 }
 
+export async function getMonthlyRevenueData() {
+    const session = await auth();
+    if (!session || session.user?.role !== 'Admin') throw new Error("Unauthorized");
+
+    try {
+        const query = `
+            SELECT 
+                strftime('%Y-%m', date) as month,
+                SUM(amount) as revenue
+            FROM payments
+            WHERE date >= date('now', '-12 months') AND status = 'Paid'
+            GROUP BY month
+            ORDER BY month ASC
+        `;
+        const result = await db.execute(query);
+        return result.rows as unknown as { month: string, revenue: number }[];
+    } catch (e) {
+        console.error("Failed to fetch monthly revenue data:", e);
+        return [];
+    }
+}
+
+export async function getTopClientsData() {
+    const session = await auth();
+    if (!session || session.user?.role !== 'Admin') throw new Error("Unauthorized");
+
+    try {
+        const query = `
+            SELECT 
+                c.company_name as company,
+                c.name as name,
+                SUM(p.amount) as revenue
+            FROM payments p
+            JOIN clients c ON p.client_id = c.id
+            WHERE p.status = 'Paid'
+            GROUP BY c.id
+            ORDER BY revenue DESC
+            LIMIT 5
+        `;
+        const result = await db.execute(query);
+
+        // Map to standard { name, value } for charts, preferring company_name
+        return result.rows.map((r: any) => ({
+            name: r.company || r.name,
+            value: r.revenue
+        })) as { name: string, value: number }[];
+    } catch (e) {
+        console.error("Failed to fetch top clients data:", e);
+        return [];
+    }
+}
+
 // --- PUBLIC BOOKING & NOTIFICATIONS ---
 
 export async function submitPublicBooking(formData: FormData) {
