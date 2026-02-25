@@ -39,7 +39,7 @@ ${existingTitles ? `Le client a déjà ces idées, alors propose quelque chose d
 IMPORTANT: Détecte la langue des idées existantes ci-dessus. Si elles sont en français, réponds entièrement en français. Si elles sont en anglais, réponds en anglais. S'il n'y a pas d'idées existantes, réponds en français par défaut.
 
 Réponds dans ce format JSON exact (pas de markdown, pas de code fences) :
-{"title": "Titre court et percutant (max 10 mots)", "description": "Description de 2-3 phrases du concept vidéo.", "script": "Script complet de la vidéo avec les indications de scène entre crochets, les dialogues, et les transitions. Le script doit être prêt à tourner."}`;
+{"title": "Titre court et percutant (max 10 mots)", "description": "Description de 2-3 phrases du concept vidéo.", "script": "UNIQUEMENT les paroles à dire devant la caméra. PAS de didascalie, PAS d'indication de scène, PAS de description visuelle, PAS de crochets. Juste le texte parlé. Saute une ligne environ tous les 6 mots pour faciliter les coupures caméra et la lecture lors des tournages."}`;
         }
 
         const response = await fetch('https://api.openai.com/v1/chat/completions', {
