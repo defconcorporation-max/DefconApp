@@ -182,15 +182,20 @@ export default function DashboardCalendar({ shoots, clients = [] }: CalendarProp
                                     defaultValue={editingShoot?.client_id}
                                     onChange={(e) => {
                                         // Fetch projects for this client
-                                        const cid = Number(e.target.value);
-                                        getProjects(cid).then(projs => setAvailableProjects(projs));
+                                        const val = e.target.value;
+                                        if (!val) {
+                                            setAvailableProjects([]);
+                                            return;
+                                        }
+                                        const cid = Number(val);
+                                        getProjects(cid).then(projs => setAvailableProjects(projs)).catch(() => setAvailableProjects([]));
                                     }}
                                     className="w-full bg-[var(--bg-root)] border border-[var(--border-subtle)] text-white text-sm rounded px-2 py-2 focus:border-[var(--text-secondary)] outline-none"
                                     required
                                 >
                                     <option value="" className="bg-[#111] text-white">-- Select Client --</option>
                                     {clients.map(c => (
-                                        <option key={c.id} value={c.id} className="bg-[#111] text-white">{c.company_name || c.name}</option>
+                                        <option key={c.id} value={c.id} className="bg-[#111] text-white">{c.name}</option>
                                     ))}
                                 </select>
                             </div>

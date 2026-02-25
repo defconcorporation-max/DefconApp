@@ -115,6 +115,45 @@ export async function getProjectFeedback(projectId: number) {
     }
 }
 
+export async function getClientPortalFeedback(clientId: number) {
+    try {
+        const { rows } = await db.execute({
+            sql: `
+                SELECT f.*, p.shoot_id, s.title as shoot_title 
+                FROM client_feedback f
+                JOIN post_prod_projects p ON f.project_id = p.id
+                JOIN shoots s ON p.shoot_id = s.id
+                WHERE s.client_id = ?
+                ORDER BY f.created_at DESC
+            `,
+            args: [clientId]
+        });
+        return rows as any[];
+    } catch {
+        return [];
+    }
+}
+
+export async function getAllClientFeedback() {
+    try {
+        // Optionally filter by agency_id if needed, but since it's an internal dashboard, we'll grab all for now.
+        // We join to get shoot title and client name
+        const { rows } = await db.execute({
+            sql: `
+                SELECT f.*, s.title as shoot_title, c.name as client_name
+                FROM client_feedback f
+                JOIN post_prod_projects p ON f.project_id = p.id
+                JOIN shoots s ON p.shoot_id = s.id
+                JOIN clients c ON s.client_id = c.id
+                ORDER BY f.is_resolved ASC, f.created_at DESC
+            `
+        });
+        return rows as any[];
+    } catch {
+        return [];
+    }
+}
+
 export async function resolveFeedbackItem(feedbackId: number, adminComment?: string) {
     await db.execute({
         sql: 'UPDATE client_feedback SET is_resolved = 1, admin_comment = ? WHERE id = ?',
