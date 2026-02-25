@@ -15,6 +15,8 @@ export async function POST(req: NextRequest) {
 
 ${existingTitles ? `The client already has these ideas, so suggest something DIFFERENT:\n${existingTitles}\n` : ''}
 
+IMPORTANT: Detect the language of the existing ideas above. If they are in French, respond entirely in French. If they are in English, respond in English. If there are no existing ideas, respond in French by default.
+
 Respond in this exact JSON format (no markdown, no code fences):
 {"title": "Short punchy title (max 10 words)", "description": "2-3 sentence description of the video concept, including the visual style, tone, and key message."}`;
 
