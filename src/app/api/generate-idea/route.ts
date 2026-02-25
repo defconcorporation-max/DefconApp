@@ -7,18 +7,40 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'OpenAI API key not configured' }, { status: 500 });
         }
 
-        const { clientName, existingIdeas } = await req.json();
+        const { clientName, existingIdeas, contentType, tone, generateScript } = await req.json();
 
         const existingTitles = (existingIdeas || []).map((i: string) => `- ${i}`).join('\n');
 
-        const prompt = `You are a creative director at a video production agency. Generate ONE fresh, creative video content idea for a client called "${clientName}".
+        const contentTypeLabel = contentType === 'ad' ? 'une publicité (Ad)'
+            : contentType === 'organic-educational' ? 'du contenu organique éducatif'
+                : contentType === 'organic-viral' ? 'du contenu organique viral'
+                    : 'une vidéo';
 
-${existingTitles ? `The client already has these ideas, so suggest something DIFFERENT:\n${existingTitles}\n` : ''}
+        let prompt = `Tu es un directeur créatif dans une agence de production vidéo. Génère UNE idée de contenu vidéo créative et fraîche pour un client appelé "${clientName}".
 
-IMPORTANT: Detect the language of the existing ideas above. If they are in French, respond entirely in French. If they are in English, respond in English. If there are no existing ideas, respond in French by default.
+Le type de contenu demandé est : ${contentTypeLabel}.
+${tone ? `Le ton et l'humeur souhaités : ${tone}.` : ''}
 
-Respond in this exact JSON format (no markdown, no code fences):
-{"title": "Short punchy title (max 10 words)", "description": "2-3 sentence description of the video concept, including the visual style, tone, and key message."}`;
+${existingTitles ? `Le client a déjà ces idées, alors propose quelque chose de DIFFÉRENT :\n${existingTitles}\n` : ''}
+
+IMPORTANT: Détecte la langue des idées existantes ci-dessus. Si elles sont en français, réponds entièrement en français. Si elles sont en anglais, réponds en anglais. S'il n'y a pas d'idées existantes, réponds en français par défaut.
+
+Réponds dans ce format JSON exact (pas de markdown, pas de code fences) :
+{"title": "Titre court et percutant (max 10 mots)", "description": "Description de 2-3 phrases du concept vidéo, incluant le style visuel, le ton, et le message clé."}`;
+
+        if (generateScript) {
+            prompt = `Tu es un directeur créatif et scénariste dans une agence de production vidéo. Génère UNE idée de contenu vidéo créative pour un client appelé "${clientName}", AVEC un script complet.
+
+Le type de contenu demandé est : ${contentTypeLabel}.
+${tone ? `Le ton et l'humeur souhaités : ${tone}.` : ''}
+
+${existingTitles ? `Le client a déjà ces idées, alors propose quelque chose de DIFFÉRENT :\n${existingTitles}\n` : ''}
+
+IMPORTANT: Détecte la langue des idées existantes ci-dessus. Si elles sont en français, réponds entièrement en français. Si elles sont en anglais, réponds en anglais. S'il n'y a pas d'idées existantes, réponds en français par défaut.
+
+Réponds dans ce format JSON exact (pas de markdown, pas de code fences) :
+{"title": "Titre court et percutant (max 10 mots)", "description": "Description de 2-3 phrases du concept vidéo.", "script": "Script complet de la vidéo avec les indications de scène entre crochets, les dialogues, et les transitions. Le script doit être prêt à tourner."}`;
+        }
 
         const response = await fetch('https://api.openai.com/v1/chat/completions', {
             method: 'POST',
@@ -30,7 +52,7 @@ Respond in this exact JSON format (no markdown, no code fences):
                 model: 'gpt-4o-mini',
                 messages: [{ role: 'user', content: prompt }],
                 temperature: 0.9,
-                max_tokens: 300,
+                max_tokens: generateScript ? 1500 : 300,
             }),
         });
 
@@ -47,10 +69,13 @@ Respond in this exact JSON format (no markdown, no code fences):
             return NextResponse.json({ error: 'No content generated' }, { status: 500 });
         }
 
-        // Parse the JSON response from GPT
         const idea = JSON.parse(content);
 
-        return NextResponse.json({ title: idea.title, description: idea.description });
+        return NextResponse.json({
+            title: idea.title,
+            description: idea.description,
+            script: idea.script || null
+        });
     } catch (error) {
         console.error('Generate idea error:', error);
         return NextResponse.json({ error: 'Failed to generate idea' }, { status: 500 });
