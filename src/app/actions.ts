@@ -2055,6 +2055,10 @@ export async function toggleShootBlocking(shootId: number, isBlocking: boolean) 
 
 export async function createAvailabilitySlot(start: string, end: string, coverageType: string = 'full') {
     if (!start || !end) return;
+
+    // Self-heal DB schema if user forgot to run /api/migrate
+    try { await db.execute("ALTER TABLE availability_slots ADD COLUMN coverage_type TEXT DEFAULT 'full'"); } catch (e) { }
+
     await db.execute({
         sql: 'INSERT INTO availability_slots (start_time, end_time, is_booked, coverage_type) VALUES (?, ?, 0, ?)',
         args: [start, end, coverageType]
@@ -2064,6 +2068,10 @@ export async function createAvailabilitySlot(start: string, end: string, coverag
 
 export async function updateAvailabilitySlot(id: number, start: string, end: string, coverageType: string = 'full') {
     if (!id || !start || !end) return;
+
+    // Self-heal DB schema if user forgot to run /api/migrate
+    try { await db.execute("ALTER TABLE availability_slots ADD COLUMN coverage_type TEXT DEFAULT 'full'"); } catch (e) { }
+
     await db.execute({
         sql: 'UPDATE availability_slots SET start_time = ?, end_time = ?, coverage_type = ? WHERE id = ?',
         args: [start, end, coverageType, id]
