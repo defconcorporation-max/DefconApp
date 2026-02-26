@@ -2367,6 +2367,101 @@ export async function getAuditLogs(limit: number = 20) {
     }
 }
 
+// --- PROJECT COSTS (LINE-ITEM BREAKDOWN) ---
+async function recalculateProjectCosts(projectId: number) {
+    const { rows } = await db.execute({
+        sql: 'SELECT COALESCE(SUM(amount), 0) as total FROM project_costs WHERE project_id = ?',
+        args: [projectId]
+    });
+    const totalCost = Number(rows[0]?.total || 0);
+
+    // Fetch current revenue to recalculate margin
+    const projRes = await db.execute({
+        sql: 'SELECT total_revenue FROM projects WHERE id = ?',
+        args: [projectId]
+    });
+    const totalRevenue = Number(projRes.rows[0]?.total_revenue || 0);
+    const totalMargin = totalRevenue - totalCost;
+    const marginPercentage = totalRevenue > 0 ? (totalMargin / totalRevenue) * 100 : 0;
+
+    await db.execute({
+        sql: 'UPDATE projects SET total_cost = ?, total_margin = ?, margin_percentage = ? WHERE id = ?',
+        args: [totalCost, totalMargin, marginPercentage, projectId]
+    });
+}
+
+export async function getProjectCosts(projectId: number) {
+    const { rows } = await db.execute({
+        sql: 'SELECT * FROM project_costs WHERE project_id = ? ORDER BY created_at ASC',
+        args: [projectId]
+    });
+    return rows as unknown as { id: number; project_id: number; label: string; amount: number; created_at: string }[];
+}
+
+export async function addProjectCost(formData: FormData) {
+    'use server';
+    const projectId = Number(formData.get('projectId'));
+    const label = formData.get('label') as string;
+    const amount = Number(formData.get('amount'));
+
+    if (!projectId || !label) throw new Error('Missing fields');
+
+    await db.execute({
+        sql: 'INSERT INTO project_costs (project_id, label, amount) VALUES (?, ?, ?)',
+        args: [projectId, label, amount || 0]
+    });
+
+    await recalculateProjectCosts(projectId);
+    revalidatePath(`/projects/${projectId}`);
+}
+
+export async function updateProjectCost(formData: FormData) {
+    'use server';
+    const costId = Number(formData.get('costId'));
+    const label = formData.get('label') as string;
+    const amount = Number(formData.get('amount'));
+
+    if (!costId || !label) throw new Error('Missing fields');
+
+    // Get project_id first
+    const { rows } = await db.execute({
+        sql: 'SELECT project_id FROM project_costs WHERE id = ?',
+        args: [costId]
+    });
+    const projectId = Number(rows[0]?.project_id);
+    if (!projectId) throw new Error('Cost not found');
+
+    await db.execute({
+        sql: 'UPDATE project_costs SET label = ?, amount = ? WHERE id = ?',
+        args: [label, amount || 0, costId]
+    });
+
+    await recalculateProjectCosts(projectId);
+    revalidatePath(`/projects/${projectId}`);
+}
+
+export async function deleteProjectCost(formData: FormData) {
+    'use server';
+    const costId = Number(formData.get('costId'));
+    if (!costId) throw new Error('Missing costId');
+
+    // Get project_id first
+    const { rows } = await db.execute({
+        sql: 'SELECT project_id FROM project_costs WHERE id = ?',
+        args: [costId]
+    });
+    const projectId = Number(rows[0]?.project_id);
+    if (!projectId) throw new Error('Cost not found');
+
+    await db.execute({
+        sql: 'DELETE FROM project_costs WHERE id = ?',
+        args: [costId]
+    });
+
+    await recalculateProjectCosts(projectId);
+    revalidatePath(`/projects/${projectId}`);
+}
+
 // --- ANALYTICS SERVER ACTIONS (ADMIN ONLY) ---
 export async function getShootVolumeData() {
     const session = await auth();

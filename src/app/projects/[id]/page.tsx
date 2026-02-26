@@ -1,4 +1,4 @@
-import { getProjectById, getProjectShoots, getTeamMembers, getClient, getProjectTasks, getTaskStages, getShootVideos, getAgencies, getProjectPostProdWorkflows, getProjectServices, getSettings } from '@/app/actions';
+import { getProjectById, getProjectShoots, getTeamMembers, getClient, getProjectTasks, getTaskStages, getShootVideos, getAgencies, getProjectPostProdWorkflows, getProjectServices, getSettings, getProjectCosts } from '@/app/actions';
 import { Project, Shoot, ProjectTask, TaskStage, Client } from '@/types';
 import Link from 'next/link';
 import { ArrowLeft, Calendar, Activity, Video, DollarSign } from 'lucide-react';
@@ -10,6 +10,7 @@ import EmptyState from '@/components/EmptyState';
 import ProjectTaskManager from '@/components/ProjectTaskManager';
 import { Layers, FileText, Download, ExternalLink } from 'lucide-react';
 import { InvoiceButton } from '@/components/InvoiceButton';
+import ProjectCostManager from '@/components/ProjectCostManager';
 
 export const dynamic = 'force-dynamic';
 
@@ -36,6 +37,7 @@ export default async function ProjectDetailsPage({ params }: { params: Promise<{
     const teamMembers = await getTeamMembers();
     const services = await getProjectServices(projectId);
     const settings = await getSettings();
+    const projectCosts = await getProjectCosts(projectId);
 
     const agencies = await getAgencies();
 
@@ -175,6 +177,9 @@ export default async function ProjectDetailsPage({ params }: { params: Promise<{
                                 </div>
                             </InvoiceButton>
                         </div>
+
+                        {/* Dynamic Cost Manager */}
+                        <ProjectCostManager projectId={project.id} initialCosts={projectCosts} />
                     </div>
 
                 </div>

@@ -190,6 +190,19 @@ export async function GET() {
         `);
         results.push('✓ public_shoot_requests table');
 
+        // ── Project Costs (line-item breakdown) ──
+        await turso.execute(`
+            CREATE TABLE IF NOT EXISTS project_costs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                project_id INTEGER NOT NULL,
+                label TEXT NOT NULL,
+                amount REAL NOT NULL DEFAULT 0,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(project_id) REFERENCES projects(id) ON DELETE CASCADE
+            )
+        `);
+        results.push('✓ project_costs table');
+
         // ── Add agency_id to clients (safe) ──
         try {
             await turso.execute('ALTER TABLE clients ADD COLUMN agency_id INTEGER');
