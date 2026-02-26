@@ -3,7 +3,7 @@ import { getAllClientFeedback, resolveFeedbackItem } from '@/app/review-actions'
 import { Badge } from '@/components/ui/Badge';
 import { Card } from '@/components/ui/Card';
 import Link from 'next/link';
-import { Film, MessageSquare, CheckCircle2, Circle, ExternalLink } from 'lucide-react';
+import { Film, MessageSquare, CheckCircle2, Circle, ExternalLink, Calendar } from 'lucide-react';
 import FeedbackAiHelper from '@/components/FeedbackAiHelper';
 
 export const dynamic = 'force-dynamic';
@@ -24,6 +24,10 @@ export default async function PostProdDashboardPage() {
                     <h1 className="text-3xl font-bold tracking-tight">Post-Production</h1>
                     <p className="text-[var(--text-secondary)] mt-1">Manage edits, versions, delivery workflows, and client feedback.</p>
                 </div>
+                <Link href="/post-production/gantt" className="bg-white/5 hover:bg-white/10 text-white border border-[var(--border-subtle)] rounded-lg px-4 py-2 flex items-center gap-2 transition-colors font-medium text-sm">
+                    <Calendar size={16} className="text-indigo-400" />
+                    Timeline View
+                </Link>
             </header>
 
             {/* Client Feedback Review Section */}

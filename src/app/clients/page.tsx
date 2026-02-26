@@ -26,9 +26,12 @@ export default async function ClientsPage() {
                     <p className="text-[var(--text-tertiary)] text-sm">Manage your client relationships and portfolios.</p>
                 </div>
                 {isAdmin && (
-                    <Link href="/" className="pro-button-primary flex items-center gap-2 text-sm shadow-lg shadow-indigo-500/20">
+                    <button
+                        onClick={() => window.dispatchEvent(new CustomEvent('open-quick-create', { detail: 'client' }))}
+                        className="pro-button-primary flex items-center gap-2 text-sm shadow-lg shadow-indigo-500/20"
+                    >
                         <span className="text-lg leading-none">+</span> Create Client
-                    </Link>
+                    </button>
                 )}
             </header>
 

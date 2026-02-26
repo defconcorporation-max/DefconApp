@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import { Shoot } from '@/types';
 import { updateShootCreative } from '@/app/actions';
-import { Lightbulb, LayoutGrid, List, Save, Loader2 } from 'lucide-react';
+import { generateShootConceptAndMood } from '@/app/ai-actions';
+import { Lightbulb, LayoutGrid, List, Save, Loader2, Wand2 } from 'lucide-react';
 import ShotListBuilder from './ShotListBuilder';
 import MoodboardGrid from './MoodboardGrid';
 
@@ -20,6 +21,17 @@ export default function CreativeDirector({ shoot }: CreativeDirectorProps) {
     const [mood, setMood] = useState(shoot.mood || '');
     const [shotList, setShotList] = useState<any[]>(shoot.shot_list ? JSON.parse(shoot.shot_list) : []);
     const [moodboard, setMoodboard] = useState<string[]>(shoot.moodboard_urls ? JSON.parse(shoot.moodboard_urls) : []);
+    const [generatingAI, setGeneratingAI] = useState(false);
+
+    const handleAIGenerate = async () => {
+        const hint = window.prompt("📝 Une idée ou direction spécifique ? (Laissez vide pour une idée libre)");
+        if (hint === null) return;
+        setGeneratingAI(true);
+        const res = await generateShootConceptAndMood(shoot.title || 'Projet', hint || 'Sois très créatif et propose un concept vendeur.');
+        if (res.concept) setConcept(res.concept);
+        if (res.mood) setMood(res.mood);
+        setGeneratingAI(false);
+    };
 
     const handleSave = async () => {
         setSaving(true);
@@ -77,7 +89,17 @@ export default function CreativeDirector({ shoot }: CreativeDirectorProps) {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-in fade-in duration-300">
                         <div className="space-y-4">
                             <div>
-                                <h3 className="text-sm font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2">Concept / Directives</h3>
+                                <div className="flex items-center justify-between mb-2">
+                                    <h3 className="text-sm font-bold text-[var(--text-secondary)] uppercase tracking-wider">Concept / Directives</h3>
+                                    <button
+                                        onClick={handleAIGenerate}
+                                        disabled={generatingAI}
+                                        className="text-xs bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500/30 px-2 py-1 rounded flex items-center gap-1 transition-colors disabled:opacity-50"
+                                    >
+                                        {generatingAI ? <Loader2 size={12} className="animate-spin" /> : <Wand2 size={12} />}
+                                        {generatingAI ? 'Génération...' : 'AI Auto-Fill'}
+                                    </button>
+                                </div>
                                 <textarea
                                     value={concept}
                                     onChange={(e) => setConcept(e.target.value)}

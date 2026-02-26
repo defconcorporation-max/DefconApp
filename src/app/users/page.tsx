@@ -135,7 +135,7 @@ export default async function UsersPage() {
                                     </div>
                                 </div>
 
-                                /* Role Info & Agency Info below */
+                                {/* Role Info & Agency Info below */}
                                 <div className="mt-3 flex items-center gap-4">
                                     <span className={`text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded-full border ${ROLES.find(r => r.value === user.role)?.color || 'text-gray-400 bg-gray-500/10 border-gray-500/20'}`}>
                                         {ROLES.find(r => r.value === user.role)?.label || user.role}

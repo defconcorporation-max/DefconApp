@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { Mail, Phone, Calendar as CalendarIcon, DollarSign, Briefcase } from 'lucide-react';
 import AvailabilityCalendar from '@/components/AvailabilityCalendar';
+import { ToastForm } from '@/components/ToastForm';
 
 export default async function TeamMemberPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
@@ -48,10 +49,9 @@ export default async function TeamMemberPage({ params }: { params: Promise<{ id:
                         </div>
                     </div>
 
-                    {/* Contact Info */}
                     <div className="bg-[#0A0A0A] border border-[var(--border-subtle)] p-6 rounded-2xl">
                         <h3 className="font-bold mb-4 flex items-center gap-2"><Briefcase size={16} /> Profile Details</h3>
-                        <form action={updateTeamMember} key={`${member.id}-${member.color}`} className="space-y-4">
+                        <ToastForm action={updateTeamMember} className="space-y-4">
                             <input type="hidden" name="id" value={member.id} />
 
                             <div className="space-y-1">
@@ -85,7 +85,7 @@ export default async function TeamMemberPage({ params }: { params: Promise<{ id:
                             <button className="w-full bg-white/10 hover:bg-white/20 text-white font-medium py-2 rounded-lg transition-colors mt-2 text-sm">
                                 Save Changes
                             </button>
-                        </form>
+                        </ToastForm>
                     </div>
                 </div>
 

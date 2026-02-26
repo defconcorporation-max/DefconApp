@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { TeamMember, ShootAssignment } from '@/types';
 import TeamCalendar from './TeamCalendar';
 import { addTeamMember } from '@/app/actions';
-import { UserPlus, Mail, Phone, LayoutGrid, Calendar } from 'lucide-react';
+import { UserPlus, Mail, Phone, LayoutGrid, Calendar, Activity } from 'lucide-react';
 import Link from 'next/link';
 
 interface Props {
@@ -22,8 +22,8 @@ export default function TeamView({ members, schedule }: Props) {
                 <button
                     onClick={() => setView('directory')}
                     className={`pb-3 text-sm font-medium flex items-center gap-2 transition-colors border-b-2 ${view === 'directory'
-                            ? 'border-indigo-500 text-white'
-                            : 'border-transparent text-[var(--text-tertiary)] hover:text-white'
+                        ? 'border-indigo-500 text-white'
+                        : 'border-transparent text-[var(--text-tertiary)] hover:text-white'
                         }`}
                 >
                     <LayoutGrid size={16} /> Directory
@@ -31,12 +31,18 @@ export default function TeamView({ members, schedule }: Props) {
                 <button
                     onClick={() => setView('calendar')}
                     className={`pb-3 text-sm font-medium flex items-center gap-2 transition-colors border-b-2 ${view === 'calendar'
-                            ? 'border-indigo-500 text-white'
-                            : 'border-transparent text-[var(--text-tertiary)] hover:text-white'
+                        ? 'border-indigo-500 text-white'
+                        : 'border-transparent text-[var(--text-tertiary)] hover:text-white'
                         }`}
                 >
                     <Calendar size={16} /> Schedule
                 </button>
+                <Link
+                    href="/team/workload"
+                    className="pb-3 text-sm font-medium flex items-center gap-2 transition-colors border-b-2 border-transparent text-[var(--text-tertiary)] hover:text-white"
+                >
+                    <Activity size={16} /> Workload Heatmap
+                </Link>
             </div>
 
             {view === 'calendar' ? (

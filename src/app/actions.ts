@@ -2272,11 +2272,46 @@ export async function getClientPortalData(clientId: number) {
         sql: 'SELECT * FROM projects WHERE client_id = ? ORDER BY created_at DESC',
         args: [clientId]
     });
+    // Shoots
+    const shootsRes = await db.execute({
+        sql: "SELECT * FROM shoots WHERE client_id = ? ORDER BY shoot_date DESC LIMIT 5",
+        args: [clientId]
+    });
 
     return {
-        client: clientRes.rows[0] as unknown as Client,
-        projects: projectsRes.rows as unknown as Project[]
+        client: clientRes.rows[0],
+        projects: projectsRes.rows,
+        recentShoots: shootsRes.rows
     };
+}
+
+export async function getClientPortalProject(clientId: number, projectId: number) {
+    const projectRes = await db.execute({
+        sql: "SELECT * FROM projects WHERE client_id = ? AND id = ?",
+        args: [clientId, projectId]
+    });
+
+    if (projectRes.rows.length === 0) return null;
+    const project = projectRes.rows[0];
+
+    const shootsRes = await db.execute({
+        sql: "SELECT * FROM shoots WHERE project_id = ? ORDER BY shoot_date ASC",
+        args: [projectId]
+    });
+
+    // Fetch videos for each shoot
+    const shoots = await Promise.all(shootsRes.rows.map(async (shoot: any) => {
+        const vidsRes = await db.execute({
+            sql: "SELECT * FROM shoot_videos WHERE shoot_id = ?",
+            args: [shoot.id]
+        });
+        return {
+            ...shoot,
+            videos: vidsRes.rows
+        };
+    }));
+
+    return { project, shoots };
 }
 
 // --- ANALYTICS SERVER ACTIONS (ADMIN ONLY) ---
@@ -2394,6 +2429,30 @@ export async function getTopClientsData() {
         })) as { name: string, value: number }[];
     } catch (e) {
         console.error("Failed to fetch top clients data:", e);
+        return [];
+    }
+}
+
+export async function getTeamUtilizationData() {
+    const session = await auth();
+    if (!session || session.user?.role !== 'Admin') throw new Error("Unauthorized");
+
+    try {
+        const query = `
+            SELECT 
+                tm.name,
+                COUNT(sa.shoot_id) as value
+            FROM team_members tm
+            JOIN shoot_assignments sa ON tm.id = sa.member_id
+            JOIN shoots s ON sa.shoot_id = s.id
+            WHERE s.shoot_date >= date('now', '-12 months')
+            GROUP BY tm.id
+            ORDER BY value DESC
+        `;
+        const result = await db.execute(query);
+        return result.rows as unknown as { name: string, value: number }[];
+    } catch (e) {
+        console.error("Failed to fetch team utilization data:", e);
         return [];
     }
 }

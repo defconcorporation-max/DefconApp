@@ -1,4 +1,5 @@
 import { getShootById, updateShoot, deleteShoot, getClients, getShootVideos, addShootVideo, toggleShootVideo, updateShootVideoNotes, deleteShootVideo, getShootVideoNotes, addShootVideoNote, deleteShootVideoNote, finishShoot, revertShoot, getProjects } from '@/app/actions';
+import { updateShootFinancials } from '@/app/profitability-actions';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import FinishShootButton from '@/components/FinishShootButton';
@@ -12,8 +13,7 @@ import NotesEditor from '@/components/NotesEditor';
 import VideoTitleEditor from '@/components/VideoTitleEditor';
 import CreativeDirector from '@/components/shoot/CreativeDirector';
 import ShootPlanPDF from '@/components/shoot/ShootPlanPDF';
-
-
+import { ToastForm } from '@/components/ToastForm';
 
 export default async function ShootPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
@@ -274,7 +274,7 @@ export default async function ShootPage({ params }: { params: Promise<{ id: stri
                 {/* Sidebar: Edit Details */}
                 <div className="bg-[#0A0A0A] border border-[var(--border-subtle)] rounded-xl overflow-hidden p-6 h-fit sticky top-6">
                     <h3 className="text-white font-medium mb-6">Shoot Details</h3>
-                    <form action={updateShoot} className="space-y-6">
+                    <ToastForm action={updateShoot} className="space-y-6">
                         <input type="hidden" name="id" value={shoot.id} />
                         <input type="hidden" name="clientId" value={shoot.client_id} />
 
@@ -373,7 +373,68 @@ export default async function ShootPage({ params }: { params: Promise<{ id: stri
                                 Delete Shoot
                             </button>
                         </div>
-                    </form>
+                    </ToastForm>
+
+                    {/* Financials / Profitability tracking */}
+                    <div className="mt-6 pt-6 border-t border-[var(--border-subtle)]">
+                        <h3 className="text-white font-medium mb-4">Financials</h3>
+                        <ToastForm action={async (formData) => {
+                            'use server';
+                            const id = formData.get('id') as string;
+                            await updateShootFinancials(id, {
+                                estimated_hours: Number(formData.get('estimated_hours')) || 0,
+                                actual_hours: Number(formData.get('actual_hours')) || 0,
+                                internal_cost: Number(formData.get('internal_cost')) || 0,
+                                external_cost: Number(formData.get('external_cost')) || 0,
+                                gear_cost: Number(formData.get('gear_cost')) || 0,
+                                revenue: Number(formData.get('revenue')) || 0,
+                            });
+                        }} className="space-y-4">
+                            <input type="hidden" name="id" value={shoot.id} />
+
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="space-y-1.5">
+                                    <label className="text-[10px] font-medium text-[var(--text-tertiary)] uppercase tracking-wider">Est. Hours</label>
+                                    <input name="estimated_hours" type="number" step="0.5" defaultValue={shoot.estimated_hours || 0} className="w-full bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded px-3 py-2 text-sm text-white focus:border-[var(--text-secondary)] outline-none" />
+                                </div>
+                                <div className="space-y-1.5">
+                                    <label className="text-[10px] font-medium text-[var(--text-tertiary)] uppercase tracking-wider">Actual Hours</label>
+                                    <input name="actual_hours" type="number" step="0.5" defaultValue={shoot.actual_hours || 0} className="w-full bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded px-3 py-2 text-sm text-white focus:border-[var(--text-secondary)] outline-none" />
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="space-y-1.5">
+                                    <label className="text-[10px] font-medium text-[var(--text-tertiary)] uppercase tracking-wider">Internal Cost</label>
+                                    <input name="internal_cost" type="number" defaultValue={shoot.internal_cost || 0} className="w-full bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded px-3 py-2 text-sm text-white focus:border-[var(--text-secondary)] outline-none" />
+                                </div>
+                                <div className="space-y-1.5">
+                                    <label className="text-[10px] font-medium text-[var(--text-tertiary)] uppercase tracking-wider">External Cost</label>
+                                    <input name="external_cost" type="number" defaultValue={shoot.external_cost || 0} className="w-full bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded px-3 py-2 text-sm text-white focus:border-[var(--text-secondary)] outline-none" />
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="space-y-1.5">
+                                    <label className="text-[10px] font-medium text-[var(--text-tertiary)] uppercase tracking-wider">Gear Cost</label>
+                                    <input name="gear_cost" type="number" defaultValue={shoot.gear_cost || 0} className="w-full bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded px-3 py-2 text-sm text-white focus:border-[var(--text-secondary)] outline-none" />
+                                </div>
+                                <div className="space-y-1.5">
+                                    <label className="text-[10px] font-medium text-emerald-400 uppercase tracking-wider">Revenue</label>
+                                    <input name="revenue" type="number" defaultValue={shoot.revenue || 0} className="w-full bg-emerald-500/10 border border-emerald-500/30 rounded px-3 py-2 text-sm text-white focus:border-emerald-500 outline-none" />
+                                </div>
+                            </div>
+
+                            <button type="submit" className="w-full mt-2 bg-[var(--bg-root)] border border-[var(--border-subtle)] text-[#a1a1aa] px-4 py-2 rounded text-sm font-medium hover:bg-white hover:text-black hover:border-white transition-colors">
+                                Update Financials
+                            </button>
+                        </ToastForm>
+                        {shoot.project_id && (
+                            <p className="text-[10px] text-[var(--text-tertiary)] mt-2 text-center">
+                                Margins will roll up to Project: {shoot.project_title}
+                            </p>
+                        )}
+                    </div>
 
                     {/* Finish Shoot Action */}
                     <PostProdTrigger

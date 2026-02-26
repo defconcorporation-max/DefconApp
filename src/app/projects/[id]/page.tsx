@@ -1,7 +1,7 @@
 import { getProjectById, getProjectShoots, getTeamMembers, getClient, getProjectTasks, getTaskStages, getShootVideos, getAgencies, getProjectPostProdWorkflows } from '@/app/actions';
 import { Project, Shoot, ProjectTask, TaskStage, Client } from '@/types';
 import Link from 'next/link';
-import { ArrowLeft, Calendar, Activity, Video } from 'lucide-react';
+import { ArrowLeft, Calendar, Activity, Video, DollarSign } from 'lucide-react';
 import ProjectTitleEditor from '@/components/ProjectTitleEditor';
 import StatusSelector from '@/components/ProjectStatusSelect';
 import ClientAgencySelect from '@/components/ClientAgencySelect';
@@ -123,6 +123,37 @@ export default async function ProjectDetailsPage({ params }: { params: Promise<{
                         </div>
                     </div>
 
+                    {/* Financials Overview */}
+                    <div className="pro-dashboard-card p-6 rounded-2xl">
+                        <h3 className="text-sm font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-4 flex items-center gap-2">
+                            <DollarSign size={16} className="text-emerald-400" /> Financials
+                        </h3>
+                        <div className="space-y-4">
+                            <div>
+                                <div className="text-[10px] text-[var(--text-tertiary)] uppercase tracking-wider mb-1">Total Revenue</div>
+                                <div className="text-2xl font-bold text-white">${project.total_revenue?.toLocaleString() || '0'}</div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <div className="text-[10px] text-[var(--text-tertiary)] uppercase tracking-wider mb-1">Total Cost</div>
+                                    <div className="text-lg font-medium text-[var(--text-secondary)]">${project.total_cost?.toLocaleString() || '0'}</div>
+                                </div>
+                                <div>
+                                    <div className="text-[10px] text-[var(--text-tertiary)] uppercase tracking-wider mb-1">Gross Margin</div>
+                                    <div className={`text-lg font-medium ${(project.total_margin || 0) >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                                        ${project.total_margin?.toLocaleString() || '0'}
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="pt-3 border-t border-[var(--border-subtle)] flex justify-between items-center">
+                                <span className="text-xs text-[var(--text-tertiary)]">Margin %</span>
+                                <span className={`text-sm font-bold ${(project.margin_percentage || 0) >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                                    {project.margin_percentage ? Math.round(project.margin_percentage) : 0}%
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
 
                 {/* --- MIDDLE & RIGHT COLUMN: Shoots, Services, Tasks --- */}
@@ -166,8 +197,8 @@ export default async function ProjectDetailsPage({ params }: { params: Promise<{
                                             </div>
                                             <div className="flex flex-col items-end gap-2">
                                                 <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${workflow.status === 'Completed' ? 'bg-emerald-500/10 text-emerald-400' :
-                                                        workflow.status === 'In Progress' ? 'bg-indigo-500/10 text-indigo-400' :
-                                                            'bg-white/10 text-[var(--text-tertiary)]'
+                                                    workflow.status === 'In Progress' ? 'bg-indigo-500/10 text-indigo-400' :
+                                                        'bg-white/10 text-[var(--text-tertiary)]'
                                                     }`}>
                                                     {workflow.status}
                                                 </span>

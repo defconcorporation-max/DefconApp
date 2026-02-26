@@ -24,12 +24,13 @@ interface AnalyticsChartsProps {
     completionData: { name: string, value: number }[];
     revenueData?: { month: string, revenue: number }[];
     topClientsData?: { name: string, value: number }[];
+    teamUtilizationData?: { name: string, value: number }[];
 }
 
 const COLORS = ['#8b5cf6', '#10b981', '#3b82f6', '#f59e0b', '#ef4444'];
 const PIE_COLORS = ['#8b5cf6', '#3b82f6', '#10b981', '#6366f1', '#ec4899'];
 
-export default function AnalyticsCharts({ volumeData, originData, completionData, revenueData = [], topClientsData = [] }: AnalyticsChartsProps) {
+export default function AnalyticsCharts({ volumeData, originData, completionData, revenueData = [], topClientsData = [], teamUtilizationData = [] }: AnalyticsChartsProps) {
 
     // Format Month data for better readability (e.g., '2025-01' -> 'Jan 2025')
     const formatMonth = (tickItem: string) => {
@@ -212,6 +213,41 @@ export default function AnalyticsCharts({ volumeData, originData, completionData
                         </ResponsiveContainer>
                     </div>
                 </div>
+
+                {/* Team Utilization (Bar Chart) */}
+                {teamUtilizationData.length > 0 && (
+                    <div className="pro-dashboard-card p-6 rounded-2xl">
+                        <div className="flex justify-between items-center mb-6">
+                            <h3 className="text-sm font-bold text-[var(--text-secondary)] uppercase tracking-wider">Team Utilization (Past Year)</h3>
+                            <button
+                                onClick={() => exportToCSV(teamUtilizationData, 'team_utilization.csv')}
+                                className="p-1.5 rounded-lg bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] text-[var(--text-tertiary)] hover:text-white transition-colors opacity-0 group-hover:opacity-100"
+                                title="Export to CSV"
+                            >
+                                <Download size={16} />
+                            </button>
+                        </div>
+                        <div className="h-[300px] w-full">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={teamUtilizationData} margin={{ top: 5, right: 30, left: 40, bottom: 5 }}>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="#333" vertical={false} />
+                                    <XAxis dataKey="name" stroke="#888" fontSize={12} />
+                                    <YAxis type="number" stroke="#888" fontSize={12} allowDecimals={false} />
+                                    <Tooltip
+                                        contentStyle={{ backgroundColor: '#111', borderColor: '#333', borderRadius: '8px' }}
+                                        cursor={{ fill: '#ffffff10' }}
+                                        formatter={(value: number) => [value, 'Shoots Assigned']}
+                                    />
+                                    <Bar dataKey="value" name="Shoots" radius={[4, 4, 0, 0]}>
+                                        {teamUtilizationData.map((entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+                                        ))}
+                                    </Bar>
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </div>
+                )}
 
                 {/* Business Origin (Pie Chart) */}
                 <div className="pro-dashboard-card p-6 rounded-2xl lg:col-span-2">

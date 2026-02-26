@@ -6,6 +6,8 @@ import Link from 'next/link';
 import { ArrowLeft, MapPin, DollarSign, Mail, Phone, Share2, Trash2, Instagram, Globe, Settings, Users, Image as ImageIcon } from 'lucide-react';
 import ActorActions from '@/components/ActorActions';
 import PortfolioUploader, { ProfilePictureUploader } from '@/components/PortfolioUploader';
+import { ActorClientList, ActorClientForm } from '@/components/ActorClientManager';
+import { ToastForm } from '@/components/ToastForm';
 
 export const dynamic = 'force-dynamic';
 
@@ -162,7 +164,7 @@ export default async function ActorDetailPage({ params }: { params: Promise<{ id
                     <h2 className="text-sm font-bold text-white uppercase tracking-wider mb-4 flex items-center gap-2">
                         <Settings size={16} className="text-violet-400" /> Edit Information
                     </h2>
-                    <form action={updateActor} className="bg-[#0A0A0A] border border-[var(--border-subtle)] rounded-xl p-6 space-y-4">
+                    <ToastForm action={updateActor} className="bg-[#0A0A0A] border border-[var(--border-subtle)] rounded-xl p-6 space-y-4">
                         <input type="hidden" name="id" value={actor.id} />
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="space-y-1">
@@ -221,7 +223,7 @@ export default async function ActorDetailPage({ params }: { params: Promise<{ id
                                 Save Changes
                             </button>
                         </div>
-                    </form>
+                    </ToastForm>
                 </section>
 
                 {/* Clients Section */}
@@ -230,40 +232,8 @@ export default async function ActorDetailPage({ params }: { params: Promise<{ id
                         <Users size={16} className="text-violet-400" /> Clients Worked With
                     </h2>
                     <div className="bg-[#0A0A0A] border border-[var(--border-subtle)] rounded-xl p-5">
-                        {actorClients.length === 0 ? (
-                            <p className="text-xs text-[var(--text-tertiary)] italic text-center py-4">No clients linked yet.</p>
-                        ) : (
-                            <div className="space-y-2 mb-4">
-                                {actorClients.map((c: any) => (
-                                    <div key={c.id} className="flex items-center justify-between text-sm bg-white/5 px-4 py-2.5 rounded-lg">
-                                        <Link href={`/clients/${c.id}`} className="text-white hover:text-violet-400 transition-colors font-medium">
-                                            {c.company_name || c.name}
-                                        </Link>
-                                        <form action={async () => {
-                                            'use server';
-                                            await removeActorClient(actorId, c.id);
-                                        }}>
-                                            <button className="text-red-400/50 hover:text-red-400 transition-colors"><Trash2 size={14} /></button>
-                                        </form>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                        <form action={async (formData: FormData) => {
-                            'use server';
-                            const clientId = Number(formData.get('clientId'));
-                            if (clientId) await addActorClient(actorId, clientId);
-                        }} className="flex gap-2">
-                            <select name="clientId" className="flex-1 pro-input text-xs">
-                                <option value="">Link a client...</option>
-                                {allClients.filter((c: any) => !actorClients.find((ac: any) => ac.id === c.id)).map((c: any) => (
-                                    <option key={c.id} value={c.id}>{c.company_name || c.name}</option>
-                                ))}
-                            </select>
-                            <button type="submit" className="px-4 py-1.5 bg-violet-500/20 text-violet-400 text-xs rounded-full hover:bg-violet-500/30 transition-colors font-medium">
-                                Link
-                            </button>
-                        </form>
+                        <ActorClientList actorClients={actorClients} actorId={actorId} />
+                        <ActorClientForm allClients={allClients} actorClients={actorClients} actorId={actorId} />
                     </div>
                 </section>
             </div>

@@ -126,6 +126,23 @@ export async function getPostProdDashboard() {
     return dashboardData as PostProdProject[];
 }
 
+export async function getPostProdGanttData() {
+    // Fetch all active projects with dates
+    const { rows: projects } = await db.execute(`
+        SELECT 
+            p.id, p.status, p.created_at as start_date,
+            s.title as shoot_title, s.due_date, s.shoot_date,
+            c.name as client_name, c.company_name
+        FROM post_prod_projects p
+        JOIN shoots s ON p.shoot_id = s.id
+        LEFT JOIN clients c ON s.client_id = c.id
+        WHERE p.status != 'Completed'
+        ORDER BY s.due_date ASC NULLS LAST, p.created_at DESC
+    `);
+
+    return projects;
+}
+
 export async function getPostProdProject(id: number) {
     // Project Details
     const { rows: projectRows } = await db.execute({
