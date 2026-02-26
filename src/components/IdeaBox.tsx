@@ -16,6 +16,12 @@ export default function IdeaBox({ clientId, ideas, clientName }: { clientId: num
     const [contentType, setContentType] = useState('organic-viral');
     const [tone, setTone] = useState('');
 
+    // Competitor analysis state
+    const [competitorDescription, setCompetitorDescription] = useState('');
+    const [isAnalyzingCompetitor, setIsAnalyzingCompetitor] = useState(false);
+    const [competitorResult, setCompetitorResult] = useState<{ angles: any[], keyInsight: string } | null>(null);
+    const [showCompetitorInput, setShowCompetitorInput] = useState(false);
+
     const activeIdeas = ideas.filter(i => i.status !== 'Archived');
     const archivedIdeas = ideas.filter(i => i.status === 'Archived');
 
@@ -83,12 +89,125 @@ export default function IdeaBox({ clientId, ideas, clientName }: { clientId: num
         setIsAdding(false);
     };
 
+    const analyzeCompetitor = async () => {
+        if (!competitorDescription) return;
+        setIsAnalyzingCompetitor(true);
+        setCompetitorResult(null);
+        try {
+            const res = await fetch('/api/analyze-competitor', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    competitorDescription,
+                    clientName: clientName || 'this client',
+                }),
+            });
+            const data = await res.json();
+            if (data.error) {
+                console.error('AI error:', data.error);
+                return;
+            }
+            setCompetitorResult(data);
+        } catch (error) {
+            console.error('Failed to analyze competitor:', error);
+        } finally {
+            setIsAnalyzingCompetitor(false);
+        }
+    };
+
+    const addAngleAsIdea = async (angle: any) => {
+        setIsAdding(true);
+        const formData = new FormData();
+        formData.set('clientId', String(clientId));
+        formData.set('title', angle.title);
+        formData.set('description', `ANGLE DE DIFFÉRENCIATION :\n${angle.why}\n\nFORMAT SUGGÉRÉ : ${angle.format}`);
+        await addIdea(formData);
+        setIsAdding(false);
+        // Note: we don't clear competitorResult here so they can add multiple angles
+    };
+
     return (
         <div className="glass-panel p-6 rounded-2xl">
             <div className="flex justify-between items-center mb-6">
-                <h3 className="text-xl font-bold neo-gradient-text">Idea Box</h3>
-                <span className="text-xs text-gray-400 bg-white/5 px-2 py-1 rounded-full">{activeIdeas.length} Active</span>
+                <div className="flex items-center gap-3">
+                    <h3 className="text-xl font-bold neo-gradient-text">Idea Box</h3>
+                </div>
+                <div className="flex items-center gap-2">
+                    <button
+                        onClick={() => setShowCompetitorInput(!showCompetitorInput)}
+                        className={`text-[10px] uppercase font-bold tracking-widest px-3 py-1 rounded-full border transition-all ${showCompetitorInput ? 'bg-indigo-500/20 border-indigo-500 text-indigo-400' : 'bg-white/5 border-white/10 text-[var(--text-tertiary)] hover:text-white'}`}
+                    >
+                        Analyse Concurrent
+                    </button>
+                    <span className="text-xs text-gray-400 bg-white/5 px-2 py-1 rounded-full">{activeIdeas.length} Active</span>
+                </div>
             </div>
+
+            {/* Competitor Analysis Section */}
+            {showCompetitorInput && (
+                <div className="mb-6 p-4 rounded-xl border border-indigo-500/30 bg-indigo-500/5 animate-in fade-in slide-in-from-top-2">
+                    <div className="flex items-center gap-2 mb-4">
+                        <X
+                            size={16}
+                            className="text-[var(--text-tertiary)] hover:text-white cursor-pointer ml-auto order-last"
+                            onClick={() => {
+                                setShowCompetitorInput(false);
+                                setCompetitorResult(null);
+                            }}
+                        />
+                        <Sparkles size={16} className="text-indigo-400" />
+                        <span className="text-sm font-bold text-white">Analyse de la Différenciation</span>
+                    </div>
+
+                    <div className="space-y-3">
+                        <textarea
+                            value={competitorDescription}
+                            onChange={e => setCompetitorDescription(e.target.value)}
+                            placeholder="Décris un concurrent, colle un lien, ou décris un contenu qui marche chez les autres..."
+                            rows={3}
+                            className="w-full bg-black/40 border border-white/10 p-3 rounded-lg text-sm text-white focus:outline-none focus:border-indigo-500 transition-colors placeholder:text-[var(--text-tertiary)] resize-none"
+                        />
+                        <button
+                            onClick={analyzeCompetitor}
+                            disabled={isAnalyzingCompetitor || !competitorDescription}
+                            className="w-full flex items-center justify-center gap-2 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed text-xs font-bold uppercase tracking-wider"
+                        >
+                            {isAnalyzingCompetitor ? (
+                                <><Loader2 size={14} className="animate-spin" /> Analyse en cours...</>
+                            ) : (
+                                <><Sparkles size={14} /> Analyser & Différencier</>
+                            )}
+                        </button>
+                    </div>
+
+                    {competitorResult && (
+                        <div className="mt-6 space-y-4 animate-in fade-in zoom-in-95 duration-300">
+                            <div className="p-3 bg-black/40 rounded-lg border border-indigo-500/20">
+                                <p className="text-xs font-medium text-indigo-400 italic">"{competitorResult.keyInsight}"</p>
+                            </div>
+                            <div className="grid grid-cols-1 gap-3">
+                                {competitorResult.angles.map((angle, idx) => (
+                                    <div key={idx} className="p-3 bg-white/5 rounded-lg border border-white/5 hover:border-indigo-500/30 transition-all group">
+                                        <div className="flex justify-between items-start mb-2">
+                                            <h5 className="text-sm font-bold text-white">{angle.title}</h5>
+                                            <span className="text-[10px] bg-indigo-500/10 text-indigo-400 px-1.5 py-0.5 rounded border border-indigo-500/20">
+                                                {angle.format}
+                                            </span>
+                                        </div>
+                                        <p className="text-xs text-[var(--text-secondary)] mb-3">{angle.why}</p>
+                                        <button
+                                            onClick={() => addAngleAsIdea(angle)}
+                                            className="text-[10px] uppercase font-bold tracking-widest text-indigo-400 hover:text-indigo-300 flex items-center gap-1 transition-colors"
+                                        >
+                                            <Plus size={12} /> Ajouter au backlog
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            )}
 
             {/* AI Generation Controls */}
             <div className="mb-6 p-4 rounded-xl border border-[var(--border-subtle)] bg-black/30">
@@ -112,8 +231,8 @@ export default function IdeaBox({ clientId, ideas, clientName }: { clientId: num
                                     type="button"
                                     onClick={() => setContentType(opt.value)}
                                     className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${contentType === opt.value
-                                            ? `bg-gradient-to-r ${opt.color} text-white shadow-lg`
-                                            : 'bg-white/5 text-[var(--text-secondary)] hover:bg-white/10'
+                                        ? `bg-gradient-to-r ${opt.color} text-white shadow-lg`
+                                        : 'bg-white/5 text-[var(--text-secondary)] hover:bg-white/10'
                                         }`}
                                 >
                                     {opt.label}

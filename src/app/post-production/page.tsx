@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Card } from '@/components/ui/Card';
 import Link from 'next/link';
 import { Film, MessageSquare, CheckCircle2, Circle, ExternalLink } from 'lucide-react';
+import FeedbackAiHelper from '@/components/FeedbackAiHelper';
 
 export const dynamic = 'force-dynamic';
 
@@ -53,6 +54,12 @@ export default async function PostProdDashboardPage() {
                                 <div className="text-sm bg-[#111] p-3 rounded border border-[var(--border-subtle)] flex-1 break-words">
                                     "{f.feedback}"
                                 </div>
+
+                                <FeedbackAiHelper
+                                    feedbackText={f.feedback}
+                                    projectTitle={f.shoot_title}
+                                    clientName={f.client_name}
+                                />
 
                                 {/* Quick Resolve Form */}
                                 <div className="mt-4 pt-4 border-t border-[var(--border-subtle)]">
