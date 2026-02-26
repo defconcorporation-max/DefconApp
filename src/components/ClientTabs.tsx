@@ -116,78 +116,76 @@ export default function ClientTabs({
                             </div>
                         </div>
 
-                        </div>
-
                         <div className="space-y-8">
                             <ClientProfileEditor client={client} teamMembers={teamMembers} />
                         </div>
                     </div>
                 )}
 
-            {/* --- PROJECTS TAB --- */}
-            {activeTab === 'projects' && (
-                <ProjectManager clientId={client.id} projects={projects} agencies={agencies} />
-            )}
+                {/* --- PROJECTS TAB --- */}
+                {activeTab === 'projects' && (
+                    <ProjectManager clientId={client.id} projects={projects} agencies={agencies} />
+                )}
 
-            {/* --- SHOOTS TAB --- */}
-            {activeTab === 'shoots' && shoots && videosMap && (
-                <ShootManager clientId={client.id} shoots={shoots} videosMap={videosMap} />
-            )}
+                {/* --- SHOOTS TAB --- */}
+                {activeTab === 'shoots' && shoots && videosMap && (
+                    <ShootManager clientId={client.id} shoots={shoots} videosMap={videosMap} />
+                )}
 
-            {/* --- SOCIAL MEDIA TAB (NEW) --- */}
-            {activeTab === 'social' && (
-                <div className="space-y-8">
-                    {/* Connected Accounts Header */}
-                    <div className="flex flex-col md:flex-row md:items-center justify-between bg-[#0A0A0A] border border-[var(--border-subtle)] p-4 rounded-xl gap-4">
-                        <div className="flex items-center gap-4">
-                            {socialAccounts.map(acc => (
-                                <div key={acc.id} className="relative w-10 h-10 rounded-full border border-[var(--border-subtle)] overflow-hidden" title={acc.handle}>
-                                    <img src={acc.avatar_url} alt={acc.handle} className="w-full h-full object-cover" />
-                                    <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border border-black"></div>
+                {/* --- SOCIAL MEDIA TAB (NEW) --- */}
+                {activeTab === 'social' && (
+                    <div className="space-y-8">
+                        {/* Connected Accounts Header */}
+                        <div className="flex flex-col md:flex-row md:items-center justify-between bg-[#0A0A0A] border border-[var(--border-subtle)] p-4 rounded-xl gap-4">
+                            <div className="flex items-center gap-4">
+                                {socialAccounts.map(acc => (
+                                    <div key={acc.id} className="relative w-10 h-10 rounded-full border border-[var(--border-subtle)] overflow-hidden" title={acc.handle}>
+                                        <img src={acc.avatar_url} alt={acc.handle} className="w-full h-full object-cover" />
+                                        <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border border-black"></div>
+                                    </div>
+                                ))}
+                                {socialAccounts.length === 0 && <span className="text-sm text-[var(--text-tertiary)] italic">No accounts connected</span>}
+                            </div>
+
+                            <div className="flex flex-col gap-2">
+                                <div className="text-xs text-[var(--text-tertiary)] uppercase font-bold mb-1">Add New</div>
+                                <div className="flex flex-wrap gap-2">
+                                    <ConnectAccountBtn platform="instagram" clientId={client.id} />
+                                    <ConnectAccountBtn platform="linkedin" clientId={client.id} />
+                                    <ConnectAccountBtn platform="tiktok" clientId={client.id} />
+                                    <ConnectAccountBtn platform="youtube" clientId={client.id} />
                                 </div>
-                            ))}
-                            {socialAccounts.length === 0 && <span className="text-sm text-[var(--text-tertiary)] italic">No accounts connected</span>}
-                        </div>
-
-                        <div className="flex flex-col gap-2">
-                            <div className="text-xs text-[var(--text-tertiary)] uppercase font-bold mb-1">Add New</div>
-                            <div className="flex flex-wrap gap-2">
-                                <ConnectAccountBtn platform="instagram" clientId={client.id} />
-                                <ConnectAccountBtn platform="linkedin" clientId={client.id} />
-                                <ConnectAccountBtn platform="tiktok" clientId={client.id} />
-                                <ConnectAccountBtn platform="youtube" clientId={client.id} />
                             </div>
                         </div>
+
+                        {/* Unassigned Accounts Warnings (if any match handle/name or just generic list) */}
+                        {/* Ideally we would list accounts with client_id = NULL here and offer to "Claim" them */}
+
+                        {/* Social Planner */}
+                        <SocialPlanner initialPosts={socialPosts} accounts={socialAccounts} clients={[client]} />
                     </div>
+                )}
 
-                    {/* Unassigned Accounts Warnings (if any match handle/name or just generic list) */}
-                    {/* Ideally we would list accounts with client_id = NULL here and offer to "Claim" them */}
-
-                    {/* Social Planner */}
-                    <SocialPlanner initialPosts={socialPosts} accounts={socialAccounts} clients={[client]} />
-                </div>
-            )}
-
-            {/* --- BRAND & INFO TAB --- */}
-            {activeTab === 'brand' && (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    <div>
-                        <h3 className="font-bold mb-4 text-[var(--text-secondary)] text-sm uppercase tracking-wider">Social Presence (Legacy Links)</h3>
-                        <SocialLinks clientId={client.id} socials={socials} />
+                {/* --- BRAND & INFO TAB --- */}
+                {activeTab === 'brand' && (
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <div>
+                            <h3 className="font-bold mb-4 text-[var(--text-secondary)] text-sm uppercase tracking-wider">Social Presence (Legacy Links)</h3>
+                            <SocialLinks clientId={client.id} socials={socials} />
+                        </div>
+                        <div>
+                            <h3 className="font-bold mb-4 text-[var(--text-secondary)] text-sm uppercase tracking-wider">Credentials & Access</h3>
+                            <CredentialsBox clientId={client.id} credentials={credentials} />
+                        </div>
                     </div>
-                    <div>
-                        <h3 className="font-bold mb-4 text-[var(--text-secondary)] text-sm uppercase tracking-wider">Credentials & Access</h3>
-                        <CredentialsBox clientId={client.id} credentials={credentials} />
-                    </div>
-                </div>
-            )}
+                )}
 
-            {/* --- IDEAS TAB --- */}
-            {activeTab === 'ideas' && (
-                <IdeaBox clientId={client.id} ideas={ideas} clientName={client.company_name || client.name} />
-            )}
+                {/* --- IDEAS TAB --- */}
+                {activeTab === 'ideas' && (
+                    <IdeaBox clientId={client.id} ideas={ideas} clientName={client.company_name || client.name} />
+                )}
 
-        </div>
+            </div>
         </div >
     );
 }
