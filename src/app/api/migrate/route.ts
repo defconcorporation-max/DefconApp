@@ -226,6 +226,15 @@ export async function GET() {
             results.push('· clients.agency_id already exists');
         }
 
+        // ── Beta Feedback: Client Profile Fields ──
+        try { await turso.execute('ALTER TABLE clients ADD COLUMN location TEXT'); results.push('✓ clients.location added'); } catch { }
+        try { await turso.execute('ALTER TABLE clients ADD COLUMN about TEXT'); results.push('✓ clients.about added'); } catch { }
+        try { await turso.execute('ALTER TABLE clients ADD COLUMN website TEXT'); results.push('✓ clients.website added'); } catch { }
+        try { await turso.execute('ALTER TABLE clients ADD COLUMN assigned_team_member_id INTEGER'); results.push('✓ clients.assigned_team_member_id added'); } catch { }
+
+        // ── Beta Feedback: Availability Team Split ──
+        try { await turso.execute("ALTER TABLE availability_slots ADD COLUMN coverage_type TEXT DEFAULT 'full'"); results.push('✓ availability_slots.coverage_type added'); } catch { }
+
         return NextResponse.json({
             success: true,
             message: 'All migrations completed successfully.',

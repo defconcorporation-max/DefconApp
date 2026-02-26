@@ -38,6 +38,10 @@ export async function createClient(formData: FormData) {
     const company = formData.get('company') as string;
     const plan = formData.get('plan') as string;
     const status = formData.get('status') as string || 'Active';
+    const location = formData.get('location') as string || null;
+    const about = formData.get('about') as string || null;
+    const website = formData.get('website') as string || null;
+    const assigned_team_member_id = formData.get('assigned_team_member_id') ? Number(formData.get('assigned_team_member_id')) : null;
 
     // Handle Agency Logic
     const rawAgencyId = formData.get('agencyId');
@@ -68,8 +72,8 @@ export async function createClient(formData: FormData) {
     // Use cloud storage or manual folder management in production
 
     await db.execute({
-        sql: 'INSERT INTO clients (name, company_name, plan, status, folder_path, agency_id) VALUES (?, ?, ?, ?, ?, ?)',
-        args: [name, company, plan, status, folderPath, finalAgencyId]
+        sql: 'INSERT INTO clients (name, company_name, plan, status, folder_path, agency_id, location, about, website, assigned_team_member_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        args: [name, company, plan, status, folderPath, finalAgencyId, location, about, website, assigned_team_member_id]
     });
 
     try {
@@ -1831,6 +1835,10 @@ export async function updateClient(formData: FormData) {
     const company = formData.get('company') as string;
     const plan = formData.get('plan') as string;
     const status = formData.get('status') as string || 'Active';
+    const location = formData.get('location') as string || null;
+    const about = formData.get('about') as string || null;
+    const website = formData.get('website') as string || null;
+    const assigned_team_member_id = formData.get('assigned_team_member_id') ? Number(formData.get('assigned_team_member_id')) : null;
 
     // Handle Agency Logic
     const rawAgencyId = formData.get('agencyId');
@@ -1853,8 +1861,8 @@ export async function updateClient(formData: FormData) {
     }
 
     await db.execute({
-        sql: 'UPDATE clients SET name = ?, company_name = ?, plan = ?, status = ?, agency_id = ? WHERE id = ?',
-        args: [name, company, plan, status, finalAgencyId, id]
+        sql: 'UPDATE clients SET name = ?, company_name = ?, plan = ?, status = ?, agency_id = ?, location = ?, about = ?, website = ?, assigned_team_member_id = ? WHERE id = ?',
+        args: [name, company, plan, status, finalAgencyId, location, about, website, assigned_team_member_id, id]
     });
     revalidatePath(`/clients/${id}`);
     revalidatePath('/');
@@ -2045,20 +2053,20 @@ export async function toggleShootBlocking(shootId: number, isBlocking: boolean) 
     revalidatePath('/availability');
 }
 
-export async function createAvailabilitySlot(start: string, end: string) {
+export async function createAvailabilitySlot(start: string, end: string, coverageType: string = 'full') {
     if (!start || !end) return;
     await db.execute({
-        sql: 'INSERT INTO availability_slots (start_time, end_time, is_booked) VALUES (?, ?, 0)',
-        args: [start, end]
+        sql: 'INSERT INTO availability_slots (start_time, end_time, is_booked, coverage_type) VALUES (?, ?, 0, ?)',
+        args: [start, end, coverageType]
     });
     revalidatePath('/availability');
 }
 
-export async function updateAvailabilitySlot(id: number, start: string, end: string) {
+export async function updateAvailabilitySlot(id: number, start: string, end: string, coverageType: string = 'full') {
     if (!id || !start || !end) return;
     await db.execute({
-        sql: 'UPDATE availability_slots SET start_time = ?, end_time = ? WHERE id = ?',
-        args: [start, end, id]
+        sql: 'UPDATE availability_slots SET start_time = ?, end_time = ?, coverage_type = ? WHERE id = ?',
+        args: [start, end, coverageType, id]
     });
     revalidatePath('/availability');
 }

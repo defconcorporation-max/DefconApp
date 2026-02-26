@@ -23,6 +23,11 @@ export interface Client {
     portal_enabled?: boolean;
     agency_id?: number;
     client_value?: number; // Admin only
+    location?: string;
+    about?: string;
+    website?: string;
+    assigned_team_member_id?: number;
+    assigned_team_member_name?: string; // Joined field
 }
 
 export interface SocialLink {
@@ -325,6 +330,7 @@ export interface AvailabilitySlot {
     end_time: string;
     is_booked: boolean;
     created_at?: string;
+    coverage_type?: string; // 'full' | 'half'
 }
 
 export interface AvailabilityRequest {

@@ -28,8 +28,9 @@ function getHeaderColor(score: number) {
 }
 
 export default function WorkloadDashboard({ members, workload, startDateStr, endDateStr }: WorkloadDashboardProps) {
-    const [viewMode, setViewMode] = useState<'monthly' | 'weekly'>('monthly');
+    const [viewMode, setViewMode] = useState<'monthly' | 'weekly' | 'daily'>('monthly');
     const [weekOffset, setWeekOffset] = useState(0);
+    const [dayOffset, setDayOffset] = useState(0);
 
     const baseStartDate = new Date(startDateStr);
 
@@ -42,7 +43,7 @@ export default function WorkloadDashboard({ members, workload, startDateStr, end
             dates.push(start.toISOString().split('T')[0]);
             start.setDate(start.getDate() + 1);
         }
-    } else {
+    } else if (viewMode === 'weekly') {
         // Weekly mapping from start date + offset
         const start = new Date(baseStartDate);
         start.setDate(start.getDate() + (weekOffset * 7));
@@ -51,6 +52,10 @@ export default function WorkloadDashboard({ members, workload, startDateStr, end
             d.setDate(d.getDate() + i);
             dates.push(d.toISOString().split('T')[0]);
         }
+    } else if (viewMode === 'daily') {
+        const start = new Date(baseStartDate);
+        start.setDate(start.getDate() + dayOffset);
+        dates.push(start.toISOString().split('T')[0]);
     }
 
     const currentWeekStart = new Date(baseStartDate);
@@ -73,18 +78,25 @@ export default function WorkloadDashboard({ members, workload, startDateStr, end
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div className="flex bg-[#111] border border-[var(--border-subtle)] rounded-lg p-1">
                     <button
-                        onClick={() => { setViewMode('monthly'); setWeekOffset(0); }}
+                        onClick={() => { setViewMode('monthly'); setWeekOffset(0); setDayOffset(0); }}
                         className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${viewMode === 'monthly' ? 'bg-indigo-600 text-white' : 'text-[var(--text-secondary)] hover:text-white'
                             }`}
                     >
                         <LayoutGrid size={16} /> Overview
                     </button>
                     <button
-                        onClick={() => setViewMode('weekly')}
+                        onClick={() => { setViewMode('weekly'); setWeekOffset(0); }}
                         className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${viewMode === 'weekly' ? 'bg-indigo-600 text-white' : 'text-[var(--text-secondary)] hover:text-white'
                             }`}
                     >
                         <CalendarDays size={16} /> Weekly Details
+                    </button>
+                    <button
+                        onClick={() => { setViewMode('daily'); setDayOffset(0); }}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${viewMode === 'daily' ? 'bg-indigo-600 text-white' : 'text-[var(--text-secondary)] hover:text-white'
+                            }`}
+                    >
+                        <CalendarIcon size={16} /> Daily Detail
                     </button>
                 </div>
 
@@ -107,11 +119,35 @@ export default function WorkloadDashboard({ members, workload, startDateStr, end
                         </button>
                     </div>
                 )}
+
+                {viewMode === 'daily' && (
+                    <div className="flex items-center gap-3">
+                        <button
+                            onClick={() => setDayOffset(prev => prev - 1)}
+                            className="p-2 border border-[var(--border-subtle)] bg-[#111] hover:bg-white/5 rounded-lg text-white transition-colors"
+                        >
+                            <ChevronLeft size={16} />
+                        </button>
+                        <span className="text-sm font-bold text-white w-48 text-center uppercase tracking-wider">
+                            {(() => {
+                                const d = new Date(baseStartDate);
+                                d.setDate(d.getDate() + dayOffset);
+                                return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', weekday: 'short' });
+                            })()}
+                        </span>
+                        <button
+                            onClick={() => setDayOffset(prev => prev + 1)}
+                            className="p-2 border border-[var(--border-subtle)] bg-[#111] hover:bg-white/5 rounded-lg text-white transition-colors"
+                        >
+                            <ChevronRight size={16} />
+                        </button>
+                    </div>
+                )}
             </div>
 
             {/* Grid Container */}
             <div className="w-full overflow-x-auto pb-8 custom-scrollbar">
-                <div className={`min-w-[1000px] bg-[#0A0A0A] border border-[var(--border-subtle)] rounded-xl overflow-hidden ${viewMode === 'weekly' ? 'min-w-[1400px]' : ''}`}>
+                <div className={`min-w-[600px] bg-[#0A0A0A] border border-[var(--border-subtle)] rounded-xl overflow-hidden ${viewMode === 'weekly' ? 'min-w-[1400px]' : ''} ${viewMode === 'monthly' ? 'min-w-[1000px]' : ''}`}>
 
                     {/* Header Row */}
                     <div className="flex border-b border-[var(--border-subtle)] bg-[#111]">
@@ -129,10 +165,10 @@ export default function WorkloadDashboard({ members, workload, startDateStr, end
                                         <div className={`text-[10px] uppercase font-bold tracking-wider mb-1 ${isWeekend ? 'text-[var(--text-tertiary)]' : 'text-[var(--text-secondary)]'} ${isToday ? 'text-indigo-400' : ''}`}>
                                             {dayName}
                                         </div>
-                                        <div className={`font-mono ${viewMode === 'weekly' ? 'text-lg' : 'text-sm'} ${isToday ? 'text-indigo-400 font-bold' : 'text-white'}`}>
+                                        <div className={`font-mono ${viewMode !== 'monthly' ? 'text-lg' : 'text-sm'} ${isToday ? 'text-indigo-400 font-bold' : 'text-white'}`}>
                                             {dayNum}
                                         </div>
-                                        {viewMode === 'weekly' && (
+                                        {viewMode !== 'monthly' && (
                                             <div className="text-[10px] text-[var(--text-tertiary)] mt-1">
                                                 {fullDate}
                                             </div>
@@ -203,7 +239,7 @@ export default function WorkloadDashboard({ members, workload, startDateStr, end
                                             );
                                         }
 
-                                        // Weekly Detailed Cell
+                                        // Weekly and Daily Detailed Cell
                                         return (
                                             <div key={dateStr} className={`flex-1 min-w-[160px] border-r border-[var(--border-subtle)] last:border-0 flex flex-col ${isWeekend ? 'bg-white/[0.02]' : ''}`}>
                                                 {!hasItems ? (

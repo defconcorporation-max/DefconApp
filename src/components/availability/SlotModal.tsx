@@ -10,7 +10,7 @@ interface SlotModalProps {
     onClose: () => void;
     initialDate?: Date;
     initialStartTime?: string; // HH:mm
-    initialSlot?: { id: number; start_time: string; end_time: string }; // For manual blocks
+    initialSlot?: { id: number; start_time: string; end_time: string; coverage_type?: string }; // For manual blocks
     initialShoot?: { id: number; shoot_date: string; start_time?: string; end_time?: string; is_blocking: number; title?: string; project_title?: string; status?: string; client_id?: number; client_name?: string }; // For shoots
     mode?: 'create' | 'block' | 'edit' | 'edit-shoot' | 'request' | 'approve';
     agencyId?: number;
@@ -22,6 +22,7 @@ export default function SlotModal({ isOpen, onClose, initialDate, initialStartTi
     const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'));
     const [startTime, setStartTime] = useState('10:00');
     const [duration, setDuration] = useState('2'); // hours
+    const [coverageType, setCoverageType] = useState('full'); // 'full' | 'half'
 
     // New fields for request
     const [title, setTitle] = useState('');
@@ -79,6 +80,7 @@ export default function SlotModal({ isOpen, onClose, initialDate, initialStartTi
                 const end = new Date(initialSlot.end_time);
                 setDate(format(start, 'yyyy-MM-dd'));
                 setStartTime(format(start, 'HH:mm'));
+                if (initialSlot.coverage_type) setCoverageType(initialSlot.coverage_type);
 
                 const diffMins = differenceInMinutes(end, start);
                 const diffHours = Math.round(diffMins / 60);
@@ -167,10 +169,10 @@ export default function SlotModal({ isOpen, onClose, initialDate, initialStartTi
                 }
                 toast.success('Shoot details updated!');
             } else if (isEdit && initialSlot) {
-                await updateAvailabilitySlot(initialSlot.id, startStr, endStr);
+                await updateAvailabilitySlot(initialSlot.id, startStr, endStr, coverageType);
                 toast.success('Unavailability block updated!');
             } else {
-                await createAvailabilitySlot(startStr, endStr);
+                await createAvailabilitySlot(startStr, endStr, coverageType);
                 toast.success('Time blocked successfully!');
             }
             onClose();
@@ -304,6 +306,23 @@ export default function SlotModal({ isOpen, onClose, initialDate, initialStartTi
                                 </select>
                             </div>
                         </div>
+
+                        {/* Coverage Type for Blocks */}
+                        {(isBlock || isEdit) && (
+                            <div className="space-y-1.5 pt-2 border-t border-[var(--border-subtle)]">
+                                <label className="text-xs font-medium text-[var(--text-secondary)] uppercase">Coverage Type</label>
+                                <div className="grid grid-cols-2 gap-3 mt-1">
+                                    <label className={`flex items-center justify-center p-2.5 rounded-lg border cursor-pointer transition-colors ${coverageType === 'full' ? `bg-${accentColor}-500/20 border-${accentColor}-500/50 text-${accentColor}-200` : 'bg-[var(--bg-root)] border-[var(--border-subtle)] text-[var(--text-tertiary)] hover:bg-white/[0.02]'}`}>
+                                        <input type="radio" name="coverageType" value="full" checked={coverageType === 'full'} onChange={() => setCoverageType('full')} className="sr-only" />
+                                        <span className="text-sm font-medium">Full Team</span>
+                                    </label>
+                                    <label className={`flex items-center justify-center p-2.5 rounded-lg border cursor-pointer transition-colors ${coverageType === 'half' ? `bg-${accentColor}-500/20 border-${accentColor}-500/50 text-${accentColor}-200` : 'bg-[var(--bg-root)] border-[var(--border-subtle)] text-[var(--text-tertiary)] hover:bg-white/[0.02]'}`}>
+                                        <input type="radio" name="coverageType" value="half" checked={coverageType === 'half'} onChange={() => setCoverageType('half')} className="sr-only" />
+                                        <span className="text-sm font-medium">Half Team (Split)</span>
+                                    </label>
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     <div className="pt-2 flex justify-end gap-3">

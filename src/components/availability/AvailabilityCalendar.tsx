@@ -341,7 +341,9 @@ export default function AvailabilityCalendar({ initialSlots, initialShoots, init
                                         // For now, treat all `slots` as Blocks.
 
                                         // Manual Blocks should be RED (blockClasses logic)
-                                        const blockClasses = "absolute left-1 right-1 rounded-md border p-1.5 text-xs transition-all cursor-pointer group/slot shadow-sm overflow-hidden bg-red-500/20 border-red-500/40 text-red-200 z-30 striped-bg";
+                                        const isHalf = slot.coverage_type === 'half';
+                                        const widthClass = isHalf ? "left-1 w-[calc(50%-6px)]" : "left-1 right-1";
+                                        const blockClasses = `absolute ${widthClass} rounded-md border p-1.5 text-xs transition-all cursor-pointer group/slot shadow-sm overflow-hidden bg-red-500/20 border-red-500/40 text-red-200 z-30 striped-bg`;
 
                                         return (
                                             <div
@@ -383,7 +385,7 @@ export default function AvailabilityCalendar({ initialSlots, initialShoots, init
                                                 </div>
 
                                                 <div className="font-bold uppercase tracking-wider text-[10px] flex items-center gap-1">
-                                                    <X size={10} /> Unavailable
+                                                    <X size={10} /> {isHalf ? 'Half Team' : 'Unavailable'}
                                                 </div>
                                             </div>
                                         );

@@ -1,4 +1,4 @@
-import { getClient, getProjects, getSocials, getIdeas, getCommissions, getPayments, getCredentials, getAgencies, getShoots, getShootVideos, getPipelineStages } from '@/app/actions';
+import { getClient, getProjects, getSocials, getIdeas, getCommissions, getPayments, getCredentials, getAgencies, getShoots, getShootVideos, getPipelineStages, getTeamMembers } from '@/app/actions';
 export const dynamic = 'force-dynamic';
 import { getSocialAccounts, getSocialPosts } from '@/app/social-actions';
 import FolderButton from '@/components/FolderButton';
@@ -16,7 +16,7 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
     const clientId = Number(id);
 
     // Parallel fetch — all independent queries run at the same time
-    const [client, socials, ideas, commissions, payments, credentials, projects, agencies, pipelineStages, socialAccounts, socialPosts, shoots, session] = await Promise.all([
+    const [client, socials, ideas, commissions, payments, credentials, projects, agencies, pipelineStages, socialAccounts, socialPosts, shoots, teamMembers, session] = await Promise.all([
         getClient(clientId),
         getSocials(clientId),
         getIdeas(clientId),
@@ -29,6 +29,7 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
         getSocialAccounts(clientId),
         getSocialPosts(clientId),
         getShoots(clientId),
+        getTeamMembers(),
         auth(),
     ]);
 
@@ -91,6 +92,7 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
                     socialPosts={socialPosts}
                     shoots={shoots as any[]}
                     videosMap={videosMap}
+                    teamMembers={teamMembers}
                 />
             </div>
         </main>
