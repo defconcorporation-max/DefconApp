@@ -203,6 +203,21 @@ export async function GET() {
         `);
         results.push('✓ project_costs table');
 
+        // ── Project Services (invoice line items) ──
+        await turso.execute(`
+            CREATE TABLE IF NOT EXISTS project_services (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                project_id INTEGER NOT NULL,
+                description TEXT NOT NULL,
+                quantity REAL DEFAULT 1,
+                unit_price REAL DEFAULT 0,
+                total REAL DEFAULT 0,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(project_id) REFERENCES projects(id) ON DELETE CASCADE
+            )
+        `);
+        results.push('✓ project_services table');
+
         // ── Add agency_id to clients (safe) ──
         try {
             await turso.execute('ALTER TABLE clients ADD COLUMN agency_id INTEGER');

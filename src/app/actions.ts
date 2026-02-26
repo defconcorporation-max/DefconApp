@@ -1225,11 +1225,16 @@ export async function getProjectShoots(projectId: number) {
 }
 
 export async function getProjectServices(projectId: number) {
-    const { rows } = await db.execute({
-        sql: 'SELECT * FROM project_services WHERE project_id = ?',
-        args: [projectId]
-    });
-    return rows as unknown as any[];
+    try {
+        const { rows } = await db.execute({
+            sql: 'SELECT * FROM project_services WHERE project_id = ?',
+            args: [projectId]
+        });
+        return rows as unknown as any[];
+    } catch (e) {
+        console.error('getProjectServices failed (table may not exist):', e);
+        return [];
+    }
 }
 
 export async function addProjectService(formData: FormData) {
@@ -2391,11 +2396,16 @@ async function recalculateProjectCosts(projectId: number) {
 }
 
 export async function getProjectCosts(projectId: number) {
-    const { rows } = await db.execute({
-        sql: 'SELECT * FROM project_costs WHERE project_id = ? ORDER BY created_at ASC',
-        args: [projectId]
-    });
-    return rows as unknown as { id: number; project_id: number; label: string; amount: number; created_at: string }[];
+    try {
+        const { rows } = await db.execute({
+            sql: 'SELECT * FROM project_costs WHERE project_id = ? ORDER BY created_at ASC',
+            args: [projectId]
+        });
+        return rows as unknown as { id: number; project_id: number; label: string; amount: number; created_at: string }[];
+    } catch (e) {
+        console.error('getProjectCosts failed (table may not exist):', e);
+        return [];
+    }
 }
 
 export async function addProjectCost(formData: FormData) {
@@ -2683,30 +2693,35 @@ export async function markNotificationAsRead(id: number) {
 
 // --- PROJECT POST PROD WORKFLOWS ---
 export async function getProjectPostProdWorkflows(projectId: number) {
-    const query = `
-        SELECT 
-            p.*, 
-            s.title as shoot_title, 
-            t.name as template_name
-        FROM post_prod_projects p
-        JOIN shoots s ON p.shoot_id = s.id
-        JOIN post_prod_templates t ON p.template_id = t.id
-        WHERE s.project_id = ?
-        ORDER BY p.created_at DESC
-    `;
-    const { rows: projects } = await db.execute({ sql: query, args: [projectId] });
+    try {
+        const query = `
+            SELECT 
+                p.*, 
+                s.title as shoot_title, 
+                t.name as template_name
+            FROM post_prod_projects p
+            JOIN shoots s ON p.shoot_id = s.id
+            JOIN post_prod_templates t ON p.template_id = t.id
+            WHERE s.project_id = ?
+            ORDER BY p.created_at DESC
+        `;
+        const { rows: projects } = await db.execute({ sql: query, args: [projectId] });
 
-    // Progress calculation
-    const workflows = await Promise.all(projects.map(async (p: any) => {
-        const { rows: tasks } = await db.execute({
-            sql: 'SELECT count(*) as total, sum(is_completed) as completed FROM post_prod_tasks WHERE project_id = ?',
-            args: [p.id]
-        });
-        const stats = tasks[0] as any;
-        const progress = stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0;
+        // Progress calculation
+        const workflows = await Promise.all(projects.map(async (p: any) => {
+            const { rows: tasks } = await db.execute({
+                sql: 'SELECT count(*) as total, sum(is_completed) as completed FROM post_prod_tasks WHERE project_id = ?',
+                args: [p.id]
+            });
+            const stats = tasks[0] as any;
+            const progress = stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0;
 
-        return { ...p, progress };
-    }));
+            return { ...p, progress };
+        }));
 
-    return workflows;
+        return workflows;
+    } catch (e) {
+        console.error('getProjectPostProdWorkflows failed:', e);
+        return [];
+    }
 }
