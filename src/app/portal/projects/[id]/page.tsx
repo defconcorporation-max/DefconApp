@@ -3,7 +3,8 @@ import { cookies } from 'next/headers';
 import { decrypt } from '@/lib/auth-utils';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import { LogOut, ArrowLeft, Folder, Video, Calendar, FileText } from 'lucide-react';
+import { LogOut, ArrowLeft, Folder, Video, Calendar, FileText, MessageSquare } from 'lucide-react';
+import ClientDeliverableComments from '@/components/portal/ClientDeliverableComments';
 
 export const dynamic = 'force-dynamic';
 
@@ -108,9 +109,16 @@ export default async function ClientProjectPage({ params }: { params: Promise<{ 
                                                     {shoot.videos.map((vid: any) => (
                                                         <li key={vid.id} className="flex items-start gap-2 text-sm">
                                                             <div className={`mt-1 flex-shrink-0 w-1.5 h-1.5 rounded-full ${vid.completed ? 'bg-emerald-500' : 'bg-white/20'}`} />
-                                                            <span className={vid.completed ? 'text-[var(--text-secondary)] line-through' : 'text-white'}>
-                                                                {vid.title}
-                                                            </span>
+                                                            <div className="flex-1">
+                                                                <span className={vid.completed ? 'text-[var(--text-secondary)] line-through' : 'text-white'}>
+                                                                    {vid.title}
+                                                                </span>
+                                                                <ClientDeliverableComments
+                                                                    videoId={vid.id}
+                                                                    clientId={session.client.id}
+                                                                    initialComments={vid.comments || []}
+                                                                />
+                                                            </div>
                                                         </li>
                                                     ))}
                                                 </ul>
@@ -123,6 +131,6 @@ export default async function ClientProjectPage({ params }: { params: Promise<{ 
                     )}
                 </div>
             </div>
-        </main>
+        </main >
     );
 }

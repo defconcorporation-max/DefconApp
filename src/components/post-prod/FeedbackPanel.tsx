@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { resolveFeedbackItem, unresolveFeedbackItem } from '@/app/review-actions';
 import { CheckCircle2, Circle, MessageSquare, ChevronDown, ChevronUp } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import FeedbackAiHelper from '../FeedbackAiHelper';
 
 interface FeedbackItem {
     id: number;
@@ -14,7 +15,17 @@ interface FeedbackItem {
     created_at: string;
 }
 
-export default function FeedbackPanel({ feedback: initialFeedback, projectId }: { feedback: FeedbackItem[], projectId: number }) {
+export default function FeedbackPanel({
+    feedback: initialFeedback,
+    projectId,
+    shootTitle,
+    clientName
+}: {
+    feedback: FeedbackItem[],
+    projectId: number,
+    shootTitle?: string,
+    clientName?: string
+}) {
     const [feedback, setFeedback] = useState<FeedbackItem[]>(initialFeedback);
     const [commentingId, setCommentingId] = useState<number | null>(null);
     const [commentText, setCommentText] = useState('');
@@ -101,6 +112,15 @@ export default function FeedbackPanel({ feedback: initialFeedback, projectId }: 
                                         </button>
                                     )}
                                 </div>
+
+                                {!item.is_resolved && (
+                                    <FeedbackAiHelper
+                                        feedbackText={item.feedback}
+                                        projectTitle={shootTitle || 'Video Project'}
+                                        clientName={clientName || 'Client'}
+                                    />
+                                )}
+
                                 {commentingId === item.id && (
                                     <div className="mt-2 flex gap-2">
                                         <input

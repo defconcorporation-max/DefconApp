@@ -147,10 +147,11 @@ export async function getPostProdProject(id: number) {
     // Project Details
     const { rows: projectRows } = await db.execute({
         sql: `
-            SELECT p.*, s.title as shoot_title, t.name as template_name 
+            SELECT p.*, s.title as shoot_title, t.name as template_name, c.company_name as client_name
             FROM post_prod_projects p
             JOIN shoots s ON p.shoot_id = s.id
             JOIN post_prod_templates t ON p.template_id = t.id
+            LEFT JOIN clients c ON s.client_id = c.id
             WHERE p.id = ?
         `,
         args: [id]

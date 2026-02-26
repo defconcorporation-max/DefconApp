@@ -3,6 +3,8 @@ import Link from 'next/link';
 import { ArrowUpRight, Briefcase, DollarSign, Activity, Users, TrendingUp } from 'lucide-react';
 import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
+import { getAuditLogs } from '@/app/actions';
+import AuditLogViewer from '@/components/AuditLogViewer';
 
 export const dynamic = 'force-dynamic';
 
@@ -48,6 +50,9 @@ export default async function CommandCenterPage() {
         ORDER BY s.shoot_date ASC LIMIT 5
     `);
     const upcomingShoots = upcomingShootsRes.rows as any[];
+
+    // Fetch recent audit logs
+    const auditLogs = await getAuditLogs(10);
 
     const formatCurrency = (amount: number | null | undefined) => {
         if (!amount) return '$0';
@@ -199,6 +204,11 @@ export default async function CommandCenterPage() {
                         )}
                     </div>
                 </div>
+            </div>
+
+            {/* Audit Log Section */}
+            <div>
+                <AuditLogViewer initialLogs={auditLogs} />
             </div>
         </div>
     );

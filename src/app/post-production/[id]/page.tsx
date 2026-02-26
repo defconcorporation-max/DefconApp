@@ -45,7 +45,12 @@ export default async function PostProdProjectPage({ params }: { params: Promise<
                 </div>
             </div>
 
-            <FeedbackPanel feedback={feedback} projectId={project.id} />
+            <FeedbackPanel
+                feedback={feedback}
+                projectId={project.id}
+                shootTitle={project.shoot_title}
+                clientName={project.client_name}
+            />
             <PostProdWorkspace project={project} tasks={tasks} versions={versions} />
         </main>
     );

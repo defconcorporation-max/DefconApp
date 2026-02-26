@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Users, Briefcase, Video, CreditCard, Settings, Command, Layers, UserPlus, BookOpen, Building, Calendar, Shield, Activity, LogOut } from 'lucide-react';
+import { Home, Users, Briefcase, Video, CreditCard, Settings, Command, Layers, UserPlus, BookOpen, Building, Calendar, Shield, Activity, LogOut, Sparkles } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { signOut } from 'next-auth/react';
 import BetaFeedbackWidget from './BetaFeedbackWidget';
@@ -27,6 +27,7 @@ export default function Sidebar({ userRole = '' }: { userRole?: string }) {
         { href: '/shoots', label: 'Shoots', icon: Video },
         { href: '/availability', label: 'Availability', icon: Calendar },
         { href: '/post-production', label: 'Post-Production', icon: Layers },
+        { href: '/creative-studio', label: 'Creative Studio', icon: Sparkles },
         { href: '/actors', label: 'Actors', icon: UserPlus },
     ];
 

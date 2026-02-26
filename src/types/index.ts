@@ -274,6 +274,7 @@ export interface PostProdProject {
     review_token?: string;
     // Joined
     shoot_title?: string;
+    client_name?: string;
     template_name?: string;
     progress?: number;
 }

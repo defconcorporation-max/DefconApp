@@ -1,4 +1,4 @@
-import { getProjectById, getProjectShoots, getTeamMembers, getClient, getProjectTasks, getTaskStages, getShootVideos, getAgencies, getProjectPostProdWorkflows } from '@/app/actions';
+import { getProjectById, getProjectShoots, getTeamMembers, getClient, getProjectTasks, getTaskStages, getShootVideos, getAgencies, getProjectPostProdWorkflows, getProjectServices, getSettings } from '@/app/actions';
 import { Project, Shoot, ProjectTask, TaskStage, Client } from '@/types';
 import Link from 'next/link';
 import { ArrowLeft, Calendar, Activity, Video, DollarSign } from 'lucide-react';
@@ -8,7 +8,8 @@ import ClientAgencySelect from '@/components/ClientAgencySelect';
 import ShootManager from '@/components/ShootManager';
 import EmptyState from '@/components/EmptyState';
 import ProjectTaskManager from '@/components/ProjectTaskManager';
-import { Layers } from 'lucide-react';
+import { Layers, FileText, Download, ExternalLink } from 'lucide-react';
+import { InvoiceButton } from '@/components/InvoiceButton';
 
 export const dynamic = 'force-dynamic';
 
@@ -33,6 +34,8 @@ export default async function ProjectDetailsPage({ params }: { params: Promise<{
     const tasks = await getProjectTasks(projectId) as ProjectTask[];
     const stages = await getTaskStages() as TaskStage[];
     const teamMembers = await getTeamMembers();
+    const services = await getProjectServices(projectId);
+    const settings = await getSettings();
 
     const agencies = await getAgencies();
 
@@ -151,6 +154,26 @@ export default async function ProjectDetailsPage({ params }: { params: Promise<{
                                     {project.margin_percentage ? Math.round(project.margin_percentage) : 0}%
                                 </span>
                             </div>
+                        </div>
+
+                        <div className="mt-6 pt-6 border-t border-[var(--border-subtle)] grid grid-cols-2 gap-3">
+                            <Link
+                                href={`/projects/${project.id}/invoice`}
+                                className="flex items-center justify-center gap-2 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 border border-indigo-500/20 py-2 rounded-xl text-xs font-bold transition-all"
+                            >
+                                <ExternalLink size={14} /> View Invoice
+                            </Link>
+                            <InvoiceButton
+                                project={project}
+                                client={client}
+                                services={services}
+                                settings={settings}
+                                className="flex items-center justify-center gap-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 py-2 rounded-xl text-xs font-bold transition-all"
+                            >
+                                <div className="flex items-center gap-2">
+                                    <Download size={14} /> PDF
+                                </div>
+                            </InvoiceButton>
                         </div>
                     </div>
 
