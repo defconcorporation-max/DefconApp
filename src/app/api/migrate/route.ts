@@ -232,8 +232,55 @@ export async function GET() {
         try { await turso.execute('ALTER TABLE clients ADD COLUMN website TEXT'); results.push('✓ clients.website added'); } catch { }
         try { await turso.execute('ALTER TABLE clients ADD COLUMN assigned_team_member_id INTEGER'); results.push('✓ clients.assigned_team_member_id added'); } catch { }
 
-        // ── Beta Feedback: Availability Team Split ──
-        try { await turso.execute("ALTER TABLE availability_slots ADD COLUMN coverage_type TEXT DEFAULT 'full'"); results.push('✓ availability_slots.coverage_type added'); } catch { }
+        // ── Leads (Discovery & CRM) ──
+        await turso.execute(`
+            CREATE TABLE IF NOT EXISTS leads (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                place_id TEXT UNIQUE,
+                name TEXT NOT NULL,
+                address TEXT,
+                website TEXT,
+                phone TEXT,
+                rating REAL,
+                user_ratings_total INTEGER,
+                status TEXT DEFAULT 'New',
+                notes TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+        results.push('✓ leads table');
+
+        // ── Lead Scraped Data ──
+        await turso.execute(`
+            CREATE TABLE IF NOT EXISTS lead_scraped_data (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                lead_id INTEGER NOT NULL,
+                emails TEXT, -- JSON array
+                social_json TEXT, -- Social profiles array
+                title TEXT,
+                description TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(lead_id) REFERENCES leads(id) ON DELETE CASCADE
+            )
+        `);
+        results.push('✓ lead_scraped_data table');
+
+        // ── Lead AI Analyses ──
+        await turso.execute(`
+            CREATE TABLE IF NOT EXISTS lead_analyses (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                lead_id INTEGER NOT NULL,
+                summary TEXT,
+                pain_points TEXT, -- JSON array
+                suggestions TEXT, -- JSON array
+                qualification_score INTEGER,
+                email_draft TEXT,
+                social_verdict TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(lead_id) REFERENCES leads(id) ON DELETE CASCADE
+            )
+        `);
+        results.push('✓ lead_analyses table');
 
         return NextResponse.json({
             success: true,
