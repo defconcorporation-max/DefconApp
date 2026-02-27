@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Users, Briefcase, Video, CreditCard, Settings, Command, Layers, UserPlus, BookOpen, Building, Calendar, Shield, Activity, LogOut, Sparkles } from 'lucide-react';
+import { Home, Users, Briefcase, Video, CreditCard, Settings, Command, Layers, UserPlus, BookOpen, Building, Calendar, Shield, Activity, LogOut, Sparkles, Target } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { signOut } from 'next-auth/react';
 import BetaFeedbackWidget from './BetaFeedbackWidget';
@@ -22,6 +22,7 @@ export default function Sidebar({ userRole = '' }: { userRole?: string }) {
 
     const mainLinks = [
         { href: '/', label: 'Dashboard', icon: Home },
+        { href: '/leads', label: 'Leads', icon: Target },
         { href: '/clients', label: 'Clients', icon: Users },
         { href: '/projects', label: 'Projects', icon: Briefcase },
         { href: '/shoots', label: 'Shoots', icon: Video },
