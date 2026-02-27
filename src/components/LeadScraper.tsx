@@ -300,7 +300,7 @@ export default function LeadScraper() {
                                                     <div className="space-y-3">
                                                         <span className="text-[9px] font-black text-red-400/80 uppercase flex items-center gap-1.5"><AlertTriangle size={12} /> Pain Points</span>
                                                         <ul className="space-y-1.5">
-                                                            {selectedLead.analysis.pain_points.map((p: string, i: number) => (
+                                                            {selectedLead.analysis?.pain_points?.map((p: string, i: number) => (
                                                                 <li key={i} className="text-[11px] text-slate-400 flex items-start gap-2">
                                                                     <span className="text-red-500/40 mt-1.5">•</span> {p}
                                                                 </li>
@@ -310,7 +310,7 @@ export default function LeadScraper() {
                                                     <div className="space-y-3">
                                                         <span className="text-[9px] font-black text-emerald-400/80 uppercase flex items-center gap-1.5"><CheckCircle2 size={12} /> AI Suggestions</span>
                                                         <ul className="space-y-1.5">
-                                                            {selectedLead.analysis.suggestions.map((s: string, i: number) => (
+                                                            {selectedLead.analysis?.suggestions?.map((s: string, i: number) => (
                                                                 <li key={i} className="text-[11px] text-slate-400 flex items-start gap-2">
                                                                     <span className="text-emerald-500/40 mt-1.5">✓</span> {s}
                                                                 </li>
@@ -331,8 +331,10 @@ export default function LeadScraper() {
                                                         </div>
                                                         <button
                                                             onClick={() => {
-                                                                navigator.clipboard.writeText(selectedLead.analysis.email_draft);
-                                                                toast.success("Copied to clipboard");
+                                                                if (selectedLead.analysis?.email_draft) {
+                                                                    navigator.clipboard.writeText(selectedLead.analysis.email_draft);
+                                                                    toast.success("Copied to clipboard");
+                                                                }
                                                             }}
                                                             className="text-[10px] font-black text-indigo-400 hover:text-indigo-300 uppercase flex items-center gap-1 transition-colors"
                                                         >
@@ -341,7 +343,7 @@ export default function LeadScraper() {
                                                     </div>
                                                     <div className="bg-black/40 p-5 rounded-2xl border border-white/5">
                                                         <p className="text-xs text-slate-400 whitespace-pre-wrap leading-relaxed italic">
-                                                            {selectedLead.analysis.email_draft}
+                                                            {selectedLead.analysis?.email_draft || "No draft generated"}
                                                         </p>
                                                     </div>
                                                 </div>

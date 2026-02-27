@@ -91,21 +91,25 @@ export async function qualifyLeadAction(lead: any, language: 'fr' | 'en' = 'fr')
             }).join('\n');
         }
 
-        const analysis = await analyzeClient(
+        const rawAnalysis = await analyzeClient(
             name,
             scrapedData.description || scrapedData.title || 'No content found',
             JSON.stringify({ emails: scrapedData.emails, title: scrapedData.title }),
             socialDataStr || undefined
         );
 
-        const emailDraft = await draftIntroEmail(name, analysis, language);
+        const emailDraft = await draftIntroEmail(name, rawAnalysis, language);
 
         return {
             success: true,
             scrapedData,
             analysis: {
-                ...analysis,
+                summary: rawAnalysis.summary,
+                pain_points: rawAnalysis.painPoints,
+                suggestions: rawAnalysis.suggestions,
+                qualification_score: rawAnalysis.qualificationScore,
                 email_draft: emailDraft,
+                social_verdict: rawAnalysis.socialMedia?.overallVerdict
             }
         };
     } catch (error: any) {
@@ -117,11 +121,19 @@ export async function qualifyLeadAction(lead: any, language: 'fr' | 'en' = 'fr')
 export async function saveLeadToPipeline(lead: Lead, scrapedData?: any, analysis?: any) {
     try {
         // 1. Save Base Lead
-        const leadRes = await db.execute({
+        await db.execute({
             sql: `INSERT INTO leads (place_id, name, address, website, phone, rating, user_ratings_total, status) 
                   VALUES (?, ?, ?, ?, ?, ?, ?, 'New')
                   ON CONFLICT(place_id) DO UPDATE SET status = status`,
-            args: [lead.place_id, lead.name, lead.address, lead.website, lead.phone, lead.rating, lead.user_ratings_total]
+            args: [
+                lead.place_id,
+                lead.name,
+                lead.address || null,
+                lead.website || null,
+                lead.phone || null,
+                lead.rating || null,
+                lead.user_ratings_total || null
+            ]
         });
 
         // Get ID (could be from INSERT or existing)
@@ -155,10 +167,10 @@ export async function saveLeadToPipeline(lead: Lead, scrapedData?: any, analysis
                       ON CONFLICT(lead_id) DO UPDATE SET summary = excluded.summary`,
                 args: [
                     leadId,
-                    analysis.summary,
-                    JSON.stringify(analysis.painPoints || []),
+                    analysis.summary || '',
+                    JSON.stringify(analysis.pain_points || []),
                     JSON.stringify(analysis.suggestions || []),
-                    analysis.qualificationScore || 0,
+                    analysis.qualification_score || 0,
                     analysis.email_draft || ''
                 ]
             });
