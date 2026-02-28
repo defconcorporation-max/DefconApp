@@ -16,7 +16,9 @@ export interface SocialProfile {
     name?: string;
     bio?: string;
     followers?: string;
+    postsCount?: string;
     postsHint?: string;
+    recentPostSnippet?: string;
     scraped: boolean; // whether we got real data
 }
 
@@ -251,20 +253,34 @@ async function buildSocialProfiles(urls: string[]): Promise<SocialProfile[]> {
                 || $('meta[name="twitter:description"]').attr('content')
                 || undefined;
 
-            // Extract follower/like hints from meta descriptions
+            // Platform specific extraction
+            if (platform === 'Instagram') {
+                const desc = profile.bio || '';
+                const postsMatch = desc.match(/([\d,.]+)\s*(Posts|Publications)/i);
+                if (postsMatch) profile.postsCount = postsMatch[1];
+
+                if (desc.includes('See Instagram photos and videos')) {
+                    profile.recentPostSnippet = "Account is public, images and captions available.";
+                }
+            }
+
+            if (platform === 'Facebook') {
+                const desc = profile.bio || '';
+                const likesMatch = desc.match(/([\d,.]+[KkMm]?)\s*(likes|mentions j'aime)/i);
+                if (likesMatch) profile.followers = `${likesMatch[1]} likes`;
+            }
+
+            // Extract follower/like hints from meta descriptions if not yet set
             if (profile.bio) {
                 const followMatch = profile.bio.match(/([\d,.]+[KkMm]?)\s*(followers|abonnés|Followers|Abonnés)/i);
-                const likesMatch = profile.bio.match(/([\d,.]+[KkMm]?)\s*(likes|mentions j'aime)/i);
-                const postsMatch = profile.bio.match(/([\d,.]+)\s*(posts|publications|Posts|Publications)/i);
+                if (followMatch && !profile.followers) profile.followers = followMatch[1];
 
-                if (followMatch) profile.followers = followMatch[1];
-                else if (likesMatch) profile.followers = `${likesMatch[1]} likes`;
-                if (postsMatch) profile.postsHint = `${postsMatch[1]} posts`;
+                const postsMatch = profile.bio.match(/([\d,.]+)\s*(posts|publications|Posts|Publications)/i);
+                if (postsMatch && !profile.postsCount) profile.postsCount = postsMatch[1];
             }
 
             profile.scraped = true;
         } catch {
-            // Scraping failed - that's fine, we still have the URL and username
             profile.scraped = false;
         }
 

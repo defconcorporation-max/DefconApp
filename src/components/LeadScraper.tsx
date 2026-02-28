@@ -368,7 +368,29 @@ export default function LeadScraper() {
                                                                                 {insight.score}/10
                                                                             </span>
                                                                         </div>
-                                                                        <p className="text-[11px] text-slate-400 line-clamp-2 italic mb-2 relative">
+
+                                                                        <div className="flex flex-wrap gap-1.5 mb-3">
+                                                                            {insight.postingSchedule && (
+                                                                                <span className={`text-[8px] font-black px-1.5 py-0.5 rounded-md uppercase tracking-tighter ${insight.postingSchedule === 'Active' ? 'bg-emerald-500/10 text-emerald-400' :
+                                                                                        insight.postingSchedule === 'Ghost' ? 'bg-red-500/10 text-red-400' :
+                                                                                            'bg-white/5 text-slate-400'
+                                                                                    }`}>
+                                                                                    {insight.postingSchedule}
+                                                                                </span>
+                                                                            )}
+                                                                            {insight.contentStyle && (
+                                                                                <span className="text-[8px] font-black px-1.5 py-0.5 rounded-md bg-indigo-500/10 text-indigo-400 uppercase tracking-tighter">
+                                                                                    {insight.contentStyle} Style
+                                                                                </span>
+                                                                            )}
+                                                                            {insight.postsCount && (
+                                                                                <span className="text-[8px] font-black px-1.5 py-0.5 rounded-md bg-white/5 text-slate-500 uppercase tracking-tighter">
+                                                                                    {insight.postsCount} Posts
+                                                                                </span>
+                                                                            )}
+                                                                        </div>
+
+                                                                        <p className="text-[11px] text-slate-400 line-clamp-3 italic mb-2 relative">
                                                                             "{insight.verdict}"
                                                                         </p>
                                                                         {insight.followers && (

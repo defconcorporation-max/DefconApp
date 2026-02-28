@@ -6,8 +6,11 @@ export interface SocialMediaInsight {
     platform: string;
     url: string;
     followers?: string;
+    postsCount?: string;
     verdict: string; // e.g. "Inactive - last posted 3 months ago"
     contentType?: string; // e.g. "Mostly photos, few videos"
+    postingSchedule?: 'Active' | 'Inconsistent' | 'Ghost' | 'Could not determine';
+    contentStyle?: 'UGC' | 'Professional' | 'Sales-heavy' | 'Informational' | 'Could not determine';
     score: number; // 1-10
 }
 
@@ -34,24 +37,28 @@ export async function analyzeClient(
         ? `\n    Social Media Profiles Found:\n    ${socialData}\n\n    IMPORTANT SOCIAL MEDIA ANALYSIS RULES:
     - If a profile was "[Could not scrape]", do NOT say "Unknown followers" or guess randomly.
     - Instead, base your analysis on: the username/page name, what the website tells us about their social activity, and your general knowledge.
-    - Focus on ACTIONABLE insights: "They have a Facebook page but it's unclear if they post regularly — this is a common issue for local businesses"
-    - If you can see follower counts or bio, analyze those.
-    - For content type: if you can't tell, say "Could not determine" instead of "Unknown".
-    - Give a FAIR score based on what we know. Having a social presence at all is already something (minimum 3/10). Score 1/10 only if the profile seems abandoned or fake.
+    - FOCUS ON CONTENT: Try to infer the TYPE of content they post (Video, Photo, Educational, Viral, etc.) based on their brand vibe and any snippets.
+    - Analyze the POSTING SCHEDULE: Does it look active or abandoned?
+    - Analyze the CONTENT STYLE: Is it authentic UGC, high-end professional, or just dry sales posts?
+    - If you see follower counts or posts counts, use them to judge their growth potential.
+    - "verdict" should be a 1-sentence CRITIQUE: "Good follower base but posts are generic sales flyers — needs a Reels strategy."
     `
         : '';
 
     const socialJsonSection = socialData
         ? `\n    5. "socialMedia": {
-        "overallVerdict": "A practical 1-2 sentence assessment. Focus on what we CAN tell and what the opportunity is. Example: 'They have Facebook and Instagram profiles but likely underutilize them — big opportunity for social media management.'",
+        "overallVerdict": "A practical 1-2 sentence assessment. Focus on the CONTENT OPPORTUNITY. Example: 'Their Instagram has high-quality photos but zero video content. Huge gap to fill with Reels and BTS clips.'",
         "insights": [
             {
                 "platform": "Instagram",
                 "url": "the profile URL",
-                "followers": "follower count if found, or null if unknown",
-                "verdict": "A practical, specific verdict. NEVER say just 'scraping failed'. Instead say something like 'Profile exists @username — likely underused based on their basic website. Good opportunity for content strategy.'",
-                "contentType": "Mostly photos / Mostly videos / Mix / Could not determine",
-                "score": 3-10 (3 minimum if profile exists, 1-2 only if clearly fake/spam)
+                "followers": "follower count if found, or null",
+                "postsCount": "post count if found, or null",
+                "verdict": "A sharp, specific critique about their content quality and strategy.",
+                "contentType": "Short-form video / Photography / Educational / Mixed",
+                "postingSchedule": "Active / Inconsistent / Ghost / Could not determine",
+                "contentStyle": "UGC / Professional / Sales-heavy / Informational",
+                "score": 3-10
             }
         ]
     }`
