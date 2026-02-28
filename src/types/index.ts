@@ -102,7 +102,7 @@ export interface Project {
     id: number;
     client_id: number;
     title: string;
-    status: 'Active' | 'Completed' | 'Archived';
+    status: string; // Planned, Active, Completed, Archived
     created_at: string;
     shoot_count?: number;
     service_count?: number;
@@ -112,6 +112,11 @@ export interface Project {
     agency_id?: number;
     agency_name?: string;
     agency_color?: string;
+    // Financials
+    total_revenue?: number;
+    total_cost?: number;
+    total_margin?: number;
+    margin_percentage?: number;
 }
 
 export interface Service {

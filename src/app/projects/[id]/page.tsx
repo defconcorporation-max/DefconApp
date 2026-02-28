@@ -11,6 +11,7 @@ import ProjectTaskManager from '@/components/ProjectTaskManager';
 import { Layers, FileText, Download, ExternalLink } from 'lucide-react';
 import { InvoiceButton } from '@/components/InvoiceButton';
 import ProjectCostManager from '@/components/ProjectCostManager';
+import ProjectSyncButton from '@/components/ProjectSyncButton';
 
 export const dynamic = 'force-dynamic';
 
@@ -140,7 +141,10 @@ export default async function ProjectDetailsPage({ params }: { params: Promise<{
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <div className="text-[10px] text-[var(--text-tertiary)] uppercase tracking-wider mb-1">Total Cost</div>
+                                    <div className="flex items-center justify-between mb-1">
+                                        <div className="text-[10px] text-[var(--text-tertiary)] uppercase tracking-wider">Total Cost</div>
+                                        <ProjectSyncButton projectId={project.id} />
+                                    </div>
                                     <div className="text-lg font-medium text-[var(--text-secondary)]">${project.total_cost?.toLocaleString() || '0'}</div>
                                 </div>
                                 <div>

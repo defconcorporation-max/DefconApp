@@ -807,7 +807,15 @@ export async function getFinanceData() {
     }));
 
     // 5. Commission Expenses
-    const paidCommissionsRes = await db.execute("SELECT * FROM commissions WHERE status = 'Paid'");
+    // Filter out commissions linked to projects that are not yet "in production" (Planned or Archived)
+    // We only want commissions for Active or Completed projects to show as realized expenses
+    const paidCommissionsRes = await db.execute(`
+        SELECT c.* 
+        FROM commissions c
+        LEFT JOIN projects p ON c.project_id = p.id
+        WHERE c.status = 'Paid'
+        AND (c.project_id IS NULL OR (p.id IS NOT NULL AND p.status NOT IN ('Planned', 'Archived')))
+    `);
     const paidCommissions = paidCommissionsRes.rows as unknown as Commission[];
 
     let totalCommissionsPaid = 0;
@@ -1721,6 +1729,45 @@ export async function deleteExpense(id: number) {
         args: [id]
     });
     revalidatePath('/finance');
+    revalidatePath('/');
+}
+
+export async function syncProjectToExpenses(projectId: number) {
+    const projectRes = await db.execute({
+        sql: `
+            SELECT p.*, c.company_name as client_company
+            FROM projects p
+            JOIN clients c ON p.client_id = c.id
+            WHERE p.id = ?
+        `,
+        args: [projectId]
+    });
+
+    const project = projectRes.rows[0] as any;
+    if (!project) return { success: false, error: 'Project not found' };
+
+    const servicesRes = await db.execute({
+        sql: 'SELECT rate, quantity FROM project_services WHERE project_id = ?',
+        args: [projectId]
+    });
+    const totalValue = servicesRes.rows.reduce((acc, s: any) => acc + (s.rate * s.quantity), 0);
+
+    const description = `Production Cost: ${project.title} (${project.client_company})`;
+    const date = new Date().toISOString().split('T')[0];
+    const category = 'Production';
+
+    await db.execute({
+        sql: `INSERT INTO expenses (description, date, category, amount_pre_tax, tps_amount, tvq_amount, total_amount)
+              VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        args: [description, date, category, totalValue, 0, 0, totalValue]
+    });
+
+    revalidatePath('/finance');
+    revalidatePath(`/projects/${projectId}`);
+    revalidatePath('/projects');
+    revalidatePath('/');
+
+    return { success: true };
 }
 
 export async function getExpenses() {

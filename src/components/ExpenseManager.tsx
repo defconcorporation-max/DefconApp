@@ -32,10 +32,17 @@ export default function ExpenseManager({ expenses, settings }: { expenses: Expen
         setTvqAmount(tvq.toFixed(2));
     };
 
+    const [deletingId, setDeletingId] = useState<number | null>(null);
+
     const handleDelete = (id: number) => {
         if (!confirm('Delete this expense?')) return;
+        setDeletingId(id);
         startTransition(async () => {
-            await deleteExpense(id);
+            try {
+                await deleteExpense(id);
+            } finally {
+                setDeletingId(null);
+            }
         });
     };
 
@@ -187,9 +194,14 @@ export default function ExpenseManager({ expenses, settings }: { expenses: Expen
                                     <td className="px-6 py-4 text-right">
                                         <button
                                             onClick={() => handleDelete(expense.id)}
-                                            className="text-gray-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
+                                            className="text-gray-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-50"
+                                            disabled={deletingId === expense.id}
                                         >
-                                            <Trash2 size={16} />
+                                            {deletingId === expense.id ? (
+                                                <div className="w-4 h-4 border-2 border-red-400 border-t-transparent rounded-full animate-spin" />
+                                            ) : (
+                                                <Trash2 size={16} />
+                                            )}
                                         </button>
                                     </td>
                                 </tr>

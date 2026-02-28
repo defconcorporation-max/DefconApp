@@ -3,8 +3,9 @@
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { Project } from '@/types';
-import { Clock, Filter, Search, SortDesc, ChevronDown, ChevronRight, Briefcase, ArrowUpDown, Hash, DollarSign } from 'lucide-react';
+import { Clock, Filter, Search, SortDesc, ChevronDown, ChevronRight, Briefcase, ArrowUpDown, Hash, DollarSign, Receipt, Send, Check } from 'lucide-react';
 import EmptyState from '@/components/EmptyState';
+import { syncProjectToExpenses } from '@/app/actions';
 
 interface EnhancedProject extends Project {
     client_name: string;
@@ -29,6 +30,32 @@ export default function ProjectList({ projects }: ProjectListProps) {
     const [sortBy, setSortBy] = useState<SortOption>('date');
     const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
     const [filterStatus, setFilterStatus] = useState<string>('All');
+    const [syncingId, setSyncingId] = useState<number | null>(null);
+    const [syncedId, setSyncedId] = useState<number | null>(null);
+
+    const handleSendToExpenses = async (e: React.MouseEvent, projectId: number) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (syncingId) return;
+
+        if (!confirm('Send this project total to Business Expenses?')) return;
+
+        setSyncingId(projectId);
+        try {
+            const result = await syncProjectToExpenses(projectId);
+            if (result.success) {
+                setSyncedId(projectId);
+                setTimeout(() => setSyncedId(null), 3000);
+            } else {
+                alert('Failed to sync: ' + result.error);
+            }
+        } catch (err) {
+            alert('An error occurred during sync.');
+        } finally {
+            setSyncingId(null);
+        }
+    };
 
     const filteredAndSortedProjects = useMemo(() => {
         let result = [...projects];
@@ -233,8 +260,27 @@ export default function ProjectList({ projects }: ProjectListProps) {
                                                 <span className="text-[10px] text-[var(--text-tertiary)] uppercase tracking-wider">Client</span>
                                             </div>
                                             <div className="flex flex-col items-end gap-1.5 flex-1 max-w-[140px]">
-                                                <div className="font-mono text-sm font-bold text-[var(--text-secondary)]">
-                                                    ${project.total_value.toLocaleString()}
+                                                <div className="flex items-center gap-2 group/value">
+                                                    <div className="font-mono text-sm font-bold text-[var(--text-secondary)]">
+                                                        ${project.total_value.toLocaleString()}
+                                                    </div>
+                                                    <button
+                                                        onClick={(e) => handleSendToExpenses(e, project.id)}
+                                                        title="Log as business expense"
+                                                        className={`p-1.5 rounded-lg transition-all border ${syncedId === project.id
+                                                            ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+                                                            : 'bg-white/5 text-[var(--text-tertiary)] hover:text-emerald-400 border-white/5 hover:border-emerald-500/30'
+                                                            }`}
+                                                        disabled={syncingId === project.id}
+                                                    >
+                                                        {syncingId === project.id ? (
+                                                            <div className="w-3 h-3 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin" />
+                                                        ) : syncedId === project.id ? (
+                                                            <Check size={12} />
+                                                        ) : (
+                                                            <Receipt size={12} />
+                                                        )}
+                                                    </button>
                                                 </div>
 
                                                 {/* Shoot Progress Bar Shortcut */}
