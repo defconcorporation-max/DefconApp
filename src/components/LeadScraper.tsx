@@ -316,6 +316,28 @@ export default function LeadScraper() {
                                                     {selectedLead.analysis.summary}
                                                 </p>
 
+                                                {/* Found Socials (Raw Links) */}
+                                                {selectedLead.scrapedData?.socialProfiles && selectedLead.scrapedData.socialProfiles.length > 0 && (
+                                                    <div className="flex flex-wrap gap-2 mb-6">
+                                                        {selectedLead.scrapedData.socialProfiles.map((p: any, i: number) => (
+                                                            <a
+                                                                key={i}
+                                                                href={p.url}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-[10px] text-white hover:bg-white/10 hover:border-indigo-500/30 transition-all font-bold group/link"
+                                                            >
+                                                                {p.platform?.toLowerCase().includes('instagram') && <Instagram size={12} className="text-pink-500" />}
+                                                                {p.platform?.toLowerCase().includes('facebook') && <Facebook size={12} className="text-blue-500" />}
+                                                                {p.platform?.toLowerCase().includes('linkedin') && <Linkedin size={12} className="text-sky-500" />}
+                                                                {!p.platform?.toLowerCase().includes('instagram') && !p.platform?.toLowerCase().includes('facebook') && !p.platform?.toLowerCase().includes('linkedin') && <Globe size={12} className="text-slate-400" />}
+                                                                {p.platform || "Direct Link"}
+                                                                <ExternalLink size={10} className="opacity-0 group-hover/link:opacity-100 transition-opacity" />
+                                                            </a>
+                                                        ))}
+                                                    </div>
+                                                )}
+
                                                 {/* Social Media Audit Section */}
                                                 {selectedLead.analysis?.social_json && selectedLead.analysis.social_json.length > 0 && (
                                                     <div className="space-y-4">
