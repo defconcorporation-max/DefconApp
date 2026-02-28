@@ -19,6 +19,8 @@ export interface SocialProfile {
     postsCount?: string;
     postsHint?: string;
     recentPostSnippet?: string;
+    contentMix?: string; // New: e.g., "Mostly Videos", "3:1 Pic/Vid"
+    recency?: string;    // New: e.g., "12 weeks ago"
     scraped: boolean; // whether we got real data
 }
 
@@ -262,12 +264,21 @@ async function buildSocialProfiles(urls: string[]): Promise<SocialProfile[]> {
                 if (desc.includes('See Instagram photos and videos')) {
                     profile.recentPostSnippet = "Account is public, images and captions available.";
                 }
+
+                // Mix & Recency hints from Instagram meta
+                if (desc.includes('Reels') || desc.includes('videos')) {
+                    profile.contentMix = desc.includes('Photos') ? "Mix of Photos & Reels" : "Mostly Reels/Video";
+                }
             }
 
             if (platform === 'Facebook') {
                 const desc = profile.bio || '';
                 const likesMatch = desc.match(/([\d,.]+[KkMm]?)\s*(likes|mentions j'aime)/i);
                 if (likesMatch) profile.followers = `${likesMatch[1]} likes`;
+
+                if (desc.includes('vidéos') || desc.includes('videos')) {
+                    profile.contentMix = "Video content detected";
+                }
             }
 
             // Extract follower/like hints from meta descriptions if not yet set
@@ -277,6 +288,17 @@ async function buildSocialProfiles(urls: string[]): Promise<SocialProfile[]> {
 
                 const postsMatch = profile.bio.match(/([\d,.]+)\s*(posts|publications|Posts|Publications)/i);
                 if (postsMatch && !profile.postsCount) profile.postsCount = postsMatch[1];
+
+                // General recency check from meta text (rare but happens in some crawlers' cache)
+                const recencyMatch = profile.bio.match(/(\d+)\s*(days|weeks|months|jours|semaines|mois)\s*ago/i);
+                if (recencyMatch) profile.recency = `${recencyMatch[1]} ${recencyMatch[1]} ago`;
+            }
+
+            // Look for "last post" or date clues in the body text snippet
+            const pageText = response.data.substring(0, 5000);
+            const dateMatch = pageText.match(/(\d{1,2}\s*(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec|janvier|février|mars|avril|mai|juin|juillet|août|septembre|octobre|novembre|décembre))/i);
+            if (dateMatch && !profile.recency) {
+                profile.recency = `Around ${dateMatch[1]}`;
             }
 
             profile.scraped = true;

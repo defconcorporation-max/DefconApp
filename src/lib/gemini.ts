@@ -12,7 +12,9 @@ export interface SocialMediaInsight {
     postingSchedule?: 'Active' | 'Inconsistent' | 'Ghost' | 'Could not determine';
     contentStyle?: 'UGC' | 'Professional' | 'Sales-heavy' | 'Informational' | 'Could not determine';
     score: number;
-    contentIdeas?: string[]; // New: Specific ideas for this platform
+    contentIdeas?: string[];
+    contentMix?: string; // New: e.g. "3:1 Photo/Video"
+    lastPostRecency?: string; // New: e.g. "12 weeks ago"
 }
 
 export interface ClientAnalysis {
@@ -62,6 +64,8 @@ export async function analyzeClient(
                 "contentType": "Short-form video / Photography / Educational / Mixed",
                 "postingSchedule": "Active / Inconsistent / Ghost / Could not determine",
                 "contentStyle": "UGC / Professional / Sales-heavy / Informational",
+                "contentMix": "Estimate the ratio, e.g. '3:1 Photo/Video' or 'Mostly Reels'",
+                "lastPostRecency": "Estimate how long ago their last post was, e.g. '2 days ago' or '15 weeks ago'",
                 "contentIdeas": ["Idea 1", "Idea 2", "Idea 3"],
                 "score": 3-10
             }

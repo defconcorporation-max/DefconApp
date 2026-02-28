@@ -415,6 +415,22 @@ export default function LeadScraper() {
                                                                             )}
                                                                         </div>
 
+                                                                        {/* Mix & Recency Metrics */}
+                                                                        <div className="grid grid-cols-2 gap-2 mb-4">
+                                                                            <div className="p-2 rounded-xl bg-white/5 border border-white/5">
+                                                                                <span className="text-[8px] font-black text-white/40 uppercase tracking-widest block mb-0.5">Content Mix</span>
+                                                                                <span className="text-[10px] font-bold text-indigo-300 truncate block">
+                                                                                    {insight.contentMix || "Mixed"}
+                                                                                </span>
+                                                                            </div>
+                                                                            <div className="p-2 rounded-xl bg-white/5 border border-white/5">
+                                                                                <span className="text-[8px] font-black text-white/40 uppercase tracking-widest block mb-0.5">Last Post</span>
+                                                                                <span className="text-[10px] font-bold text-amber-400 truncate block">
+                                                                                    {insight.lastPostRecency || "Recently"}
+                                                                                </span>
+                                                                            </div>
+                                                                        </div>
+
                                                                         <p className="text-[11px] text-slate-300 leading-relaxed mb-4 italic font-medium line-clamp-4 overflow-hidden">
                                                                             "{insight.verdict}"
                                                                         </p>
