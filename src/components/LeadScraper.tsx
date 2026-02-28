@@ -312,6 +312,15 @@ export default function LeadScraper() {
                                                     <Sparkles className="text-indigo-400" size={16} />
                                                     <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Digital Audit</span>
                                                 </div>
+
+                                                {/* Brand Vibe Header */}
+                                                <div className="mb-6 bg-white/5 p-4 rounded-2xl border border-white/5">
+                                                    <span className="text-[9px] font-black text-white/40 uppercase tracking-widest block mb-1">Brand Identity & Vibe</span>
+                                                    <p className="text-base font-black text-white leading-tight">
+                                                        {selectedLead.analysis.brandVibe || "Professional / Local"}
+                                                    </p>
+                                                </div>
+
                                                 <p className="text-sm text-slate-200 leading-relaxed mb-6 font-medium">
                                                     {selectedLead.analysis.summary}
                                                 </p>
@@ -341,10 +350,31 @@ export default function LeadScraper() {
                                                 {/* Social Media Audit Section */}
                                                 {selectedLead.analysis?.social_json && selectedLead.analysis.social_json.length > 0 && (
                                                     <div className="space-y-4">
-                                                        <div className="flex items-center gap-2">
-                                                            <Globe className="text-purple-400" size={16} />
-                                                            <span className="text-[10px] font-black text-purple-400 uppercase tracking-widest">Platform Specific Audit</span>
+                                                        <div className="flex items-center justify-between">
+                                                            <div className="flex items-center gap-2">
+                                                                <Globe className="text-purple-400" size={16} />
+                                                                <span className="text-[10px] font-black text-purple-400 uppercase tracking-widest">Deep Content Audit</span>
+                                                            </div>
+                                                            <button
+                                                                onClick={() => handleQualify(selectedLead)}
+                                                                disabled={isQualifying}
+                                                                className="text-[9px] font-black text-indigo-400 hover:text-indigo-300 uppercase tracking-widest bg-indigo-500/10 hover:bg-indigo-500/20 px-3 py-1.5 rounded-lg transition-colors border border-indigo-500/10 disabled:opacity-50"
+                                                            >
+                                                                {isQualifying ? "Re-Analyzing..." : "Refresh Deep Audit"}
+                                                            </button>
                                                         </div>
+
+                                                        {selectedLead.analysis.contentStrategy && (
+                                                            <div className="p-5 rounded-2xl bg-indigo-600/10 border border-indigo-500/20 mb-4 shadow-inner">
+                                                                <span className="text-[9px] font-black text-indigo-400 uppercase tracking-widest block mb-1 flex items-center gap-2">
+                                                                    <Sparkles size={10} /> Strategic Content Roadmap
+                                                                </span>
+                                                                <p className="text-xs text-indigo-100 font-bold leading-relaxed">
+                                                                    {selectedLead.analysis.contentStrategy}
+                                                                </p>
+                                                            </div>
+                                                        )}
+
                                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                                             {selectedLead.analysis.social_json.map((insight: any, i: number) => {
                                                                 const isIG = insight.platform?.toLowerCase().includes('instagram');
@@ -352,62 +382,64 @@ export default function LeadScraper() {
                                                                 const isLI = insight.platform?.toLowerCase().includes('linkedin');
 
                                                                 return (
-                                                                    <div key={i} className="p-4 rounded-2xl bg-white/5 border border-white/5 hover:border-purple-500/20 transition-all group/insight">
-                                                                        <div className="flex justify-between items-start mb-2">
+                                                                    <div key={i} className="p-4 rounded-2xl bg-white/5 border border-white/5 hover:border-purple-500/20 transition-all group/insight flex flex-col h-full">
+                                                                        <div className="flex justify-between items-start mb-3">
                                                                             <div className="flex items-center gap-2">
                                                                                 {isIG && <Instagram size={14} className="text-pink-500" />}
                                                                                 {isFB && <Facebook size={14} className="text-blue-500" />}
                                                                                 {isLI && <Linkedin size={14} className="text-sky-500" />}
                                                                                 {!isIG && !isFB && !isLI && <ExternalLink size={14} className="text-gray-400" />}
-                                                                                <span className="text-xs font-bold text-white">{insight.platform}</span>
+                                                                                <span className="text-xs font-black text-white uppercase tracking-tighter">{insight.platform}</span>
                                                                             </div>
-                                                                            <span className={`text-[10px] font-black px-2 py-0.5 rounded-md ${insight.score >= 7 ? 'bg-emerald-500/10 text-emerald-400' :
-                                                                                insight.score >= 4 ? 'bg-amber-500/10 text-amber-400' :
-                                                                                    'bg-red-500/10 text-red-400'
+                                                                            <span className={`text-[10px] font-black px-2 py-0.5 rounded-md ${insight.score >= 7 ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/10' :
+                                                                                insight.score >= 4 ? 'bg-amber-500/10 text-amber-400 border border-amber-500/10' :
+                                                                                    'bg-red-500/10 text-red-400 border border-red-500/10'
                                                                                 }`}>
                                                                                 {insight.score}/10
                                                                             </span>
                                                                         </div>
 
-                                                                        <div className="flex flex-wrap gap-1.5 mb-3">
+                                                                        <div className="flex flex-wrap gap-1.5 mb-4">
                                                                             {insight.postingSchedule && (
-                                                                                <span className={`text-[8px] font-black px-1.5 py-0.5 rounded-md uppercase tracking-tighter ${insight.postingSchedule === 'Active' ? 'bg-emerald-500/10 text-emerald-400' :
-                                                                                        insight.postingSchedule === 'Ghost' ? 'bg-red-500/10 text-red-400' :
-                                                                                            'bg-white/5 text-slate-400'
+                                                                                <span className={`text-[9px] font-black px-2 py-1 rounded-lg uppercase tracking-widest ${insight.postingSchedule === 'Active' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/20' :
+                                                                                    insight.postingSchedule === 'Ghost' ? 'bg-red-500/20 text-red-400 border border-red-500/20' :
+                                                                                        'bg-white/10 text-slate-300 border border-white/5'
                                                                                     }`}>
                                                                                     {insight.postingSchedule}
                                                                                 </span>
                                                                             )}
                                                                             {insight.contentStyle && (
-                                                                                <span className="text-[8px] font-black px-1.5 py-0.5 rounded-md bg-indigo-500/10 text-indigo-400 uppercase tracking-tighter">
+                                                                                <span className="text-[9px] font-black px-2 py-1 rounded-lg bg-indigo-500/20 text-indigo-300 border border-indigo-500/20 uppercase tracking-widest">
                                                                                     {insight.contentStyle} Style
-                                                                                </span>
-                                                                            )}
-                                                                            {insight.postsCount && (
-                                                                                <span className="text-[8px] font-black px-1.5 py-0.5 rounded-md bg-white/5 text-slate-500 uppercase tracking-tighter">
-                                                                                    {insight.postsCount} Posts
                                                                                 </span>
                                                                             )}
                                                                         </div>
 
-                                                                        <p className="text-[11px] text-slate-400 line-clamp-3 italic mb-2 relative">
+                                                                        <p className="text-[11px] text-slate-300 leading-relaxed mb-4 italic font-medium line-clamp-4 overflow-hidden">
                                                                             "{insight.verdict}"
                                                                         </p>
-                                                                        {insight.followers && (
-                                                                            <span className="text-[9px] font-bold text-slate-500 uppercase tracking-tighter">
-                                                                                {insight.followers} Followers
-                                                                            </span>
+
+                                                                        {insight.contentIdeas && insight.contentIdeas.length > 0 && (
+                                                                            <div className="mt-auto pt-4 border-t border-white/5 space-y-2">
+                                                                                <span className="text-[8px] font-black text-white/40 uppercase tracking-widest block">Proposed Content Ideas</span>
+                                                                                <div className="space-y-1.5">
+                                                                                    {insight.contentIdeas.map((idea: string, idx: number) => (
+                                                                                        <div key={idx} className="flex items-start gap-2 text-[10px] text-indigo-200/80 font-bold leading-tight">
+                                                                                            <span className="text-indigo-500 flex-shrink-0">•</span> {idea}
+                                                                                        </div>
+                                                                                    ))}
+                                                                                </div>
+                                                                            </div>
                                                                         )}
+
+                                                                        <div className="flex justify-between items-center mt-4 pt-3 border-t border-white/5 text-[9px] font-black text-white/40 uppercase tracking-tighter">
+                                                                            <span>{insight.followers || "N/A"} Followers</span>
+                                                                            <span>{insight.postsCount || "N/A"} Posts</span>
+                                                                        </div>
                                                                     </div>
                                                                 );
                                                             })}
                                                         </div>
-                                                        {selectedLead.analysis.social_verdict && (
-                                                            <p className="text-[11px] text-indigo-300 font-bold bg-indigo-500/10 p-3 rounded-xl border border-indigo-500/20">
-                                                                <Sparkles size={12} className="inline mr-2" />
-                                                                {selectedLead.analysis.social_verdict}
-                                                            </p>
-                                                        )}
                                                     </div>
                                                 )}
 

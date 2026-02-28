@@ -7,20 +7,23 @@ export interface SocialMediaInsight {
     url: string;
     followers?: string;
     postsCount?: string;
-    verdict: string; // e.g. "Inactive - last posted 3 months ago"
-    contentType?: string; // e.g. "Mostly photos, few videos"
+    verdict: string;
+    contentType?: string;
     postingSchedule?: 'Active' | 'Inconsistent' | 'Ghost' | 'Could not determine';
     contentStyle?: 'UGC' | 'Professional' | 'Sales-heavy' | 'Informational' | 'Could not determine';
-    score: number; // 1-10
+    score: number;
+    contentIdeas?: string[]; // New: Specific ideas for this platform
 }
 
 export interface ClientAnalysis {
     summary: string;
+    brandVibe: string; // New: Tone and aesthetic of the business
     painPoints: string[];
     suggestions: string[];
-    qualificationScore: number; // 1-10
+    qualificationScore: number;
     socialMedia?: {
         overallVerdict: string;
+        contentStrategy: string; // New: High-level strategy advice
         insights: SocialMediaInsight[];
     };
 }
@@ -47,7 +50,8 @@ export async function analyzeClient(
 
     const socialJsonSection = socialData
         ? `\n    5. "socialMedia": {
-        "overallVerdict": "A practical 1-2 sentence assessment. Focus on the CONTENT OPPORTUNITY. Example: 'Their Instagram has high-quality photos but zero video content. Huge gap to fill with Reels and BTS clips.'",
+        "overallVerdict": "A practical 1-2 sentence assessment. Focus on the CONTENT OPPORTUNITY.",
+        "contentStrategy": "A 2-3 sentence strategic roadmap. What is the ONE big move they should make on socials?",
         "insights": [
             {
                 "platform": "Instagram",
@@ -58,6 +62,7 @@ export async function analyzeClient(
                 "contentType": "Short-form video / Photography / Educational / Mixed",
                 "postingSchedule": "Active / Inconsistent / Ghost / Could not determine",
                 "contentStyle": "UGC / Professional / Sales-heavy / Informational",
+                "contentIdeas": ["Idea 1", "Idea 2", "Idea 3"],
                 "score": 3-10
             }
         ]
@@ -73,13 +78,14 @@ export async function analyzeClient(
 
     Provide a JSON response with:
     1. "summary": A brief overview of what they do (2-3 sentences max).
-    2. "painPoints": An array of SHORT strings (max 15 words each). Each string is one digital problem they might have. Return 3-5 items.
-    3. "suggestions": An array of SHORT strings (max 15 words each). Each string is one concrete thing we could build or fix. Return 3 items.
-    4. "qualificationScore": A score from 1 to 10 on how likely they are to need professional digital services.
+    2. "brandVibe": A description of their current visual and tonal identity (e.g. "Trusted local expert, traditional aesthetic, text-heavy").
+    3. "painPoints": An array of SHORT strings (max 15 words each). Return 3-5 items.
+    4. "suggestions": An array of SHORT strings (max 15 words each). Return 3 items.
+    5. "qualificationScore": A score from 1 to 10.
     ${socialJsonSection}
 
-    CRITICAL: painPoints and suggestions must be arrays of plain strings, NOT objects.
-    Response must be valid JSON only, no markdown formatting, no code blocks.
+    CRITICAL: painPoints and suggestions must be arrays of plain strings.
+    Response must be valid JSON only.
   `;
 
     const result = await model.generateContent(prompt);
@@ -100,6 +106,7 @@ export async function analyzeClient(
 
         return {
             summary: parsed.summary || '',
+            brandVibe: parsed.brandVibe || 'Professional / Local',
             painPoints: normalize(parsed.painPoints || []),
             suggestions: normalize(parsed.suggestions || []),
             qualificationScore: parsed.qualificationScore || 0,
@@ -109,6 +116,7 @@ export async function analyzeClient(
         console.error('Failed to parse Gemini analysis:', text);
         return {
             summary: 'Analysis failed to parse.',
+            brandVibe: 'Unknown',
             painPoints: [],
             suggestions: [],
             qualificationScore: 0,
