@@ -61,12 +61,20 @@ export async function searchLeadsAction(query: string, radius: number = 1000) {
 
 export async function qualifyLeadAction(lead: any, language: 'fr' | 'en' = 'fr') {
     try {
-        let { place_id, name, website } = lead;
+        let { place_id, name, website, phone } = lead;
+        let updatedDetails: any = {};
 
         // 1. Get Details if missing
-        if (!website) {
+        if (!website || !phone) {
             const details = await getPlaceDetails(place_id);
-            website = details.website;
+            if (details.website) {
+                website = details.website;
+                updatedDetails.website = website;
+            }
+            if (details.phone) {
+                phone = details.phone;
+                updatedDetails.phone = phone;
+            }
         }
 
         if (!website) {
@@ -103,6 +111,7 @@ export async function qualifyLeadAction(lead: any, language: 'fr' | 'en' = 'fr')
 
         return {
             success: true,
+            updatedDetails, // Return new phone/website found
             scrapedData,
             analysis: {
                 summary: rawAnalysis.summary,

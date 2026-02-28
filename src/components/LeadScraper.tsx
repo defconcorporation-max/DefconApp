@@ -58,7 +58,12 @@ export default function LeadScraper() {
         try {
             const res = await qualifyLeadAction(lead);
             if (res.success) {
-                const updatedLead = { ...lead, analysis: res.analysis, scrapedData: res.scrapedData };
+                const updatedLead = {
+                    ...lead,
+                    ...res.updatedDetails, // Merge newly found phone/website
+                    analysis: res.analysis,
+                    scrapedData: res.scrapedData
+                };
                 setSelectedLead(updatedLead);
                 setSearchResults(prev => prev.map(b => b.place_id === lead.place_id ? updatedLead : b));
                 toast.success("AI Analysis Complete");
@@ -245,7 +250,9 @@ export default function LeadScraper() {
                                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
                                         <div className="p-4 rounded-3xl bg-white/5 border border-white/5">
                                             <span className="text-[9px] font-black text-[var(--text-tertiary)] uppercase tracking-widest block mb-1">Phone</span>
-                                            <p className="text-xs text-white font-mono">{selectedLead.phone || "Hidden"}</p>
+                                            <p className={`text-xs font-mono ${selectedLead.phone ? 'text-white' : 'text-white/20 italic'}`}>
+                                                {selectedLead.phone || "Ready to Qualify"}
+                                            </p>
                                         </div>
                                         <div className="p-4 rounded-3xl bg-white/5 border border-white/5">
                                             <span className="text-[9px] font-black text-[var(--text-tertiary)] uppercase tracking-widest block mb-1">Website</span>
@@ -253,7 +260,7 @@ export default function LeadScraper() {
                                                 <a href={selectedLead.website} target="_blank" className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1.5 truncate">
                                                     Visit <ExternalLink size={10} />
                                                 </a>
-                                            ) : <p className="text-xs text-[var(--text-tertiary)]">N/A</p>}
+                                            ) : <p className="text-xs text-white/20 italic">Ready to Qualify</p>}
                                         </div>
                                         <div className="p-4 rounded-3xl bg-white/5 border border-white/5">
                                             <span className="text-[9px] font-black text-[var(--text-tertiary)] uppercase tracking-widest block mb-1">Socials</span>
@@ -321,8 +328,8 @@ export default function LeadScraper() {
                                                                                 <span className="text-xs font-bold text-white">{insight.platform}</span>
                                                                             </div>
                                                                             <span className={`text-[10px] font-black px-2 py-0.5 rounded-md ${insight.score >= 7 ? 'bg-emerald-500/10 text-emerald-400' :
-                                                                                    insight.score >= 4 ? 'bg-amber-500/10 text-amber-400' :
-                                                                                        'bg-red-500/10 text-red-400'
+                                                                                insight.score >= 4 ? 'bg-amber-500/10 text-amber-400' :
+                                                                                    'bg-red-500/10 text-red-400'
                                                                                 }`}>
                                                                                 {insight.score}/10
                                                                             </span>
