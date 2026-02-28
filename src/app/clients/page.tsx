@@ -17,7 +17,7 @@ export default async function ClientsPage() {
     const isAdmin = userRole === 'Admin' || userRole === 'Team';
 
     return (
-        <main className="min-h-screen p-4 md:p-8 pt-20 md:pt-8 pb-20">
+        <main className="min-h-screen p-4 md:p-8 pb-20">
             <header className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4 border-b border-[var(--border-subtle)] pb-6">
                 <div>
                     <h1 className="text-2xl font-bold tracking-tight text-white mb-2 flex items-center gap-2">

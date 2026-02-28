@@ -33,7 +33,7 @@ export default async function Page() {
                         ← BACK TO DASHBOARD
                     </Link>
                 </header>
-                <div className="p-8 max-w-4xl mx-auto space-y-8">
+                <div className="p-4 md:p-8 pb-20 max-w-4xl mx-auto space-y-8">
                     {/* Navigation Cards */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <Link href="/services" className="bg-[#0A0A0A] border border-[var(--border-subtle)] p-6 rounded-xl hover:border-violet-500/30 hover:bg-violet-500/5 transition-all group">

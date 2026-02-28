@@ -13,7 +13,7 @@ export default async function AnalyticsPage() {
     const teamUtilizationData = await getTeamUtilizationData();
 
     return (
-        <main className="min-h-screen p-8 bg-[var(--bg-root)] text-white pb-20">
+        <main className="min-h-screen p-4 md:p-8 bg-[var(--bg-root)] text-white pb-20">
             <header className="mb-8">
                 <div className="flex items-center gap-3">
                     <div className="p-2 bg-indigo-500/20 text-indigo-400 rounded-lg">

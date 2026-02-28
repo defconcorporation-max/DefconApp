@@ -15,7 +15,7 @@ export default async function ServicesPage() {
     const services = await getServices() as Service[];
 
     return (
-        <main className="min-h-screen p-8 bg-[var(--bg-root)] text-white">
+        <main className="min-h-screen p-4 md:p-8 bg-[var(--bg-root)] text-white pb-20">
             <header className="mb-8 flex items-center justify-between">
                 <div className="flex items-center gap-4">
                     <Link href="/" className="p-2 hover:bg-white/10 rounded-full transition-colors text-gray-400 hover:text-white">

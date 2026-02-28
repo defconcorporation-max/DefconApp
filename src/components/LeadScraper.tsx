@@ -152,8 +152,8 @@ export default function LeadScraper() {
             {view === 'discovery' ? (
                 /* DISCOVERY MODE */
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                    {/* Search & Results */}
-                    <div className="lg:col-span-5 space-y-6">
+                    {/* Search & Results Panel - Hidden on mobile if a lead is selected */}
+                    <div className={`lg:col-span-5 space-y-6 ${selectedLead ? 'hidden lg:block' : 'block'}`}>
                         <form onSubmit={handleSearch} className="pro-dashboard-card p-6 rounded-3xl border border-white/5 bg-[#09090b]/40 backdrop-blur-xl shadow-2xl">
                             <div className="space-y-4">
                                 <div className="relative">
@@ -230,8 +230,8 @@ export default function LeadScraper() {
                         </div>
                     </div>
 
-                    {/* Detailed Analysis Panel */}
-                    <div className="lg:col-span-7">
+                    {/* Detailed Analysis Panel - Full width on mobile if selected */}
+                    <div className={`lg:col-span-7 ${!selectedLead ? 'hidden lg:block' : 'block'}`}>
                         <AnimatePresence mode="wait">
                             {selectedLead ? (
                                 <motion.div
@@ -239,8 +239,17 @@ export default function LeadScraper() {
                                     initial={{ opacity: 0, x: 20 }}
                                     animate={{ opacity: 1, x: 0 }}
                                     exit={{ opacity: 0, x: -20 }}
-                                    className="pro-dashboard-card p-8 rounded-[40px] border border-white/5 bg-[#09090b]/60 backdrop-blur-3xl shadow-2xl sticky top-24"
+                                    className="pro-dashboard-card p-6 lg:p-8 rounded-[40px] border border-white/5 bg-[#09090b]/60 backdrop-blur-3xl shadow-2xl sticky top-24"
                                 >
+                                    {/* Mobile Back Button */}
+                                    <div className="lg:hidden mb-6">
+                                        <button
+                                            onClick={() => setSelectedLead(null)}
+                                            className="flex items-center gap-2 text-sm font-bold text-[var(--text-tertiary)] hover:text-white transition-colors"
+                                        >
+                                            <ChevronRight className="rotate-180" size={16} /> Back to Search Results
+                                        </button>
+                                    </div>
                                     <div className="flex justify-between items-start mb-8">
                                         <div>
                                             <h2 className="text-3xl font-black text-white">{selectedLead.name}</h2>
@@ -259,6 +268,7 @@ export default function LeadScraper() {
                                         </div>
                                     </div>
 
+                                    {/* Responsive 2x2 grid on mobile, 4 columns on large screens */}
                                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
                                         <div className="p-4 rounded-3xl bg-white/5 border border-white/5">
                                             <span className="text-[9px] font-black text-[var(--text-tertiary)] uppercase tracking-widest block mb-1">Phone</span>
@@ -542,6 +552,7 @@ export default function LeadScraper() {
                                     </span>
                                 </div>
 
+                                {/* Horizontal scrollable area on mobile for Kanban */}
                                 <div className="space-y-4">
                                     {leads.map(lead => (
                                         <motion.div

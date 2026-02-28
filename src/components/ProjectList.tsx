@@ -213,7 +213,7 @@ export default function ProjectList({ projects }: ProjectListProps) {
 
                         {/* Projects Grid */}
                         {!collapsedMonths[monthKey] && (
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pl-2 border-l border-[var(--border-subtle)] ml-2.5">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pl-0 md:pl-2 md:border-l border-[var(--border-subtle)] md:ml-2.5">
                                 {groupedProjects[monthKey].map(project => (
                                     <Link
                                         key={project.id}

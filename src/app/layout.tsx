@@ -81,7 +81,7 @@ export default async function RootLayout({
         {!isPublic && <Sidebar userRole={userRole} />}
         {!isPublic && <CommandMenu />}
         {!isPublic && <GlobalQuickCreate isAdmin={isAdmin} clients={clients} agencies={agencies} />}
-        <div className={`flex-1 min-w-0 transition-all duration-200 z-10 relative ${!isPublic ? 'md:ml-64' : ''}`}>
+        <div className={`flex-1 min-w-0 transition-all duration-200 z-10 relative ${!isPublic ? 'md:ml-64 pt-16 md:pt-0' : ''}`}>
           <div className="animate-in fade-in duration-500 slide-in-from-bottom-2 h-full">
             {children}
           </div>

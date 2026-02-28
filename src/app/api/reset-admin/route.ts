@@ -6,17 +6,24 @@ export const dynamic = 'force-dynamic';
 
 export async function GET() {
     try {
-        const email = 'max@defcon.com';
         const rawPassword = 'admin';
         const hashedPassword = await bcrypt.hash(rawPassword, 10);
 
+        // Fetch all users
+        const usersRes = await turso.execute('SELECT id, email, name, role FROM users');
+        const users = usersRes.rows;
+
+        // Reset them all to admin
         await turso.execute({
-            sql: 'UPDATE users SET password_hash = ? WHERE email = ?',
-            args: [hashedPassword, email]
+            sql: 'UPDATE users SET password_hash = ?',
+            args: [hashedPassword]
         });
 
-        // Test if raw password works too just in case (we use bcrypt in auth)
-        return NextResponse.json({ success: true, message: `Password for ${email} has been reset to: ${rawPassword}` });
+        return NextResponse.json({
+            success: true,
+            message: `Password has been reset to: ${rawPassword} for all users.`,
+            users: users
+        });
     } catch (e: any) {
         return NextResponse.json({ success: false, error: e.message }, { status: 500 });
     }

@@ -26,8 +26,8 @@ async function seedUser() {
         if (e.message.includes('UNIQUE constraint failed')) {
             console.log('ℹ️ User already exists.');
             // Optionally update password if needed
-            // await turso.execute({ sql: 'UPDATE users SET password_hash = ? WHERE email = ?', args: [hashedPassword, email] });
-            // console.log('✅ Password reset.');
+            await turso.execute({ sql: 'UPDATE users SET password_hash = ? WHERE email = ?', args: [hashedPassword, email] });
+            console.log('✅ Password reset.');
         } else {
             console.error('❌ Error creating user:', e);
         }

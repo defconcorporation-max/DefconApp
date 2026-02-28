@@ -161,8 +161,8 @@ export default function ExpenseManager({ expenses, settings }: { expenses: Expen
             )}
 
             {/* Expenses List */}
-            <div className="overflow-x-auto">
-                <table className="w-full text-sm text-left">
+            <div className="overflow-x-auto w-full">
+                <table className="w-full text-sm text-left min-w-[600px]">
                     <thead className="bg-white/5 text-[var(--text-tertiary)] uppercase text-xs font-medium">
                         <tr>
                             <th className="px-6 py-4">Date</th>
