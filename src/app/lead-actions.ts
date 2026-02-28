@@ -26,6 +26,7 @@ export interface Lead {
         qualification_score: number;
         email_draft: string;
         social_verdict?: string;
+        social_json?: any[]; // Detailed platform insights
     };
     scrapedData?: {
         emails: string[];
@@ -109,7 +110,8 @@ export async function qualifyLeadAction(lead: any, language: 'fr' | 'en' = 'fr')
                 suggestions: rawAnalysis.suggestions,
                 qualification_score: rawAnalysis.qualificationScore,
                 email_draft: emailDraft,
-                social_verdict: rawAnalysis.socialMedia?.overallVerdict
+                social_verdict: rawAnalysis.socialMedia?.overallVerdict,
+                social_json: rawAnalysis.socialMedia?.insights || []
             }
         };
     } catch (error: any) {
@@ -162,8 +164,8 @@ export async function saveLeadToPipeline(lead: Lead, scrapedData?: any, analysis
         // 3. Save Analysis
         if (analysis) {
             await db.execute({
-                sql: `INSERT INTO lead_analyses (lead_id, summary, pain_points, suggestions, qualification_score, email_draft) 
-                      VALUES (?, ?, ?, ?, ?, ?)
+                sql: `INSERT INTO lead_analyses (lead_id, summary, pain_points, suggestions, qualification_score, email_draft, social_verdict, social_json) 
+                      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                       ON CONFLICT(lead_id) DO UPDATE SET summary = excluded.summary`,
                 args: [
                     leadId,
@@ -171,7 +173,9 @@ export async function saveLeadToPipeline(lead: Lead, scrapedData?: any, analysis
                     JSON.stringify(analysis.pain_points || []),
                     JSON.stringify(analysis.suggestions || []),
                     analysis.qualification_score || 0,
-                    analysis.email_draft || ''
+                    analysis.email_draft || '',
+                    analysis.social_verdict || '',
+                    JSON.stringify(analysis.social_json || [])
                 ]
             });
         }
@@ -189,7 +193,7 @@ export async function getPipelineLeads(): Promise<Lead[]> {
         const { rows } = await db.execute(`
             SELECT 
                 l.*,
-                la.summary, la.pain_points, la.suggestions, la.qualification_score, la.email_draft,
+                la.summary, la.pain_points, la.suggestions, la.qualification_score, la.email_draft, la.social_verdict, la.social_json as ai_social_json,
                 lsd.emails, lsd.social_json, lsd.title as site_title, lsd.description as site_desc
             FROM leads l
             LEFT JOIN lead_analyses la ON l.id = la.lead_id
@@ -204,7 +208,9 @@ export async function getPipelineLeads(): Promise<Lead[]> {
                 pain_points: JSON.parse(r.pain_points || '[]'),
                 suggestions: JSON.parse(r.suggestions || '[]'),
                 qualification_score: r.qualification_score,
-                email_draft: r.email_draft
+                email_draft: r.email_draft,
+                social_verdict: r.social_verdict,
+                social_json: JSON.parse(r.ai_social_json || '[]')
             } : undefined,
             scrapedData: r.emails ? {
                 emails: JSON.parse(r.emails || '[]'),

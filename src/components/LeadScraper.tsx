@@ -6,7 +6,8 @@ import {
     Search, MapPin, Sparkles, Loader2, Globe, Phone, Mail,
     Bookmark, BookmarkCheck, CheckCircle2, AlertTriangle,
     ExternalLink, Trash2, ArrowRight, Gavel, Target, TrendingUp,
-    ChevronRight, X, Copy, MailPlus, LayoutDashboard
+    ChevronRight, X, Copy, MailPlus, LayoutDashboard,
+    Instagram, Facebook, Linkedin
 } from 'lucide-react';
 import {
     searchLeadsAction, qualifyLeadAction, saveLeadToPipeline,
@@ -295,6 +296,57 @@ export default function LeadScraper() {
                                                 <p className="text-sm text-slate-200 leading-relaxed mb-6 font-medium">
                                                     {selectedLead.analysis.summary}
                                                 </p>
+
+                                                {/* Social Media Audit Section */}
+                                                {selectedLead.analysis?.social_json && selectedLead.analysis.social_json.length > 0 && (
+                                                    <div className="space-y-4">
+                                                        <div className="flex items-center gap-2">
+                                                            <Globe className="text-purple-400" size={16} />
+                                                            <span className="text-[10px] font-black text-purple-400 uppercase tracking-widest">Platform Specific Audit</span>
+                                                        </div>
+                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                            {selectedLead.analysis.social_json.map((insight: any, i: number) => {
+                                                                const isIG = insight.platform?.toLowerCase().includes('instagram');
+                                                                const isFB = insight.platform?.toLowerCase().includes('facebook');
+                                                                const isLI = insight.platform?.toLowerCase().includes('linkedin');
+
+                                                                return (
+                                                                    <div key={i} className="p-4 rounded-2xl bg-white/5 border border-white/5 hover:border-purple-500/20 transition-all group/insight">
+                                                                        <div className="flex justify-between items-start mb-2">
+                                                                            <div className="flex items-center gap-2">
+                                                                                {isIG && <Instagram size={14} className="text-pink-500" />}
+                                                                                {isFB && <Facebook size={14} className="text-blue-500" />}
+                                                                                {isLI && <Linkedin size={14} className="text-sky-500" />}
+                                                                                {!isIG && !isFB && !isLI && <ExternalLink size={14} className="text-gray-400" />}
+                                                                                <span className="text-xs font-bold text-white">{insight.platform}</span>
+                                                                            </div>
+                                                                            <span className={`text-[10px] font-black px-2 py-0.5 rounded-md ${insight.score >= 7 ? 'bg-emerald-500/10 text-emerald-400' :
+                                                                                    insight.score >= 4 ? 'bg-amber-500/10 text-amber-400' :
+                                                                                        'bg-red-500/10 text-red-400'
+                                                                                }`}>
+                                                                                {insight.score}/10
+                                                                            </span>
+                                                                        </div>
+                                                                        <p className="text-[11px] text-slate-400 line-clamp-2 italic mb-2 relative">
+                                                                            "{insight.verdict}"
+                                                                        </p>
+                                                                        {insight.followers && (
+                                                                            <span className="text-[9px] font-bold text-slate-500 uppercase tracking-tighter">
+                                                                                {insight.followers} Followers
+                                                                            </span>
+                                                                        )}
+                                                                    </div>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                        {selectedLead.analysis.social_verdict && (
+                                                            <p className="text-[11px] text-indigo-300 font-bold bg-indigo-500/10 p-3 rounded-xl border border-indigo-500/20">
+                                                                <Sparkles size={12} className="inline mr-2" />
+                                                                {selectedLead.analysis.social_verdict}
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                )}
 
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                     <div className="space-y-3">

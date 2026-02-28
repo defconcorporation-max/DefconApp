@@ -276,6 +276,7 @@ export async function GET() {
                 qualification_score INTEGER,
                 email_draft TEXT,
                 social_verdict TEXT,
+                social_json TEXT, -- AI insights array
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY(lead_id) REFERENCES leads(id) ON DELETE CASCADE
             )
