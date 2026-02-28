@@ -59,6 +59,15 @@ export async function searchLeadsAction(query: string, radius: number = 1000) {
     }
 }
 
+export async function getLeadDetailsAction(placeId: string) {
+    try {
+        const details = await getPlaceDetails(placeId);
+        return { success: true, details };
+    } catch (error: any) {
+        return { success: false, error: error.message };
+    }
+}
+
 export async function qualifyLeadAction(lead: any, language: 'fr' | 'en' = 'fr') {
     try {
         let { place_id, name, website, phone } = lead;

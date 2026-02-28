@@ -12,7 +12,7 @@ import {
 import {
     searchLeadsAction, qualifyLeadAction, saveLeadToPipeline,
     getPipelineLeads, updateLeadStatusAction, deleteLeadAction,
-    Lead
+    getLeadDetailsAction, Lead
 } from '@/app/lead-actions';
 import toast from 'react-hot-toast';
 
@@ -34,6 +34,18 @@ export default function LeadScraper() {
         };
         loadPipeline();
     }, []);
+
+    const handleSelectLead = async (lead: any) => {
+        setSelectedLead(lead);
+        if (!lead.phone || !lead.website) {
+            const res = await getLeadDetailsAction(lead.place_id);
+            if (res.success && res.details) {
+                const updated = { ...lead, ...res.details };
+                setSelectedLead((prev: any) => prev?.place_id === lead.place_id ? updated : prev);
+                setSearchResults((prev: any[]) => prev.map(b => b.place_id === lead.place_id ? { ...b, ...res.details } : b));
+            }
+        }
+    };
 
     const handleSearch = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -188,7 +200,7 @@ export default function LeadScraper() {
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ delay: idx * 0.05 }}
-                                    onClick={() => setSelectedLead(lead)}
+                                    onClick={() => handleSelectLead(lead)}
                                     className={`p-4 rounded-2xl border transition-all cursor-pointer ${selectedLead?.place_id === lead.place_id ? 'bg-indigo-500/10 border-indigo-500/30 ring-1 ring-indigo-500/20' : 'bg-white/5 border-white/5 hover:border-white/10'}`}
                                 >
                                     <div className="flex justify-between items-start">
