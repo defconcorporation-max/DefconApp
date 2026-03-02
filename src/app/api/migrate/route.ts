@@ -251,10 +251,11 @@ export async function GET() {
         results.push('✓ leads table');
 
         // ── Lead Scraped Data ──
+        await turso.execute('DROP TABLE IF EXISTS lead_scraped_data');
         await turso.execute(`
             CREATE TABLE IF NOT EXISTS lead_scraped_data (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                lead_id INTEGER NOT NULL,
+                lead_id INTEGER NOT NULL UNIQUE,
                 emails TEXT, -- JSON array
                 social_json TEXT, -- Social profiles array
                 title TEXT,
@@ -266,10 +267,11 @@ export async function GET() {
         results.push('✓ lead_scraped_data table');
 
         // ── Lead AI Analyses ──
+        await turso.execute('DROP TABLE IF EXISTS lead_analyses');
         await turso.execute(`
             CREATE TABLE IF NOT EXISTS lead_analyses (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                lead_id INTEGER NOT NULL,
+                lead_id INTEGER NOT NULL UNIQUE,
                 summary TEXT,
                 pain_points TEXT, -- JSON array
                 suggestions TEXT, -- JSON array
