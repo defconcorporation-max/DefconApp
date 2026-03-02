@@ -87,9 +87,9 @@ export async function scrapeWebsite(url: string): Promise<ScrapedData> {
         const uniqueSocialLinks = Array.from(new Set(socialLinks));
         const uniqueContactPages = Array.from(new Set(contactPages)).slice(0, 3); // Max 3 contact pages
 
-        // 3. If no emails found, crawl contact pages
+        // 3. If no emails found, crawl contact pages IN PARALLEL
         if (emails.length === 0 && uniqueContactPages.length > 0) {
-            for (const contactUrl of uniqueContactPages) {
+            await Promise.all(uniqueContactPages.map(async (contactUrl) => {
                 try {
                     const contactRes = await axios.get(contactUrl, {
                         timeout: 5000,
@@ -111,13 +111,10 @@ export async function scrapeWebsite(url: string): Promise<ScrapedData> {
                             if (email && emailRegex.test(email)) emails.push(email);
                         }
                     });
-
-                    // If we found some, stop crawling
-                    if (emails.length > 0) break;
                 } catch (e) {
                     // Ignore errors on subpages
                 }
-            }
+            }));
         }
 
         // Clean up emails (remove duplicates and fake image extensions)

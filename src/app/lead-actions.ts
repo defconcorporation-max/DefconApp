@@ -3,7 +3,7 @@
 import { turso as db } from '@/lib/turso';
 import { revalidatePath } from 'next/cache';
 import { scrapeWebsite } from '@/lib/scraper';
-import { analyzeClient, draftIntroEmail } from '@/lib/gemini';
+import { analyzeClient } from '@/lib/gemini';
 import { broadAreaSearch, getPlaceDetails } from '@/lib/maps';
 
 export interface Lead {
@@ -72,31 +72,48 @@ export async function qualifyLeadAction(lead: any, language: 'fr' | 'en' = 'fr')
     try {
         let { place_id, name, website, phone } = lead;
         let updatedDetails: any = {};
+        let scrapedData: any = null;
+        let detailsPromise = null;
 
-        // 1. Get Details if missing
+        // 1. Launch Place Details fetch if we're missing phone or website
         if (!website || !phone) {
-            const details = await getPlaceDetails(place_id);
-            if (details.website) {
+            detailsPromise = getPlaceDetails(place_id);
+        }
+
+        // 2. If we already have a website, launch scraper immediately in parallel
+        let scrapePromise = null;
+        if (website) {
+            scrapePromise = scrapeWebsite(website);
+        }
+
+        // 3. Await details if we needed them
+        if (detailsPromise) {
+            const details = await detailsPromise;
+            if (details.website && !website) {
                 website = details.website;
                 updatedDetails.website = website;
+                // Launch scraper now that we found the website
+                scrapePromise = scrapeWebsite(website);
             }
-            if (details.phone) {
+            if (details.phone && !phone) {
                 phone = details.phone;
                 updatedDetails.phone = phone;
             }
         }
 
         if (!website) {
-            return { success: false, error: "No website found for this business" };
+            return { success: false, error: "No website found for this business. Scraping & Qualification aborted." };
         }
 
-        // 2. Scrape
-        const scrapedData = await scrapeWebsite(website);
+        // 4. Await scraper (either launched early or just now)
+        if (scrapePromise) {
+            scrapedData = await scrapePromise;
+        }
 
-        // 3. AI Analysis
+        // 5. AI Analysis (Now includes email drafting in one go)
         let socialDataStr = '';
-        if (scrapedData.socialProfiles?.length) {
-            socialDataStr = scrapedData.socialProfiles.map(p => {
+        if (scrapedData?.socialProfiles?.length) {
+            socialDataStr = scrapedData.socialProfiles.map((p: any) => {
                 let info = `Platform: ${p.platform}, URL: ${p.url}`;
                 if (p.username) info += `, Username: @${p.username}`;
                 if (p.scraped) {
@@ -111,12 +128,11 @@ export async function qualifyLeadAction(lead: any, language: 'fr' | 'en' = 'fr')
 
         const rawAnalysis = await analyzeClient(
             name,
-            scrapedData.description || scrapedData.title || 'No content found',
-            JSON.stringify({ emails: scrapedData.emails, title: scrapedData.title }),
-            socialDataStr || undefined
+            scrapedData?.description || scrapedData?.title || 'No content found',
+            JSON.stringify({ emails: scrapedData?.emails || [], title: scrapedData?.title || '' }),
+            socialDataStr || undefined,
+            language
         );
-
-        const emailDraft = await draftIntroEmail(name, rawAnalysis, language);
 
         return {
             success: true,
@@ -127,7 +143,7 @@ export async function qualifyLeadAction(lead: any, language: 'fr' | 'en' = 'fr')
                 pain_points: rawAnalysis.painPoints,
                 suggestions: rawAnalysis.suggestions,
                 qualification_score: rawAnalysis.qualificationScore,
-                email_draft: emailDraft,
+                email_draft: rawAnalysis.emailDraft,
                 social_verdict: rawAnalysis.socialMedia?.overallVerdict,
                 social_json: rawAnalysis.socialMedia?.insights || []
             }

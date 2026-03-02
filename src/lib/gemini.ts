@@ -23,6 +23,7 @@ export interface ClientAnalysis {
     painPoints: string[];
     suggestions: string[];
     qualificationScore: number;
+    emailDraft: string;
     socialMedia?: {
         overallVerdict: string;
         contentStrategy: string; // New: High-level strategy advice
@@ -34,9 +35,14 @@ export async function analyzeClient(
     businessName: string,
     websiteContent: string,
     metadata: string,
-    socialData?: string
+    socialData?: string,
+    language: 'fr' | 'en' = 'fr'
 ): Promise<ClientAnalysis> {
     const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+
+    const langInstructions = language === 'fr'
+        ? `Write the email draft entirely in French. Use "tu" or "vous" naturally depending on the business vibe. Sound like a real Québécois entrepreneur, not a Paris marketing firm.`
+        : `Write the email draft entirely in English. Sound like a real person, not a marketing team.`;
 
     const socialSection = socialData
         ? `\n    Social Media Profiles Found:\n    ${socialData}\n\n    IMPORTANT SOCIAL MEDIA ANALYSIS RULES:
@@ -81,11 +87,13 @@ export async function analyzeClient(
     ${socialSection}
 
     Provide a JSON response with:
+    Provide a JSON response with:
     1. "summary": A brief overview of what they do (2-3 sentences max).
     2. "brandVibe": A description of their current visual and tonal identity (e.g. "Trusted local expert, traditional aesthetic, text-heavy").
     3. "painPoints": An array of SHORT strings (max 15 words each). Return 3-5 items.
     4. "suggestions": An array of SHORT strings (max 15 words each). Return 3 items.
     5. "qualificationScore": A score from 1 to 10.
+    6. "emailDraft": A highly personalized, 3-4 sentence cold outreach email. It should start with a specific compliment based on their website or socials, introduce value related to their pain points, and end with a low-friction question. ${langInstructions}
     ${socialJsonSection}
 
     CRITICAL: painPoints and suggestions must be arrays of plain strings.
@@ -114,6 +122,7 @@ export async function analyzeClient(
             painPoints: normalize(parsed.painPoints || []),
             suggestions: normalize(parsed.suggestions || []),
             qualificationScore: parsed.qualificationScore || 0,
+            emailDraft: parsed.emailDraft || '',
             socialMedia: parsed.socialMedia || undefined,
         };
     } catch (e) {
@@ -124,54 +133,7 @@ export async function analyzeClient(
             painPoints: [],
             suggestions: [],
             qualificationScore: 0,
+            emailDraft: '',
         };
     }
-}
-
-export async function draftIntroEmail(
-    businessName: string,
-    analysis: ClientAnalysis,
-    language: 'fr' | 'en' = 'fr'
-): Promise<string> {
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
-
-    const langInstructions = language === 'fr'
-        ? `Write entirely in French. Use "tu" or "vous" naturally depending on the business vibe. Sound like a real Québécois/French entrepreneur, not a Paris marketing firm.`
-        : `Write entirely in English. Sound like a real person, not a marketing team.`;
-
-    const socialContext = analysis.socialMedia
-        ? `\n    - Their social media: ${analysis.socialMedia.overallVerdict}`
-        : '';
-
-    const prompt = `
-    Write a SHORT cold intro email to ${businessName}.
-
-    Context from our research:
-    - What they do: ${analysis.summary}
-    - AI's main suggestion for them: ${analysis.suggestions[0] || 'improving their online presence'}${socialContext}
-
-    ${langInstructions}
-
-    CORE OFFER & STRATEGY:
-    - Our company's biggest strength is Social Media Strategy (creation, growth, ads, video content).
-    - The entire pitch MUST pivot toward how we can help them completely dominate their social media presence or fix what they are lacking on socials.
-    - Even if the AI suggestion is about their website, try to tie it back to social media or make social media the star of the pitch.
-
-    RULES — THIS IS CRITICAL:
-    - Sound like a REAL HUMAN who genuinely checked their business. Not a template.
-    - NO corporate buzzwords ("synergy", "leverage", "solutions provider", "digital agency").
-    - Do NOT start with "I hope this finds you well" or "I came across your business".
-    - Start with something specific about THEIR business that shows you actually looked.
-    - Keep it to 4-6 sentences MAX. People don't read long cold emails.
-    - End with a casual invite to chat about their social media game, not a hard sell.
-    - Sign off with [Votre nom] / [Your Name] as placeholder.
-    - The sender works at Interstellar Viking, a small creative studio.
-    - Make it feel like a message you'd actually send to someone, not something ChatGPT wrote.
-    
-    Output the email text only, no subject line, no markdown formatting.
-  `;
-
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    return response.text();
 }
