@@ -140,3 +140,44 @@ export async function broadAreaSearch(
     console.log(`Broad search complete. Found ${businesses.size} unique businesses.`);
     return Array.from(businesses.values());
 }
+
+export async function getTopCompetitors(lat: number, lng: number, keyword: string, excludePlaceId: string): Promise<Business[]> {
+    if (!GOOGLE_MAPS_API_KEY) {
+        throw new Error('Google Maps API key is missing');
+    }
+
+    const url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json`;
+
+    const response = await axios.get(url, {
+        params: {
+            location: `${lat},${lng}`,
+            radius: 2000, // 2km radius
+            keyword: keyword,
+            key: GOOGLE_MAPS_API_KEY,
+        },
+    });
+
+    const data = response.data;
+    if (data.status !== 'OK') {
+        return [];
+    }
+
+    // Filter out the original lead, sort by review count * rating, and take top 2
+    return data.results
+        .filter((item: any) => item.place_id !== excludePlaceId && item.user_ratings_total > 5)
+        .sort((a: any, b: any) => {
+            const scoreA = (a.rating || 0) * (a.user_ratings_total || 0);
+            const scoreB = (b.rating || 0) * (b.user_ratings_total || 0);
+            return scoreB - scoreA;
+        })
+        .slice(0, 2)
+        .map((item: any) => ({
+            place_id: item.place_id,
+            name: item.name,
+            address: item.vicinity,
+            rating: item.rating,
+            user_ratings_total: item.user_ratings_total,
+            types: item.types,
+            location: item.geometry.location,
+        }));
+}

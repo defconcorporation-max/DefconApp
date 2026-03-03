@@ -7,6 +7,11 @@ export interface ScrapedData {
     title: string;
     socialLinks: string[];
     socialProfiles?: SocialProfile[];
+    techStack?: {
+        cms: string[];
+        analytics: string[];
+        pixels: string[];
+    };
 }
 
 export interface SocialProfile {
@@ -137,12 +142,16 @@ export async function scrapeWebsite(url: string): Promise<ScrapedData> {
         const socialContextFromSite = extractSocialContextFromSite($, bodyText);
         const socialProfiles = await buildSocialProfiles(uniqueSocialLinks);
 
+        // 4. Detect Technology Stack
+        const techStack = extractTechStack(response.data);
+
         return {
             emails,
             title,
             description: description + (socialContextFromSite ? `\n\nSocial context from website: ${socialContextFromSite}` : ''),
             socialLinks: uniqueSocialLinks,
             socialProfiles,
+            techStack,
         };
     } catch (error) {
         console.error(`Error scraping ${url}:`, error);
@@ -175,6 +184,34 @@ function extractSocialContextFromSite($: cheerio.CheerioAPI, bodyText: string): 
     if (lowerText.includes('blog') || lowerText.includes('actualités') || lowerText.includes('news')) hints.push('Has blog/news section');
 
     return hints.join('. ');
+}
+
+function extractTechStack(html: string) {
+    const stack = {
+        cms: [] as string[],
+        analytics: [] as string[],
+        pixels: [] as string[]
+    };
+
+    const lowerHtml = html.toLowerCase();
+
+    // CMS Detection
+    if (lowerHtml.includes('wp-content') || lowerHtml.includes('wp-includes')) stack.cms.push('WordPress');
+    if (lowerHtml.includes('cdn.shopify.com') || lowerHtml.includes('shopify.com')) stack.cms.push('Shopify');
+    if (lowerHtml.includes('wixpress.com') || lowerHtml.includes('wix.com')) stack.cms.push('Wix');
+    if (lowerHtml.includes('squarespace.com')) stack.cms.push('Squarespace');
+    if (lowerHtml.includes('webflow.com')) stack.cms.push('Webflow');
+
+    // Analytics Detection
+    if (lowerHtml.includes('googletagmanager.com/gtag/js') || lowerHtml.includes('google-analytics.com/analytics.js')) stack.analytics.push('Google Analytics');
+    if (lowerHtml.includes('googletagmanager.com/gtm.js')) stack.analytics.push('Google Tag Manager');
+
+    // Pixel/Ads Detection
+    if (lowerHtml.includes('connect.facebook.net') || lowerHtml.includes('fbevents.js')) stack.pixels.push('Meta Pixel');
+    if (lowerHtml.includes('tiktok.com/')) stack.pixels.push('TikTok Pixel');
+    if (lowerHtml.includes('bat.bing.com')) stack.pixels.push('Microsoft Ads Pixel');
+
+    return stack;
 }
 
 function extractUsername(url: string, platform: string): string | undefined {

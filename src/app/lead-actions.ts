@@ -4,7 +4,7 @@ import { turso as db } from '@/lib/turso';
 import { revalidatePath } from 'next/cache';
 import { scrapeWebsite } from '@/lib/scraper';
 import { analyzeClient } from '@/lib/gemini';
-import { broadAreaSearch, getPlaceDetails } from '@/lib/maps';
+import { broadAreaSearch, getPlaceDetails, getTopCompetitors, Business } from '@/lib/maps';
 
 export interface Lead {
     id?: number;
@@ -33,6 +33,7 @@ export interface Lead {
         social_json: any;
         title: string;
         description: string;
+        techStack?: any;
     };
 }
 
@@ -110,6 +111,18 @@ export async function qualifyLeadAction(lead: any, language: 'fr' | 'en' = 'fr')
             scrapedData = await scrapePromise;
         }
 
+        // 4.5 Fetch Top Competitors
+        let competitors: Business[] = [];
+        if (lead.location?.lat && lead.location?.lng) {
+            // We use the first 'type' as the keyword for competitors, or default to their name
+            const keyword = lead.types?.[0] || name;
+            try {
+                competitors = await getTopCompetitors(lead.location.lat, lead.location.lng, keyword, place_id);
+            } catch (e) {
+                console.error("Failed to fetch competitors:", e);
+            }
+        }
+
         // 5. AI Analysis (Now includes email drafting in one go)
         let socialDataStr = '';
         if (scrapedData?.socialProfiles?.length) {
@@ -130,7 +143,10 @@ export async function qualifyLeadAction(lead: any, language: 'fr' | 'en' = 'fr')
             name,
             scrapedData?.description || scrapedData?.title || 'No content found',
             JSON.stringify({ emails: scrapedData?.emails || [], title: scrapedData?.title || '' }),
+            lead.address || undefined,
             socialDataStr || undefined,
+            scrapedData?.techStack || undefined,
+            competitors || [],
             language
         );
 
@@ -143,6 +159,8 @@ export async function qualifyLeadAction(lead: any, language: 'fr' | 'en' = 'fr')
                 pain_points: rawAnalysis.painPoints,
                 suggestions: rawAnalysis.suggestions,
                 qualification_score: rawAnalysis.qualificationScore,
+                tech_stack: rawAnalysis.techStack,
+                competitors: rawAnalysis.competitors,
                 email_draft: rawAnalysis.emailDraft,
                 social_verdict: rawAnalysis.socialMedia?.overallVerdict,
                 social_json: rawAnalysis.socialMedia?.insights || []

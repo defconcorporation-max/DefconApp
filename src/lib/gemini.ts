@@ -23,6 +23,12 @@ export interface ClientAnalysis {
     painPoints: string[];
     suggestions: string[];
     qualificationScore: number;
+    techStack?: {  // New: Tech Stack found
+        cms: string[];
+        analytics: string[];
+        pixels: string[];
+    };
+    competitors?: any[]; // New: Competitor insights
     emailDraft: string;
     socialMedia?: {
         overallVerdict: string;
@@ -35,7 +41,10 @@ export async function analyzeClient(
     businessName: string,
     websiteContent: string,
     metadata: string,
+    address?: string,
     socialData?: string,
+    techStack?: any,
+    competitors: any[] = [],
     language: 'fr' | 'en' = 'fr'
 ): Promise<ClientAnalysis> {
     const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
@@ -79,21 +88,33 @@ export async function analyzeClient(
     }`
         : '';
 
+    const techSection = techStack
+        ? `\n    Technologies Detected on their Website:\n    - CMS: ${techStack.cms.join(', ') || 'None Detected'}\n    - Analytics: ${techStack.analytics.join(', ') || 'None Detected'}\n    - Pixels/Ads: ${techStack.pixels.join(', ') || 'None Detected'}\n`
+        : '';
+
+    const competitorSection = competitors.length > 0
+        ? `\n    Top Local Competitors:\n${competitors.map(c => `    - ${c.name} (${c.rating} stars, ${c.user_ratings_total} reviews)`).join('\n')}\n`
+        : '';
+
     const prompt = `
     Analyze the following business to see how a digital agency/software consultancy could help them.
     Business Name: ${businessName}
+    Location/Address: ${address || 'Unknown'}
     Website Content Snippet: ${websiteContent.substring(0, 5000)}
     Metadata: ${metadata}
+    ${techSection}
+    ${competitorSection}
     ${socialSection}
 
     Provide a JSON response with:
-    Provide a JSON response with:
     1. "summary": A brief overview of what they do (2-3 sentences max).
     2. "brandVibe": A description of their current visual and tonal identity (e.g. "Trusted local expert, traditional aesthetic, text-heavy").
-    3. "painPoints": An array of SHORT strings (max 15 words each). Return 3-5 items.
+    3. "painPoints": An array of SHORT strings (max 15 words each). Return 3-5 items. (e.g. "No TikTok pixel installed", "Outdated WordPress design").
     4. "suggestions": An array of SHORT strings (max 15 words each). Return 3 items.
     5. "qualificationScore": A score from 1 to 10.
-    6. "emailDraft": A highly personalized, 3-4 sentence cold outreach email. It should start with a specific compliment based on their website or socials, introduce value related to their pain points, and end with a low-friction question. ${langInstructions}
+    6. "techStack": (Optional) The parsed tech stack if you have meaningful insights on it.
+    7. "competitors": (Optional) An array of strings with 1-2 sharp observations about how they compare to the provided "Top Local Competitors" (e.g. "They have 50 fewer reviews than Competitor X").
+    8. "emailDraft": A highly personalized, 3-4 sentence cold outreach email. It should start with a specific compliment based on their website or socials. If you have their Location/Address, try to reference their specific city or neighborhood. If they lack a specific pixel (like Meta or TikTok) but run ads, or if they have an old CMS, you MUST subtly mention it to build authority. If you have competitor data, you can optionally drop a competitor's name to build urgency (e.g., "I noticed [Competitor Name] has been doubling down on video content lately..."). End with a low-friction question. ${langInstructions}
     ${socialJsonSection}
 
     CRITICAL: painPoints and suggestions must be arrays of plain strings.
@@ -122,6 +143,8 @@ export async function analyzeClient(
             painPoints: normalize(parsed.painPoints || []),
             suggestions: normalize(parsed.suggestions || []),
             qualificationScore: parsed.qualificationScore || 0,
+            techStack: parsed.techStack || undefined,
+            competitors: parsed.competitors || undefined,
             emailDraft: parsed.emailDraft || '',
             socialMedia: parsed.socialMedia || undefined,
         };

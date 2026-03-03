@@ -4,10 +4,9 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Search, MapPin, Sparkles, Loader2, Globe, Phone, Mail,
-    Bookmark, BookmarkCheck, CheckCircle2, AlertTriangle,
-    ExternalLink, Trash2, ArrowRight, Gavel, Target, TrendingUp,
-    ChevronRight, X, Copy, MailPlus, LayoutDashboard,
-    Instagram, Facebook, Linkedin
+    Bookmark, BookmarkCheck, CheckCircle2, AlertTriangle, ExternalLink, Trash2, ArrowRight,
+    Gavel, Target, TrendingUp, ChevronRight, X, Copy, MailPlus,
+    LayoutDashboard, Instagram, Facebook, Linkedin, Briefcase
 } from 'lucide-react';
 import {
     searchLeadsAction, qualifyLeadAction, saveLeadToPipeline,
@@ -19,12 +18,18 @@ import toast from 'react-hot-toast';
 export default function LeadScraper() {
     const [view, setView] = useState<'discovery' | 'pipeline'>('discovery');
     const [query, setQuery] = useState('');
+    const [sector, setSector] = useState('');
     const [radius, setRadius] = useState(1000);
     const [isSearching, setIsSearching] = useState(false);
     const [searchResults, setSearchResults] = useState<any[]>([]);
     const [pipelineLeads, setPipelineLeads] = useState<Lead[]>([]);
     const [selectedLead, setSelectedLead] = useState<any | null>(null);
     const [isQualifying, setIsQualifying] = useState(false);
+
+    // Batch Mode State
+    const [selectedForBatch, setSelectedForBatch] = useState<Set<string>>(new Set());
+    const [isBatchQualifying, setIsBatchQualifying] = useState(false);
+    const [batchProgress, setBatchProgress] = useState({ current: 0, total: 0 });
 
     // Load pipeline leads
     useEffect(() => {
@@ -49,11 +54,15 @@ export default function LeadScraper() {
 
     const handleSearch = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!query) return;
+        if (!query || !sector) {
+            toast.error("Please enter a sector and location");
+            return;
+        }
         setIsSearching(true);
         setSelectedLead(null);
+        setSelectedForBatch(new Set()); // Reset batch selection on new search
         try {
-            const res = await searchLeadsAction(query, radius);
+            const res = await searchLeadsAction(`${sector} in ${query}`, radius);
             if (res.success) {
                 setSearchResults(res.businesses || []);
                 toast.success(`Found ${res.businesses?.length} leads`);
@@ -85,6 +94,51 @@ export default function LeadScraper() {
         } finally {
             setIsQualifying(false);
         }
+    };
+
+    const toggleBatchSelection = (placeId: string, e: React.MouseEvent) => {
+        e.stopPropagation();
+        setSelectedForBatch(prev => {
+            const newSet = new Set(prev);
+            if (newSet.has(placeId)) {
+                newSet.delete(placeId);
+            } else {
+                newSet.add(placeId);
+            }
+            return newSet;
+        });
+    };
+
+    const handleBatchQualify = async () => {
+        const leadsToQualify = searchResults.filter(l => selectedForBatch.has(l.place_id));
+        if (leadsToQualify.length === 0) return;
+
+        setIsBatchQualifying(true);
+        setBatchProgress({ current: 0, total: leadsToQualify.length });
+
+        // We run them sequentially to avoid rate-limiting the Gemini API
+        for (let i = 0; i < leadsToQualify.length; i++) {
+            const lead = leadsToQualify[i];
+            try {
+                const res = await qualifyLeadAction(lead);
+                if (res.success) {
+                    const updatedLead = {
+                        ...lead,
+                        ...res.updatedDetails,
+                        analysis: res.analysis,
+                        scrapedData: res.scrapedData
+                    };
+                    setSearchResults(prev => prev.map(b => b.place_id === lead.place_id ? updatedLead : b));
+                }
+            } catch (error) {
+                console.error(`Failed to qualify ${lead.name}`, error);
+            }
+            setBatchProgress(prev => ({ ...prev, current: i + 1 }));
+        }
+
+        setIsBatchQualifying(false);
+        setSelectedForBatch(new Set());
+        toast.success(`Batch qualification complete (${leadsToQualify.length} leads)`);
     };
 
     const handleSaveToPipeline = async (lead: any) => {
@@ -156,15 +210,27 @@ export default function LeadScraper() {
                     <div className={`lg:col-span-5 space-y-6 ${selectedLead ? 'hidden lg:block' : 'block'}`}>
                         <form onSubmit={handleSearch} className="pro-dashboard-card p-6 rounded-3xl border border-white/5 bg-[#09090b]/40 backdrop-blur-xl shadow-2xl">
                             <div className="space-y-4">
-                                <div className="relative">
-                                    <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-indigo-400" size={20} />
-                                    <input
-                                        type="text"
-                                        placeholder="City or Area (e.g. Montreal, Quebec)"
-                                        className="w-full bg-black/40 border border-white/10 p-4 pl-12 rounded-2xl text-sm text-white focus:outline-none focus:border-indigo-500 transition-all placeholder:text-[var(--text-tertiary)]"
-                                        value={query}
-                                        onChange={(e) => setQuery(e.target.value)}
-                                    />
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="relative">
+                                        <Briefcase className="absolute left-4 top-1/2 -translate-y-1/2 text-indigo-400" size={20} />
+                                        <input
+                                            type="text"
+                                            placeholder="Sector (e.g. Plumber, Lawyer)"
+                                            className="w-full bg-black/40 border border-white/10 p-4 pl-12 rounded-2xl text-sm text-white focus:outline-none focus:border-indigo-500 transition-all placeholder:text-[var(--text-tertiary)]"
+                                            value={sector}
+                                            onChange={(e) => setSector(e.target.value)}
+                                        />
+                                    </div>
+                                    <div className="relative">
+                                        <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-indigo-400" size={20} />
+                                        <input
+                                            type="text"
+                                            placeholder="City (e.g. Montreal)"
+                                            className="w-full bg-black/40 border border-white/10 p-4 pl-12 rounded-2xl text-sm text-white focus:outline-none focus:border-indigo-500 transition-all placeholder:text-[var(--text-tertiary)]"
+                                            value={query}
+                                            onChange={(e) => setQuery(e.target.value)}
+                                        />
+                                    </div>
                                 </div>
                                 <div className="flex items-center gap-4">
                                     <div className="flex-1">
@@ -201,21 +267,31 @@ export default function LeadScraper() {
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ delay: idx * 0.05 }}
                                     onClick={() => handleSelectLead(lead)}
-                                    className={`p-4 rounded-2xl border transition-all cursor-pointer ${selectedLead?.place_id === lead.place_id ? 'bg-indigo-500/10 border-indigo-500/30 ring-1 ring-indigo-500/20' : 'bg-white/5 border-white/5 hover:border-white/10'}`}
+                                    className={`p-4 rounded-2xl border transition-all cursor-pointer flex items-center gap-4 ${selectedLead?.place_id === lead.place_id ? 'bg-indigo-500/10 border-indigo-500/30 ring-1 ring-indigo-500/20' : 'bg-white/5 border-white/5 hover:border-white/10'}`}
                                 >
-                                    <div className="flex justify-between items-start">
-                                        <div className="flex-1">
+                                    <div
+                                        onClick={(e) => toggleBatchSelection(lead.place_id, e)}
+                                        className={`w-5 h-5 rounded border flex items-center justify-center transition-all ${selectedForBatch.has(lead.place_id) ? 'bg-indigo-500 border-indigo-500' : 'border-white/20 hover:border-white/40'}`}
+                                    >
+                                        {selectedForBatch.has(lead.place_id) && <CheckCircle2 size={12} className="text-white" />}
+                                    </div>
+                                    <div className="flex-1 flex justify-between items-start overflow-hidden">
+                                        <div className="flex-1 min-w-0 pr-2">
                                             <h3 className="font-bold text-white text-sm truncate">{lead.name}</h3>
                                             <p className="text-[var(--text-tertiary)] text-[10px] flex items-center gap-1 mt-1 truncate">
-                                                <MapPin size={10} /> {lead.address}
+                                                <MapPin size={10} className="shrink-0" /> <span className="truncate">{lead.address}</span>
                                             </p>
                                         </div>
                                         {lead.rating && (
-                                            <span className="text-[10px] font-black text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded-lg border border-amber-400/20">
+                                            <span className="shrink-0 text-[10px] font-black text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded-lg border border-amber-400/20 whitespace-nowrap">
                                                 ★ {lead.rating}
                                             </span>
                                         )}
                                     </div>
+                                    {/* Indicator if already qualified */}
+                                    {lead.analysis && (
+                                        <div className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.5)] shrink-0"></div>
+                                    )}
                                 </motion.div>
                             ))}
                             {searchResults.length === 0 && !isSearching && (
@@ -228,6 +304,49 @@ export default function LeadScraper() {
                                 </div>
                             )}
                         </div>
+
+                        {/* Batch Qualification Action Bar */}
+                        <AnimatePresence>
+                            {selectedForBatch.size > 0 && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: 20 }}
+                                    className="fixed bottom-6 left-6 lg:left-auto lg:w-[calc((100vw-4rem)*5/12)] z-50 p-4 rounded-2xl bg-[#09090b]/90 backdrop-blur-xl border border-indigo-500/30 shadow-2xl flex items-center justify-between"
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <div className="bg-indigo-500 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm">
+                                            {selectedForBatch.size}
+                                        </div>
+                                        <div>
+                                            <p className="text-white font-bold text-sm">Leads Selected</p>
+                                            {isBatchQualifying && (
+                                                <p className="text-indigo-400 text-xs">
+                                                    Qualifying {batchProgress.current} / {batchProgress.total}...
+                                                </p>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <button
+                                            onClick={() => setSelectedForBatch(new Set())}
+                                            disabled={isBatchQualifying}
+                                            className="p-2 hover:bg-white/10 rounded-xl text-white/50 transition-colors disabled:opacity-50"
+                                        >
+                                            <X size={20} />
+                                        </button>
+                                        <button
+                                            onClick={handleBatchQualify}
+                                            disabled={isBatchQualifying}
+                                            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl flex items-center gap-2 transition-all disabled:opacity-50"
+                                        >
+                                            {isBatchQualifying ? <Loader2 className="animate-spin" size={16} /> : <Target size={16} />}
+                                            {isBatchQualifying ? 'Processing...' : 'Sniper Mode'}
+                                        </button>
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
                     </div>
 
                     {/* Detailed Analysis Panel - Full width on mobile if selected */}
