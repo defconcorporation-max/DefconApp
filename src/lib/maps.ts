@@ -19,7 +19,14 @@ export interface Business {
     in_pipeline?: boolean;
     status?: string;
     analysis?: {
+        summary?: string;
+        pain_points?: string[];
+        suggestions?: string[];
         qualification_score?: number;
+        email_draft?: string;
+        social_verdict?: string;
+        social_json?: any[];
+        mode?: 'rapid' | 'deep';
     };
 }
 

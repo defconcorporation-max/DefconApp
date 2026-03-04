@@ -276,6 +276,7 @@ export async function GET() {
                 pain_points TEXT, -- JSON array
                 suggestions TEXT, -- JSON array
                 qualification_score INTEGER,
+                mode TEXT DEFAULT 'deep', -- 'rapid' or 'deep'
                 email_draft TEXT,
                 social_verdict TEXT,
                 social_json TEXT, -- AI insights array

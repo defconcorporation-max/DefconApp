@@ -62,7 +62,7 @@ export async function searchLeadsAction(query: string, sector?: string, radius: 
         if (placeIds.length > 0) {
             const placeholders = placeIds.map(() => '?').join(',');
             const existingLeads = await db.execute({
-                sql: `SELECT l.*, a.qualification_score 
+                sql: `SELECT l.*, a.* 
                       FROM leads l 
                       LEFT JOIN lead_analyses a ON l.id = a.lead_id 
                       WHERE l.place_id IN (${placeholders})`,
@@ -78,7 +78,14 @@ export async function searchLeadsAction(query: string, sector?: string, radius: 
                     b.in_pipeline = true;
                     b.status = existing.status;
                     b.analysis = {
-                        qualification_score: existing.qualification_score
+                        summary: existing.summary,
+                        pain_points: JSON.parse(existing.pain_points || '[]'),
+                        suggestions: JSON.parse(existing.suggestions || '[]'),
+                        qualification_score: existing.qualification_score,
+                        email_draft: existing.email_draft,
+                        social_verdict: existing.social_verdict,
+                        social_json: JSON.parse(existing.social_json || '[]'),
+                        mode: existing.mode || 'deep'
                     };
                 }
             });
@@ -182,7 +189,7 @@ export async function qualifyLeadAction(lead: any, language: 'fr' | 'en' = 'fr',
             mode
         );
 
-        return {
+        const result = {
             success: true,
             updatedDetails, // Return new phone/website found
             scrapedData,
@@ -191,6 +198,7 @@ export async function qualifyLeadAction(lead: any, language: 'fr' | 'en' = 'fr',
                 pain_points: rawAnalysis.painPoints,
                 suggestions: rawAnalysis.suggestions,
                 qualification_score: rawAnalysis.qualificationScore,
+                mode: mode, // 'rapid' or 'deep'
                 tech_stack: rawAnalysis.techStack,
                 competitors: rawAnalysis.competitors,
                 email_draft: rawAnalysis.emailDraft,
@@ -198,6 +206,19 @@ export async function qualifyLeadAction(lead: any, language: 'fr' | 'en' = 'fr',
                 social_json: rawAnalysis.socialMedia?.insights || []
             }
         };
+
+        // 6. AUTO-SAVE to pipeline so that qualifications persist
+        try {
+            const saveLead = {
+                ...lead,
+                ...updatedDetails
+            };
+            await saveLeadToPipeline(saveLead, scrapedData, result.analysis);
+        } catch (saveError) {
+            console.error("Auto-save failed during qualification:", saveError);
+        }
+
+        return result;
     } catch (error: any) {
         console.error("[LeadActions] Qualification error:", error);
         return { success: false, error: error.message };
@@ -248,15 +269,24 @@ export async function saveLeadToPipeline(lead: Lead, scrapedData?: any, analysis
         // 3. Save Analysis
         if (analysis) {
             await db.execute({
-                sql: `INSERT INTO lead_analyses (lead_id, summary, pain_points, suggestions, qualification_score, email_draft, social_verdict, social_json) 
-                      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                      ON CONFLICT(lead_id) DO UPDATE SET summary = excluded.summary`,
+                sql: `INSERT INTO lead_analyses (lead_id, summary, pain_points, suggestions, qualification_score, mode, email_draft, social_verdict, social_json) 
+                      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                      ON CONFLICT(lead_id) DO UPDATE SET 
+                        summary = excluded.summary,
+                        pain_points = excluded.pain_points,
+                        suggestions = excluded.suggestions,
+                        qualification_score = excluded.qualification_score,
+                        mode = excluded.mode,
+                        email_draft = excluded.email_draft,
+                        social_verdict = excluded.social_verdict,
+                        social_json = excluded.social_json`,
                 args: [
                     leadId,
                     analysis.summary || '',
                     JSON.stringify(analysis.pain_points || []),
                     JSON.stringify(analysis.suggestions || []),
                     analysis.qualification_score || 0,
+                    analysis.mode || 'deep',
                     analysis.email_draft || '',
                     analysis.social_verdict || '',
                     JSON.stringify(analysis.social_json || [])

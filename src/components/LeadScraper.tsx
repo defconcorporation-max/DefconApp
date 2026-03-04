@@ -24,7 +24,7 @@ export default function LeadScraper() {
     const [searchResults, setSearchResults] = useState<any[]>([]);
     const [pipelineLeads, setPipelineLeads] = useState<Lead[]>([]);
     const [selectedLead, setSelectedLead] = useState<any | null>(null);
-    const [isQualifying, setIsQualifying] = useState(false);
+    const [isQualifying, setIsQualifying] = useState<'rapid' | 'deep' | null>(null);
 
     // Batch Mode State
     const [selectedForBatch, setSelectedForBatch] = useState<Set<string>>(new Set());
@@ -75,10 +75,10 @@ export default function LeadScraper() {
     };
 
     const handleQualify = async (lead: any, mode: 'rapid' | 'deep' = 'deep') => {
-        setIsQualifying(true);
+        setIsQualifying(mode);
         try {
             const res = await qualifyLeadAction(lead, 'fr', mode);
-            if (res.success) {
+            if (res.success && 'analysis' in res) {
                 const updatedLead = {
                     ...lead,
                     ...res.updatedDetails, // Merge newly found phone/website
@@ -87,16 +87,21 @@ export default function LeadScraper() {
                 };
                 setSelectedLead(updatedLead);
                 setSearchResults(prev => prev.map(b => b.place_id === lead.place_id ? updatedLead : b));
+
+                // Also update pipeline view if needed
+                const freshPipeline = await getPipelineLeads();
+                setPipelineLeads(freshPipeline);
+
                 if (mode === 'deep') {
                     toast.success("Deep Analysis Complete");
                 } else {
                     toast.success("Flash Audit Complete");
                 }
-            } else {
-                toast.error(res.error || "Qualification failed");
+            } else if (!res.success) {
+                toast.error((res as any).error || "Qualification failed");
             }
         } finally {
-            setIsQualifying(false);
+            setIsQualifying(null);
         }
     };
 
@@ -124,7 +129,7 @@ export default function LeadScraper() {
             const lead = leadsToQualify[i];
             try {
                 const res = await qualifyLeadAction(lead, 'fr', mode);
-                if (res.success) {
+                if (res.success && 'analysis' in res) {
                     const updatedLead = {
                         ...lead,
                         ...res.updatedDetails,
@@ -471,35 +476,43 @@ export default function LeadScraper() {
                                         </div>
                                     </div>
 
-                                    {!selectedLead.analysis ? (
-                                        <div className="flex flex-col items-center justify-center p-12 bg-indigo-500/5 border border-dashed border-indigo-500/20 rounded-[32px]">
+                                    {(!selectedLead.analysis || selectedLead.analysis.mode === 'rapid') && (
+                                        <div className="flex flex-col items-center justify-center p-12 bg-indigo-500/5 border border-dashed border-indigo-500/20 rounded-[32px] mb-8">
                                             <div className="bg-indigo-500/20 p-4 rounded-full mb-6">
                                                 <Sparkles className="text-indigo-400" size={32} />
                                             </div>
-                                            <h3 className="text-xl font-bold text-white mb-2 text-center">AI Qualification Required</h3>
+                                            <h3 className="text-xl font-bold text-white mb-2 text-center">
+                                                {selectedLead.analysis?.mode === 'rapid' ? 'Deep Dive Available' : 'AI Qualification Required'}
+                                            </h3>
                                             <p className="text-[var(--text-tertiary)] text-sm mb-8 text-center max-w-sm">
-                                                Our AI will scrape the website, analyze their digital presence, and identify high-value pain points.
+                                                {selectedLead.analysis?.mode === 'rapid'
+                                                    ? 'You have a flash audit. Run a Deep Dive for full social analysis, competitors, and email drafts.'
+                                                    : 'Our AI will scrape the website, analyze their digital presence, and identify high-value pain points.'}
                                             </p>
                                             <div className="flex gap-4 w-full max-w-lg">
-                                                <button
-                                                    onClick={() => handleQualify(selectedLead, 'rapid')}
-                                                    disabled={isQualifying}
-                                                    className="flex-1 py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-black uppercase tracking-widest transition-all shadow-xl shadow-indigo-500/40 disabled:opacity-50 flex items-center justify-center gap-3"
-                                                >
-                                                    {isQualifying ? <Loader2 className="animate-spin" /> : <Sparkles size={20} />}
-                                                    Flash Audit
-                                                </button>
+                                                {(!selectedLead.analysis?.mode || selectedLead.analysis.mode !== 'rapid') && (
+                                                    <button
+                                                        onClick={() => handleQualify(selectedLead, 'rapid')}
+                                                        disabled={!!isQualifying}
+                                                        className="flex-1 py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-black uppercase tracking-widest transition-all shadow-xl shadow-indigo-500/40 disabled:opacity-50 flex items-center justify-center gap-3"
+                                                    >
+                                                        {isQualifying === 'rapid' ? <Loader2 className="animate-spin" /> : <Sparkles size={20} />}
+                                                        Flash Audit
+                                                    </button>
+                                                )}
                                                 <button
                                                     onClick={() => handleQualify(selectedLead, 'deep')}
-                                                    disabled={isQualifying}
+                                                    disabled={!!isQualifying}
                                                     className="flex-1 py-4 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-2xl font-black uppercase tracking-widest transition-all shadow-xl shadow-purple-500/40 disabled:opacity-50 flex items-center justify-center gap-3"
                                                 >
-                                                    {isQualifying ? <Loader2 className="animate-spin" /> : <Gavel size={20} />}
+                                                    {isQualifying === 'deep' ? <Loader2 className="animate-spin" /> : <Gavel size={20} />}
                                                     Deep Dive
                                                 </button>
                                             </div>
                                         </div>
-                                    ) : (
+                                    )}
+
+                                    {selectedLead.analysis && (
                                         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
                                             {/* AI Analysis View */}
                                             <div className="p-6 rounded-3xl bg-indigo-500/5 border border-indigo-500/10">
@@ -552,7 +565,7 @@ export default function LeadScraper() {
                                                             </div>
                                                             <button
                                                                 onClick={() => handleQualify(selectedLead)}
-                                                                disabled={isQualifying}
+                                                                disabled={!!isQualifying}
                                                                 className="text-[9px] font-black text-indigo-400 hover:text-indigo-300 uppercase tracking-widest bg-indigo-500/10 hover:bg-indigo-500/20 px-3 py-1.5 rounded-lg transition-colors border border-indigo-500/10 disabled:opacity-50"
                                                             >
                                                                 {isQualifying ? "Re-Analyzing..." : "Refresh Deep Audit"}
