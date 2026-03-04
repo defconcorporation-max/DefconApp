@@ -421,7 +421,7 @@ export async function assignLeadAction(leadId: number, memberId: number | null) 
 
 export async function getPipelineStagesAction(): Promise<PipelineStage[]> {
     try {
-        const { rows } = await db.execute("SELECT * FROM pipeline_stages ORDER BY order_index ASC");
+        const { rows } = await db.execute("SELECT * FROM lead_pipeline_stages ORDER BY order_index ASC");
         return rows as any as PipelineStage[];
     } catch (error) {
         console.error("Failed to fetch pipeline stages:", error);
@@ -443,8 +443,40 @@ export async function updatePipelineStageAction(id: number, data: Partial<Pipeli
     const fields = Object.keys(data).map(key => `${key} = ?`).join(', ');
     const values = Object.values(data);
     await db.execute({
-        sql: `UPDATE pipeline_stages SET ${fields} WHERE id = ?`,
+        sql: `UPDATE lead_pipeline_stages SET ${fields} WHERE id = ?`,
         args: [...values, id]
+    });
+    revalidatePath('/leads');
+}
+
+export async function addPipelineStageAction(label: string, color: string = 'gray') {
+    if (!label) return;
+    const value = label.toLowerCase().replace(/\s+/g, '_');
+
+    const resultRes = await db.execute('SELECT MAX(order_index) as maxOrder FROM lead_pipeline_stages');
+    const result = resultRes.rows[0] as unknown as { maxOrder: number };
+    const nextOrder = (result?.maxOrder ?? -1) + 1;
+
+    await db.execute({
+        sql: 'INSERT INTO lead_pipeline_stages (label, value, color, order_index) VALUES (?, ?, ?, ?)',
+        args: [label, value, color, nextOrder]
+    });
+    revalidatePath('/leads');
+}
+
+export async function reorderPipelineStagesAction(stages: PipelineStage[]) {
+    const statements = stages.map((s, i) => ({
+        sql: 'UPDATE lead_pipeline_stages SET order_index = ? WHERE id = ?',
+        args: [i, s.id]
+    }));
+    await db.batch(statements, 'write');
+    revalidatePath('/leads');
+}
+
+export async function deletePipelineStageAction(id: number) {
+    await db.execute({
+        sql: 'DELETE FROM lead_pipeline_stages WHERE id = ?',
+        args: [id]
     });
     revalidatePath('/leads');
 }

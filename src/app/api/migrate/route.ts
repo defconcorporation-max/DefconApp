@@ -92,7 +92,7 @@ export async function GET() {
         `);
         results.push('✓ agencies table');
 
-        // ── Pipeline Stages ──
+        // ── Pipeline Stages (Projects) ──
         await turso.execute(`
             CREATE TABLE IF NOT EXISTS pipeline_stages (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -105,11 +105,31 @@ export async function GET() {
         results.push('✓ pipeline_stages table');
         const { rows: stageRows } = await turso.execute('SELECT count(*) as count FROM pipeline_stages');
         if (stageRows[0].count === 0) {
-            await turso.execute("INSERT INTO pipeline_stages (label, value, color, order_index) VALUES ('New Leads', 'New', 'bg-blue-500', 0)");
-            await turso.execute("INSERT INTO pipeline_stages (label, value, color, order_index) VALUES ('Contacted', 'Contacted', 'bg-amber-500', 1)");
-            await turso.execute("INSERT INTO pipeline_stages (label, value, color, order_index) VALUES ('Qualified', 'Qualified', 'bg-indigo-500', 2)");
-            await turso.execute("INSERT INTO pipeline_stages (label, value, color, order_index) VALUES ('Closed/Won', 'Closed', 'bg-emerald-500', 3)");
+            await turso.execute("INSERT INTO pipeline_stages (label, value, color, order_index) VALUES ('Prospect', 'prospect', 'bg-blue-500', 0)");
+            await turso.execute("INSERT INTO pipeline_stages (label, value, color, order_index) VALUES ('Meeting', 'meeting', 'bg-amber-500', 1)");
+            await turso.execute("INSERT INTO pipeline_stages (label, value, color, order_index) VALUES ('In Production', 'production', 'bg-indigo-500', 2)");
+            await turso.execute("INSERT INTO pipeline_stages (label, value, color, order_index) VALUES ('Delivered', 'delivered', 'bg-emerald-500', 3)");
             results.push('✓ pipeline_stages seeded');
+        }
+
+        // ── Lead Pipeline Stages (CRM) ──
+        await turso.execute(`
+            CREATE TABLE IF NOT EXISTS lead_pipeline_stages (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                label TEXT NOT NULL,
+                value TEXT NOT NULL,
+                color TEXT DEFAULT 'bg-gray-500',
+                order_index INTEGER DEFAULT 0
+            )
+        `);
+        results.push('✓ lead_pipeline_stages table');
+        const { rows: leadStageRows } = await turso.execute('SELECT count(*) as count FROM lead_pipeline_stages');
+        if (leadStageRows[0].count === 0) {
+            await turso.execute("INSERT INTO lead_pipeline_stages (label, value, color, order_index) VALUES ('New Leads', 'New', 'bg-indigo-500', 0)");
+            await turso.execute("INSERT INTO lead_pipeline_stages (label, value, color, order_index) VALUES ('Contacted', 'Contacted', 'bg-amber-500', 1)");
+            await turso.execute("INSERT INTO lead_pipeline_stages (label, value, color, order_index) VALUES ('In Progress', 'In Progress', 'bg-orange-500', 2)");
+            await turso.execute("INSERT INTO lead_pipeline_stages (label, value, color, order_index) VALUES ('Closed', 'Closed', 'bg-emerald-500', 3)");
+            results.push('✓ lead_pipeline_stages seeded');
         }
 
         // ── Client Feedback (Post-Production Reviews) ──

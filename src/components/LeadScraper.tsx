@@ -7,13 +7,14 @@ import {
     Bookmark, BookmarkCheck, CheckCircle2, AlertTriangle, ExternalLink, Trash2, ArrowRight,
     Gavel, Target, TrendingUp, ChevronRight, X, Copy, MailPlus,
     LayoutDashboard, Instagram, Facebook, Linkedin, Briefcase,
-    History, Calendar, Clock, Star
+    History, Calendar, Clock, Star, Settings2
 } from 'lucide-react';
 import {
     searchLeadsAction, qualifyLeadAction, saveLeadToPipeline,
     getPipelineLeads, updateLeadStatusAction, deleteLeadAction,
     getLeadDetailsAction, updateLeadNotesAction, markLeadContactedAction, Lead,
     logReachAttemptAction, assignLeadAction, getPipelineStagesAction, getTeamMembersAction, sendSmsAction,
+    addPipelineStageAction, updatePipelineStageAction, deletePipelineStageAction, reorderPipelineStagesAction,
     PipelineStage, TeamMember
 } from '@/app/lead-actions';
 import toast from 'react-hot-toast';
@@ -38,6 +39,7 @@ export default function LeadScraper() {
     const [selectedLead, setSelectedLead] = useState<any | null>(null);
     const [isQualifying, setIsQualifying] = useState<'rapid' | 'deep' | null>(null);
     const [isNotesModalOpen, setIsNotesModalOpen] = useState(false);
+    const [isStageManagerOpen, setIsStageManagerOpen] = useState(false);
     const [tempNotes, setTempNotes] = useState('');
     const [pipelineColumns, setPipelineColumns] = useState<PipelineStage[]>([]);
     const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
@@ -292,6 +294,32 @@ export default function LeadScraper() {
         }
     };
 
+    // Stage Management
+    const [newStageName, setNewStageName] = useState('');
+    const [newStageColor, setNewStageColor] = useState('bg-indigo-500');
+
+    const handleAddStage = async () => {
+        if (!newStageName.trim()) return;
+        toast.loading("Adding stage...");
+        await addPipelineStageAction(newStageName, newStageColor);
+        const freshStages = await getPipelineStagesAction();
+        setPipelineColumns(freshStages);
+        setNewStageName('');
+        toast.dismiss();
+        toast.success("Stage added");
+    };
+
+    const handleDeleteStage = async (id: number) => {
+        if (confirm("Are you sure you want to delete this stage? Leads in this stage may not appear in the pipeline until moved.")) {
+            toast.loading("Deleting stage...");
+            await deletePipelineStageAction(id);
+            const freshStages = await getPipelineStagesAction();
+            setPipelineColumns(freshStages);
+            toast.dismiss();
+            toast.success("Stage deleted");
+        }
+    };
+
     const handleLogReachAttempt = async () => {
         if (!selectedLead?.id) return;
         try {
@@ -357,6 +385,15 @@ export default function LeadScraper() {
                     >
                         <LayoutDashboard size={16} /> Pipeline
                     </button>
+                    {view === 'pipeline' && (
+                        <button
+                            onClick={() => setIsStageManagerOpen(true)}
+                            className="px-4 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center gap-2 text-[var(--text-tertiary)] hover:text-white border-l border-white/10 ml-2 pl-4"
+                            title="Edit Pipeline Stages"
+                        >
+                            <Settings2 size={16} />
+                        </button>
+                    )}
                 </div>
             </div>
 
@@ -1281,6 +1318,80 @@ export default function LeadScraper() {
                                     </div>
                                 )}
 
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* PIPELINE STAGE MANAGER MODAL */}
+            <AnimatePresence>
+                {isStageManagerOpen && (
+                    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setIsStageManagerOpen(false)}
+                            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+                        />
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                            className="relative bg-[#09090b] border border-white/10 p-6 rounded-3xl w-full max-w-lg shadow-2xl z-10 flex flex-col"
+                        >
+                            <div className="flex justify-between items-center mb-6">
+                                <h3 className="text-xl font-black text-white">Manage Pipeline Stages</h3>
+                                <button onClick={() => setIsStageManagerOpen(false)} className="p-2 text-white/50 hover:bg-white/10 hover:text-white rounded-xl transition-colors">
+                                    <X size={20} />
+                                </button>
+                            </div>
+
+                            <div className="max-h-[50vh] overflow-y-auto space-y-2 pr-2 mb-6 custom-scrollbar">
+                                {pipelineColumns.map(col => (
+                                    <div key={col.id} className="flex justify-between items-center p-3 bg-white/5 border border-white/10 rounded-xl">
+                                        <div className="flex items-center gap-3">
+                                            <div className={`w-3 h-3 rounded-full ${col.color}`} />
+                                            <span className="font-bold text-white text-sm">{col.label}</span>
+                                        </div>
+                                        <button onClick={() => handleDeleteStage(col.id)} className="p-2 text-red-400 hover:bg-red-500/10 rounded-lg transition-colors" title="Delete Stage">
+                                            <Trash2 size={16} />
+                                        </button>
+                                    </div>
+                                ))}
+                                {pipelineColumns.length === 0 && (
+                                    <p className="text-center text-[var(--text-tertiary)] py-4 text-sm font-bold uppercase">No stages defined</p>
+                                )}
+                            </div>
+
+                            <div className="pt-4 border-t border-white/10 space-y-4">
+                                <div>
+                                    <label className="text-[10px] font-bold text-[var(--text-tertiary)] uppercase tracking-widest mb-2 block">Create New Stage</label>
+                                    <input
+                                        type="text"
+                                        value={newStageName}
+                                        onChange={(e) => setNewStageName(e.target.value)}
+                                        placeholder="E.g., In Negotiation"
+                                        className="w-full bg-black/40 border border-white/10 p-3 rounded-xl text-white text-sm focus:outline-none focus:border-indigo-500 placeholder:text-white/20"
+                                    />
+                                </div>
+                                <div className="flex gap-2">
+                                    {['bg-slate-500', 'bg-red-500', 'bg-orange-500', 'bg-amber-500', 'bg-emerald-500', 'bg-cyan-500', 'bg-blue-500', 'bg-indigo-500', 'bg-violet-500', 'bg-fuchsia-500', 'bg-rose-500'].map(color => (
+                                        <button
+                                            key={color}
+                                            onClick={() => setNewStageColor(color)}
+                                            className={`w-6 h-6 rounded-full cursor-pointer transition-all ${color} ${newStageColor === color ? 'ring-2 ring-white scale-110' : 'opacity-50 hover:opacity-100'}`}
+                                        />
+                                    ))}
+                                </div>
+                                <button
+                                    onClick={handleAddStage}
+                                    disabled={!newStageName.trim()}
+                                    className="w-full bg-white text-black font-black py-3 rounded-xl hover:bg-gray-200 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-widest text-sm"
+                                >
+                                    Add Stage
+                                </button>
                             </div>
                         </motion.div>
                     </div>
