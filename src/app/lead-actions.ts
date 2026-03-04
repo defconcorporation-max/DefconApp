@@ -54,7 +54,8 @@ export async function searchLeadsAction(query: string, sector?: string, radius: 
         }
 
         const { lat, lng } = geoResult.results[0].geometry.location;
-        const businesses = await broadAreaSearch(lat, lng, radius, sector || query);
+        // Use sector as primary keyword. If empty, broadAreaSearch will find all establishments.
+        const businesses = await broadAreaSearch(lat, lng, radius, sector || undefined);
 
         // Check if leads are already in the database
         const placeIds = businesses.map(b => b.place_id);

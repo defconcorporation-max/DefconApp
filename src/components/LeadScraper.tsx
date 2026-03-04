@@ -246,7 +246,7 @@ export default function LeadScraper() {
                                         <Briefcase className="absolute left-4 top-1/2 -translate-y-1/2 text-indigo-400" size={20} />
                                         <input
                                             type="text"
-                                            placeholder="Sector (e.g. Plumber, Lawyer)"
+                                            placeholder="What? (e.g. Plumber, Lawyer, Bakery)"
                                             className="w-full bg-black/40 border border-white/10 p-4 pl-12 rounded-2xl text-sm text-white focus:outline-none focus:border-indigo-500 transition-all placeholder:text-[var(--text-tertiary)]"
                                             value={sector}
                                             onChange={(e) => setSector(e.target.value)}
@@ -256,7 +256,7 @@ export default function LeadScraper() {
                                         <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-indigo-400" size={20} />
                                         <input
                                             type="text"
-                                            placeholder="City (e.g. Montreal)"
+                                            placeholder="Where? (e.g. Montreal, Downtown)"
                                             className="w-full bg-black/40 border border-white/10 p-4 pl-12 rounded-2xl text-sm text-white focus:outline-none focus:border-indigo-500 transition-all placeholder:text-[var(--text-tertiary)]"
                                             value={query}
                                             onChange={(e) => setQuery(e.target.value)}
