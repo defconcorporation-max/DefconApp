@@ -797,7 +797,7 @@ export default function LeadScraper() {
                                             layoutId={`lead-${lead.id}`}
                                             draggable
                                             onDragStart={(e) => handleDragStart(e as any, lead)}
-                                            onClick={() => setSelectedLead(lead)}
+                                            onClick={() => handleSelectLead(lead)}
                                             className="pro-dashboard-card p-5 rounded-3xl border border-white/5 bg-[#09090b]/40 hover:border-indigo-500/30 transition-all group relative cursor-pointer active:cursor-grabbing"
                                         >
                                             <div className="flex justify-between items-start mb-3">
