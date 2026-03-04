@@ -56,13 +56,12 @@ export async function analyzeClient(
 
     const socialSection = socialData
         ? `\n    Social Media Profiles Found:\n    ${socialData}\n\n    IMPORTANT SOCIAL MEDIA ANALYSIS RULES:
-    - If a profile was "[Could not scrape]", do NOT say "Unknown followers" or guess randomly.
-    - Instead, base your analysis on: the username/page name, what the website tells us about their social activity, and your general knowledge.
-    - FOCUS ON CONTENT: Try to infer the TYPE of content they post (Video, Photo, Educational, Viral, etc.) based on their brand vibe and any snippets.
-    - Analyze the POSTING SCHEDULE: Does it look active or abandoned?
-    - Analyze the CONTENT STYLE: Is it authentic UGC, high-end professional, or just dry sales posts?
-    - If you see follower counts or posts counts, use them to judge their growth potential.
-    - "verdict" should be a 1-sentence CRITIQUE: "Good follower base but posts are generic sales flyers — needs a Reels strategy."
+    - If a profile says "[Could not scrape details...]", it means the platform successfully blocked our bot. This is NORMAL. Do NOT say their profile is empty or bad.
+    - Instead, base your analysis heavily on the brand vibe and website context. Assume their social media reflects their website's quality.
+    - FOCUS ON CONTENT PREDICTION: Infer the TYPE of content they likely post (Video, Photo, Educational) based on their industry and vibe.
+    - Analyze the CONTENT STYLE: Is it authentic UGC, high-end professional, or generic?
+    - If you see scraped follower/post counts, use them to judge growth potential. Otherwise, skip mentioning numbers.
+    - "verdict" should be a 1-sentence CRITIQUE: e.g. "Solid brand identity on the website, but likely missing a strong Reels/TikTok strategy based on their static industry."
     `
         : '';
 
@@ -76,7 +75,7 @@ export async function analyzeClient(
                 "url": "the profile URL",
                 "followers": "follower count if found, or null",
                 "postsCount": "post count if found, or null",
-                "verdict": "A sharp, specific critique about their content quality and strategy.",
+                "verdict": "A sharp, specific critique about their content quality and strategy. If protected, infer based on website vibe.",
                 "contentType": "Short-form video / Photography / Educational / Mixed",
                 "postingSchedule": "Active / Inconsistent / Ghost / Could not determine",
                 "contentStyle": "UGC / Professional / Sales-heavy / Informational",

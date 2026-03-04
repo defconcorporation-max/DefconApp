@@ -70,7 +70,10 @@ export async function scrapeWebsite(url: string, homepageOnly: boolean = false):
                 href.includes('x.com') ||
                 href.includes('tiktok.com') ||
                 href.includes('youtube.com')) {
-                socialLinks.push(href);
+                const l = href.toLowerCase();
+                if (!l.includes('sharer') && !l.includes('share') && !l.includes('tweet?') && !l.includes('plugins/')) {
+                    socialLinks.push(href);
+                }
             }
 
             // Look for contact pages
@@ -84,6 +87,16 @@ export async function scrapeWebsite(url: string, homepageOnly: boolean = false):
                 } catch {
                     // Invalid URL, skip
                 }
+            }
+        });
+
+        // Fallback: Raw Regex over entire HTML (catches JSON-LD, Next.js hydration, hidden elements)
+        const socialRegex = /https?:\/\/(www\.)?(facebook\.com|instagram\.com|linkedin\.com|twitter\.com|x\.com|tiktok\.com|youtube\.com)\/[a-zA-Z0-9_.-]+/gi;
+        const rawMatches = response.data.match(socialRegex) || [];
+        rawMatches.forEach((href: string) => {
+            const l = href.toLowerCase();
+            if (!l.includes('sharer') && !l.includes('share') && !l.includes('tweet?') && !l.includes('plugins/')) {
+                socialLinks.push(href);
             }
         });
 

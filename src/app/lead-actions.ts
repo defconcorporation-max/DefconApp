@@ -194,7 +194,9 @@ export async function qualifyLeadAction(lead: any, language: 'fr' | 'en' = 'fr',
                     if (p.name) info += `, Name: ${p.name}`;
                     if (p.bio) info += `, Bio: ${p.bio}`;
                     if (p.followers) info += `, Followers: ${p.followers}`;
-                    info += ` [Scraped]`;
+                    info += ` [Successfully Scraped]`;
+                } else {
+                    info += ` [Could not scrape details - Page protected. Infer strategy from URL, brand vibe, and website context]`;
                 }
                 return info;
             }).join('\n');
