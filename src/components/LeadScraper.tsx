@@ -51,10 +51,11 @@ export default function LeadScraper() {
     });
     const [mapCenter, setMapCenter] = useState({ lat: 45.5017, lng: -73.5673 });
     const [mapInstance, setMapInstance] = useState<any>(null);
+    const [isMapEnabled, setIsMapEnabled] = useState(false);
 
     const onMapLoad = (map: any) => setMapInstance(map);
     const handleMapDragEnd = () => {
-        if (mapInstance) {
+        if (mapInstance && isMapEnabled) {
             const center = mapInstance.getCenter();
             setMapCenter({ lat: center.lat(), lng: center.lng() });
             setQuery("Map Location"); // Soft update the input
@@ -132,16 +133,26 @@ export default function LeadScraper() {
 
     const handleSearch = async (e: React.FormEvent) => {
         e.preventDefault();
-        // Allow search if we have a valid map center, even if query string is generic
-        if (!query && !mapCenter) {
-            toast.error("Please enter a location or query");
+        // Require query if map is off
+        if (!isMapEnabled && !query) {
+            toast.error("Please enter a location");
             return;
         }
+
         setIsSearching(true);
         setSelectedLead(null);
         setSelectedForBatch(new Set()); // Reset batch selection on new search
         try {
-            const res = await searchLeadsAction(query || 'Map Location', sector || undefined, radius, mapCenter.lat, mapCenter.lng);
+            // If map is disabled, we don't pass lat/lng
+            const q = isMapEnabled ? (query || 'Map Location') : query;
+            const res = await searchLeadsAction(
+                q,
+                sector || undefined,
+                radius,
+                isMapEnabled ? mapCenter.lat : undefined,
+                isMapEnabled ? mapCenter.lng : undefined
+            );
+
             if (res.success) {
                 setSearchResults(res.businesses || []);
                 toast.success(`Found ${res.businesses?.length} leads`);
@@ -427,25 +438,35 @@ export default function LeadScraper() {
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-4">
-                                    <div className="flex-1">
-                                        <div className="flex justify-between mb-2">
-                                            <span className="text-[10px] font-bold text-[var(--text-tertiary)] uppercase">Search Radius</span>
-                                            <span className="text-[10px] font-bold text-indigo-400 uppercase">{radius}m</span>
+                                    {isMapEnabled && (
+                                        <div className="flex-1">
+                                            <div className="flex justify-between mb-2">
+                                                <span className="text-[10px] font-bold text-[var(--text-tertiary)] uppercase">Search Radius</span>
+                                                <span className="text-[10px] font-bold text-indigo-400 uppercase">{radius}m</span>
+                                            </div>
+                                            <input
+                                                type="range"
+                                                min="500"
+                                                max="5000"
+                                                step="500"
+                                                value={radius}
+                                                onChange={(e) => setRadius(parseInt(e.target.value))}
+                                                className="w-full accent-indigo-500 bg-white/5 rounded-lg h-2 cursor-pointer"
+                                            />
                                         </div>
-                                        <input
-                                            type="range"
-                                            min="500"
-                                            max="5000"
-                                            step="500"
-                                            value={radius}
-                                            onChange={(e) => setRadius(parseInt(e.target.value))}
-                                            className="w-full accent-indigo-500 bg-white/5 rounded-lg h-2 cursor-pointer"
-                                        />
-                                    </div>
+                                    )}
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsMapEnabled(!isMapEnabled)}
+                                        className={`px-4 py-4 rounded-2xl font-bold transition-all flex items-center gap-2 ${isMapEnabled ? 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30' : 'bg-white/5 text-[var(--text-tertiary)] hover:bg-white/10 border border-white/5'}`}
+                                    >
+                                        <Globe size={18} />
+                                        <span className="hidden sm:inline text-xs">{isMapEnabled ? 'Map Active' : 'Use Map'}</span>
+                                    </button>
                                     <button
                                         type="submit"
                                         disabled={isSearching}
-                                        className="px-6 py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-bold transition-all active:scale-95 disabled:opacity-50 shadow-xl shadow-indigo-500/20"
+                                        className="flex-1 sm:flex-none px-8 py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-bold transition-all active:scale-95 disabled:opacity-50 shadow-xl shadow-indigo-500/20"
                                     >
                                         {isSearching ? <Loader2 className="animate-spin" size={24} /> : "Discovery"}
                                     </button>
@@ -454,41 +475,43 @@ export default function LeadScraper() {
                         </form>
 
                         {/* Interactive Map Area */}
-                        <div className="h-[250px] w-full rounded-3xl overflow-hidden border border-white/10 relative shadow-2xl">
-                            {isLoaded ? (
-                                <GoogleMap
-                                    mapContainerStyle={{ width: '100%', height: '100%' }}
-                                    center={mapCenter}
-                                    zoom={14}
-                                    options={{ disableDefaultUI: true, zoomControl: true, styles: darkMapStyle }}
-                                    onLoad={onMapLoad}
-                                    onDragEnd={handleMapDragEnd}
-                                >
-                                    <Circle
+                        {isMapEnabled && (
+                            <div className="h-[250px] w-full rounded-3xl overflow-hidden border border-white/10 relative shadow-2xl">
+                                {isLoaded ? (
+                                    <GoogleMap
+                                        mapContainerStyle={{ width: '100%', height: '100%' }}
                                         center={mapCenter}
-                                        radius={radius}
-                                        options={{
-                                            fillColor: '#6366f1',
-                                            fillOpacity: 0.15,
-                                            strokeColor: '#6366f1',
-                                            strokeOpacity: 0.8,
-                                            strokeWeight: 2,
-                                            clickable: false,
-                                            editable: false,
-                                            zIndex: 1
-                                        }}
-                                    />
-                                    <Marker position={mapCenter} />
-                                </GoogleMap>
-                            ) : (
-                                <div className="w-full h-full bg-black/40 flex flex-col items-center justify-center border border-white/5">
-                                    <Loader2 className="animate-spin text-indigo-500 mb-2" size={24} />
-                                    <span className="text-[10px] font-bold text-[var(--text-tertiary)] uppercase tracking-widest">Loading Map...</span>
-                                </div>
-                            )}
-                        </div>
+                                        zoom={14}
+                                        options={{ disableDefaultUI: true, zoomControl: true, styles: darkMapStyle }}
+                                        onLoad={onMapLoad}
+                                        onDragEnd={handleMapDragEnd}
+                                    >
+                                        <Circle
+                                            center={mapCenter}
+                                            radius={radius}
+                                            options={{
+                                                fillColor: '#6366f1',
+                                                fillOpacity: 0.15,
+                                                strokeColor: '#6366f1',
+                                                strokeOpacity: 0.8,
+                                                strokeWeight: 2,
+                                                clickable: false,
+                                                editable: false,
+                                                zIndex: 1
+                                            }}
+                                        />
+                                        <Marker position={mapCenter} />
+                                    </GoogleMap>
+                                ) : (
+                                    <div className="w-full h-full bg-black/40 flex flex-col items-center justify-center border border-white/5">
+                                        <Loader2 className="animate-spin text-indigo-500 mb-2" size={24} />
+                                        <span className="text-[10px] font-bold text-[var(--text-tertiary)] uppercase tracking-widest">Loading Map...</span>
+                                    </div>
+                                )}
+                            </div>
+                        )}
 
-                        <div className="space-y-3 h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                        <div className={`space-y-3 overflow-y-auto pr-2 custom-scrollbar ${isMapEnabled ? 'h-[400px]' : 'h-[650px]'}`}>
                             {searchResults.map((lead, idx) => (
                                 <motion.div
                                     key={lead.place_id}
