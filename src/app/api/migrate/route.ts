@@ -103,6 +103,14 @@ export async function GET() {
             )
         `);
         results.push('✓ pipeline_stages table');
+        const { rows: stageRows } = await turso.execute('SELECT count(*) as count FROM pipeline_stages');
+        if (stageRows[0].count === 0) {
+            await turso.execute("INSERT INTO pipeline_stages (label, value, color, order_index) VALUES ('New Leads', 'New', 'bg-blue-500', 0)");
+            await turso.execute("INSERT INTO pipeline_stages (label, value, color, order_index) VALUES ('Contacted', 'Contacted', 'bg-amber-500', 1)");
+            await turso.execute("INSERT INTO pipeline_stages (label, value, color, order_index) VALUES ('Qualified', 'Qualified', 'bg-indigo-500', 2)");
+            await turso.execute("INSERT INTO pipeline_stages (label, value, color, order_index) VALUES ('Closed/Won', 'Closed', 'bg-emerald-500', 3)");
+            results.push('✓ pipeline_stages seeded');
+        }
 
         // ── Client Feedback (Post-Production Reviews) ──
         await turso.execute(`
@@ -250,6 +258,9 @@ export async function GET() {
             )
         `);
         try { await turso.execute('ALTER TABLE leads ADD COLUMN last_contact_at TIMESTAMP'); results.push('✓ leads.last_contact_at added'); } catch { }
+        try { await turso.execute('ALTER TABLE leads ADD COLUMN assigned_member_id INTEGER'); results.push('✓ leads.assigned_member_id added'); } catch { }
+        try { await turso.execute('ALTER TABLE leads ADD COLUMN reach_count INTEGER DEFAULT 0'); results.push('✓ leads.reach_count added'); } catch { }
+        try { await turso.execute('ALTER TABLE leads ADD COLUMN last_reach_at TIMESTAMP'); results.push('✓ leads.last_reach_at added'); } catch { }
         results.push('✓ leads table');
 
         // ── Lead Scraped Data ──

@@ -18,6 +18,9 @@ export interface Lead {
     status: string;
     notes?: string;
     last_contact_at?: string;
+    assigned_member_id?: number | null;
+    reach_count?: number;
+    last_reach_at?: string;
     created_at?: string;
     // Joined data
     analysis?: {
@@ -38,25 +41,44 @@ export interface Lead {
     };
 }
 
-export async function searchLeadsAction(query: string, sector?: string, radius: number = 1000) {
+export interface PipelineStage {
+    id: number;
+    label: string;
+    value: string;
+    color: string;
+    order_index: number;
+}
+
+export interface TeamMember {
+    id: number;
+    name: string;
+    role?: string;
+    color?: string;
+}
+
+export async function searchLeadsAction(query: string, sector?: string, radius: number = 1000, explicitLat?: number, explicitLng?: number) {
     try {
         const key = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
         if (!key) throw new Error("Google Maps API key missing");
 
-        // Construct search query
-        const searchQuery = sector ? `${sector} in ${query}` : query;
+        let searchLat = explicitLat;
+        let searchLng = explicitLng;
 
-        // Geocode the location/query first to get coordinates
-        const geoUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(query)}&key=${key}`;
-        const geoResult = await fetch(geoUrl).then(res => res.json());
+        if (!searchLat || !searchLng) {
+            // Geocode the location/query first to get coordinates
+            const geoUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(query)}&key=${key}`;
+            const geoResult = await fetch(geoUrl).then(res => res.json());
 
-        if (geoResult.status !== 'OK') {
-            throw new Error(`Location "${query}" not found. Please enter a valid city or address.`);
+            if (geoResult.status !== 'OK') {
+                throw new Error(`Location "${query}" not found. Please enter a valid city or address.`);
+            }
+
+            searchLat = geoResult.results[0].geometry.location.lat;
+            searchLng = geoResult.results[0].geometry.location.lng;
         }
 
-        const { lat, lng } = geoResult.results[0].geometry.location;
         // Use sector as primary keyword. If empty, broadAreaSearch will find all establishments.
-        const businesses = await broadAreaSearch(lat, lng, radius, sector || undefined);
+        const businesses = await broadAreaSearch(searchLat!, searchLng!, radius, sector || undefined);
 
         // Check if leads are already in the database
         const placeIds = businesses.map(b => b.place_id);
@@ -379,4 +401,57 @@ export async function markLeadContactedAction(leadId: number) {
         args: [leadId]
     });
     revalidatePath('/leads');
+}
+
+export async function logReachAttemptAction(leadId: number) {
+    await db.execute({
+        sql: "UPDATE leads SET reach_count = COALESCE(reach_count, 0) + 1, last_reach_at = CURRENT_TIMESTAMP WHERE id = ?",
+        args: [leadId]
+    });
+    revalidatePath('/leads');
+}
+
+export async function assignLeadAction(leadId: number, memberId: number | null) {
+    await db.execute({
+        sql: "UPDATE leads SET assigned_member_id = ? WHERE id = ?",
+        args: [memberId, leadId]
+    });
+    revalidatePath('/leads');
+}
+
+export async function getPipelineStagesAction(): Promise<PipelineStage[]> {
+    try {
+        const { rows } = await db.execute("SELECT * FROM pipeline_stages ORDER BY order_index ASC");
+        return rows as any as PipelineStage[];
+    } catch (error) {
+        console.error("Failed to fetch pipeline stages:", error);
+        return [];
+    }
+}
+
+export async function getTeamMembersAction(): Promise<TeamMember[]> {
+    try {
+        const { rows } = await db.execute("SELECT id, name, role, color FROM team_members ORDER BY name ASC");
+        return rows as any as TeamMember[];
+    } catch (error) {
+        console.error("Failed to fetch team members:", error);
+        return [];
+    }
+}
+
+export async function updatePipelineStageAction(id: number, data: Partial<PipelineStage>) {
+    const fields = Object.keys(data).map(key => `${key} = ?`).join(', ');
+    const values = Object.values(data);
+    await db.execute({
+        sql: `UPDATE pipeline_stages SET ${fields} WHERE id = ?`,
+        args: [...values, id]
+    });
+    revalidatePath('/leads');
+}
+
+export async function sendSmsAction(phone: string, message: string) {
+    // This is a placeholder for Twilio integration
+    // Requires TWILIO_ACCOUNT_SID, AUTH_TOKEN, and TWILIO_NUMBER in .env
+    console.log(`[Twilio Simulation] Sending SMS to ${phone}: ${message}`);
+    return { success: true, message: "SMS sent (simulated)" };
 }

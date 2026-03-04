@@ -12,9 +12,20 @@ import {
 import {
     searchLeadsAction, qualifyLeadAction, saveLeadToPipeline,
     getPipelineLeads, updateLeadStatusAction, deleteLeadAction,
-    getLeadDetailsAction, updateLeadNotesAction, markLeadContactedAction, Lead
+    getLeadDetailsAction, updateLeadNotesAction, markLeadContactedAction, Lead,
+    logReachAttemptAction, assignLeadAction, getPipelineStagesAction, getTeamMembersAction, sendSmsAction,
+    PipelineStage, TeamMember
 } from '@/app/lead-actions';
 import toast from 'react-hot-toast';
+import { GoogleMap, Circle, Marker, useJsApiLoader } from '@react-google-maps/api';
+
+const darkMapStyle = [
+    { elementType: "geometry", stylers: [{ color: "#09090b" }] },
+    { elementType: "labels.text.stroke", stylers: [{ color: "#09090b" }] },
+    { elementType: "labels.text.fill", stylers: [{ color: "#746855" }] },
+    { featureType: "water", elementType: "geometry", stylers: [{ color: "#111" }] },
+    { featureType: "road", elementType: "geometry", stylers: [{ color: "#38414e" }] }
+];
 
 export default function LeadScraper() {
     const [view, setView] = useState<'discovery' | 'pipeline'>('discovery');
@@ -28,17 +39,48 @@ export default function LeadScraper() {
     const [isQualifying, setIsQualifying] = useState<'rapid' | 'deep' | null>(null);
     const [isNotesModalOpen, setIsNotesModalOpen] = useState(false);
     const [tempNotes, setTempNotes] = useState('');
+    const [pipelineColumns, setPipelineColumns] = useState<PipelineStage[]>([]);
+    const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+
+    // Google Maps State
+    const { isLoaded } = useJsApiLoader({
+        id: 'google-map-script',
+        googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ''
+    });
+    const [mapCenter, setMapCenter] = useState({ lat: 45.5017, lng: -73.5673 });
+    const [mapInstance, setMapInstance] = useState<any>(null);
+
+    const onMapLoad = (map: any) => setMapInstance(map);
+    const handleMapDragEnd = () => {
+        if (mapInstance) {
+            const center = mapInstance.getCenter();
+            setMapCenter({ lat: center.lat(), lng: center.lng() });
+            setQuery("Map Location"); // Soft update the input
+        }
+    };
 
     // Batch Mode State
     const [selectedForBatch, setSelectedForBatch] = useState<Set<string>>(new Set());
     const [isBatchQualifying, setIsBatchQualifying] = useState(false);
     const [batchProgress, setBatchProgress] = useState({ current: 0, total: 0 });
 
-    // Load pipeline leads
+    // Load pipeline leads, stages, and team members
     useEffect(() => {
         const loadPipeline = async () => {
-            const leads = await getPipelineLeads();
+            const [leads, stages, members] = await Promise.all([
+                getPipelineLeads(),
+                getPipelineStagesAction(),
+                getTeamMembersAction()
+            ]);
             setPipelineLeads(leads);
+            // Fallback for hardcoded stages if none in DB during dev
+            setPipelineColumns(stages.length ? stages : [
+                { id: 1, label: 'New Leads', value: 'New', color: 'bg-indigo-500', order_index: 0 },
+                { id: 2, label: 'Contacted', value: 'Contacted', color: 'bg-amber-500', order_index: 1 },
+                { id: 3, label: 'Qualified', value: 'Qualified', color: 'bg-orange-500', order_index: 2 },
+                { id: 4, label: 'Closed', value: 'Closed', color: 'bg-emerald-500', order_index: 3 }
+            ]);
+            setTeamMembers(members);
         };
         loadPipeline();
     }, []);
@@ -88,7 +130,8 @@ export default function LeadScraper() {
 
     const handleSearch = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!query) {
+        // Allow search if we have a valid map center, even if query string is generic
+        if (!query && !mapCenter) {
             toast.error("Please enter a location or query");
             return;
         }
@@ -96,7 +139,7 @@ export default function LeadScraper() {
         setSelectedLead(null);
         setSelectedForBatch(new Set()); // Reset batch selection on new search
         try {
-            const res = await searchLeadsAction(query, sector || undefined, radius);
+            const res = await searchLeadsAction(query || 'Map Location', sector || undefined, radius, mapCenter.lat, mapCenter.lng);
             if (res.success) {
                 setSearchResults(res.businesses || []);
                 toast.success(`Found ${res.businesses?.length} leads`);
@@ -236,12 +279,56 @@ export default function LeadScraper() {
         }
     };
 
-    const pipelineColumns = [
-        { id: 'New', color: 'bg-indigo-500' },
-        { id: 'Contacted', color: 'bg-amber-500' },
-        { id: 'In Progress', color: 'bg-orange-500' },
-        { id: 'Closed', color: 'bg-emerald-500' }
-    ];
+    const handleAssignLead = async (memberIdStr: string) => {
+        if (!selectedLead?.id) return;
+        const memberId = memberIdStr ? parseInt(memberIdStr) : null;
+        try {
+            await assignLeadAction(selectedLead.id, memberId);
+            setPipelineLeads(prev => prev.map(l => l.id === selectedLead.id ? { ...l, assigned_member_id: memberId } : l));
+            setSelectedLead((prev: any) => ({ ...prev, assigned_member_id: memberId }));
+            toast.success("Lead assigned");
+        } catch (e) {
+            toast.error("Failed to assign lead");
+        }
+    };
+
+    const handleLogReachAttempt = async () => {
+        if (!selectedLead?.id) return;
+        try {
+            await logReachAttemptAction(selectedLead.id);
+            const now = new Date().toISOString();
+            setPipelineLeads(prev => prev.map(l => l.id === selectedLead.id ? {
+                ...l,
+                reach_count: (l.reach_count || 0) + 1,
+                last_reach_at: now
+            } : l));
+            setSelectedLead((prev: any) => ({
+                ...prev,
+                reach_count: (prev.reach_count || 0) + 1,
+                last_reach_at: now
+            }));
+            toast.success("Reach attempt logged");
+        } catch (e) {
+            toast.error("Failed to log reach attempt");
+        }
+    };
+
+    const handleCallContact = () => {
+        if (!selectedLead?.phone) return;
+        // Placeholder for Twilio Call
+        toast.success(`Calling ${selectedLead.phone} (Simulation)...`);
+    };
+
+    const handleSmsContact = async () => {
+        if (!selectedLead?.phone) return;
+        const msg = window.prompt("Enter SMS message:");
+        if (msg) {
+            toast.loading("Sending SMS...");
+            await sendSmsAction(selectedLead.phone, msg);
+            toast.dismiss();
+            toast.success("SMS Sent (Simulation)");
+        }
+    };
 
     return (
         <div className="space-y-8 max-w-7xl mx-auto px-4 pb-20">
@@ -329,7 +416,42 @@ export default function LeadScraper() {
                             </div>
                         </form>
 
-                        <div className="space-y-3 h-[600px] overflow-y-auto pr-2 custom-scrollbar">
+                        {/* Interactive Map Area */}
+                        <div className="h-[250px] w-full rounded-3xl overflow-hidden border border-white/10 relative shadow-2xl">
+                            {isLoaded ? (
+                                <GoogleMap
+                                    mapContainerStyle={{ width: '100%', height: '100%' }}
+                                    center={mapCenter}
+                                    zoom={14}
+                                    options={{ disableDefaultUI: true, zoomControl: true, styles: darkMapStyle }}
+                                    onLoad={onMapLoad}
+                                    onDragEnd={handleMapDragEnd}
+                                >
+                                    <Circle
+                                        center={mapCenter}
+                                        radius={radius}
+                                        options={{
+                                            fillColor: '#6366f1',
+                                            fillOpacity: 0.15,
+                                            strokeColor: '#6366f1',
+                                            strokeOpacity: 0.8,
+                                            strokeWeight: 2,
+                                            clickable: false,
+                                            editable: false,
+                                            zIndex: 1
+                                        }}
+                                    />
+                                    <Marker position={mapCenter} />
+                                </GoogleMap>
+                            ) : (
+                                <div className="w-full h-full bg-black/40 flex flex-col items-center justify-center border border-white/5">
+                                    <Loader2 className="animate-spin text-indigo-500 mb-2" size={24} />
+                                    <span className="text-[10px] font-bold text-[var(--text-tertiary)] uppercase tracking-widest">Loading Map...</span>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="space-y-3 h-[400px] overflow-y-auto pr-2 custom-scrollbar">
                             {searchResults.map((lead, idx) => (
                                 <motion.div
                                     key={lead.place_id}
@@ -771,18 +893,18 @@ export default function LeadScraper() {
                 /* PIPELINE MODE (KANBAN) */
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 pb-20 overflow-x-auto custom-scrollbar min-h-[70vh]">
                     {pipelineColumns.map(col => {
-                        const leads = pipelineLeads.filter(l => l.status === col.id);
+                        const leads = pipelineLeads.filter(l => l.status === col.value);
                         return (
                             <div
                                 key={col.id}
                                 className="space-y-6 min-w-[300px]"
                                 onDragOver={handleDragOver}
-                                onDrop={(e) => handleDrop(e, col.id)}
+                                onDrop={(e) => handleDrop(e, col.value)}
                             >
                                 <div className="flex items-center justify-between px-2">
                                     <div className="flex items-center gap-3">
                                         <div className={`w-3 h-3 rounded-full ${col.color}`}></div>
-                                        <h3 className="font-black text-white text-sm uppercase tracking-widest">{col.id}</h3>
+                                        <h3 className="font-black text-white text-sm uppercase tracking-widest">{col.label}</h3>
                                     </div>
                                     <span className="bg-white/5 px-3 py-1 rounded-lg text-[10px] font-black text-[var(--text-tertiary)] border border-white/5">
                                         {leads.length}
@@ -833,7 +955,7 @@ export default function LeadScraper() {
                                                     onChange={(e) => updateLeadStatusAction(lead.id!, e.target.value)}
                                                     className="bg-transparent text-[9px] font-black text-[var(--text-tertiary)] uppercase border-none focus:ring-0 cursor-pointer hover:text-white transition-colors"
                                                 >
-                                                    {pipelineColumns.map(c => <option key={c.id} value={c.id} className="bg-[#111]">{c.id}</option>)}
+                                                    {pipelineColumns.map(c => <option key={c.id} value={c.value} className="bg-[#111]">{c.label}</option>)}
                                                 </select>
 
                                                 <button
@@ -895,15 +1017,41 @@ export default function LeadScraper() {
                                     </button>
                                 </div>
 
-                                {/* Contact Grid */}
+                                {/* Assignment Dropdown */}
+                                <div className="flex items-center gap-4 bg-white/5 p-3 rounded-2xl border border-white/5">
+                                    <span className="text-[10px] font-black text-[var(--text-tertiary)] uppercase tracking-widest">Assignee:</span>
+                                    <select
+                                        value={selectedLead.assigned_member_id || ""}
+                                        onChange={(e) => handleAssignLead(e.target.value)}
+                                        className="bg-transparent text-sm font-bold text-white border-none focus:ring-0 cursor-pointer"
+                                    >
+                                        <option value="" className="bg-[#111]">Unassigned</option>
+                                        {teamMembers.map(m => (
+                                            <option key={m.id} value={m.id} className="bg-[#111]">{m.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+
                                 <div className="grid grid-cols-2 gap-4">
-                                    <div className="pro-dashboard-card p-4 rounded-3xl border border-white/5 bg-white/5">
-                                        <span className="text-[9px] font-black text-[var(--text-tertiary)] uppercase tracking-widest block mb-2">Phone</span>
-                                        {selectedLead.phone ? (
-                                            <a href={`tel:${selectedLead.phone}`} className="text-sm font-bold text-white flex items-center gap-2">
-                                                <Phone size={14} className="text-indigo-400" /> {selectedLead.phone}
-                                            </a>
-                                        ) : <p className="text-sm text-white/20 italic">No phone</p>}
+                                    <div className="pro-dashboard-card p-4 rounded-3xl border border-white/5 bg-white/5 flex flex-col justify-between">
+                                        <div>
+                                            <span className="text-[9px] font-black text-[var(--text-tertiary)] uppercase tracking-widest block mb-2">Phone</span>
+                                            {selectedLead.phone ? (
+                                                <div className="text-sm font-bold text-white flex items-center gap-2">
+                                                    <Phone size={14} className="text-indigo-400" /> {selectedLead.phone}
+                                                </div>
+                                            ) : <p className="text-sm text-white/20 italic">No phone</p>}
+                                        </div>
+                                        {selectedLead.phone && (
+                                            <div className="flex items-center gap-2 mt-4 pt-4 border-t border-white/5">
+                                                <button onClick={handleCallContact} className="flex-1 py-1.5 bg-green-500/10 hover:bg-green-500/20 text-green-400 rounded-lg text-[10px] font-black uppercase transition-all flex items-center justify-center gap-1.5">
+                                                    <Phone size={12} /> Call
+                                                </button>
+                                                <button onClick={handleSmsContact} className="flex-1 py-1.5 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 rounded-lg text-[10px] font-black uppercase transition-all flex items-center justify-center gap-1.5">
+                                                    <MailPlus size={12} /> SMS
+                                                </button>
+                                            </div>
+                                        )}
                                     </div>
                                     <div className="pro-dashboard-card p-4 rounded-3xl border border-white/5 bg-white/5">
                                         <span className="text-[9px] font-black text-[var(--text-tertiary)] uppercase tracking-widest block mb-2">Website</span>
@@ -917,16 +1065,24 @@ export default function LeadScraper() {
 
                                 {/* CRM Actions */}
                                 <div className="space-y-4">
-                                    <div className="flex items-center justify-between">
+                                    <div className="flex flex-wrap items-center justify-between gap-4">
                                         <h3 className="text-[10px] font-black text-white uppercase tracking-widest flex items-center gap-2">
                                             <BookmarkCheck size={14} className="text-indigo-400" /> Notes & Activity
                                         </h3>
-                                        <button
-                                            onClick={handleMarkContacted}
-                                            className="px-4 py-2 bg-indigo-600/10 hover:bg-indigo-600/20 border border-indigo-600/20 text-indigo-400 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2"
-                                        >
-                                            <Clock size={14} /> Mark Last Action
-                                        </button>
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={handleLogReachAttempt}
+                                                className="px-4 py-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2"
+                                            >
+                                                <AlertTriangle size={14} /> No Answer {selectedLead.reach_count ? `(${selectedLead.reach_count})` : ''}
+                                            </button>
+                                            <button
+                                                onClick={handleMarkContacted}
+                                                className="px-4 py-2 bg-indigo-600/10 hover:bg-indigo-600/20 border border-indigo-600/20 text-indigo-400 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2"
+                                            >
+                                                <Clock size={14} /> Mark Last Action
+                                            </button>
+                                        </div>
                                     </div>
 
                                     {selectedLead.last_contact_at && (
