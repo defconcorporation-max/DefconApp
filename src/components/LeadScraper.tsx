@@ -928,13 +928,13 @@ export default function LeadScraper() {
                 </div>
             ) : (
                 /* PIPELINE MODE (KANBAN) */
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 pb-20 overflow-x-auto custom-scrollbar min-h-[70vh]">
+                <div className="flex gap-6 pb-20 overflow-x-auto custom-scrollbar min-h-[70vh] snap-x">
                     {pipelineColumns.map(col => {
                         const leads = pipelineLeads.filter(l => l.status === col.value);
                         return (
                             <div
                                 key={col.id}
-                                className="space-y-6 min-w-[300px]"
+                                className="space-y-6 min-w-[320px] max-w-[320px] snap-start"
                                 onDragOver={handleDragOver}
                                 onDrop={(e) => handleDrop(e, col.value)}
                             >
