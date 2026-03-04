@@ -37,21 +37,51 @@ export interface Lead {
     };
 }
 
-export async function searchLeadsAction(query: string, radius: number = 1000) {
+export async function searchLeadsAction(query: string, sector?: string, radius: number = 1000) {
     try {
         const key = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
         if (!key) throw new Error("Google Maps API key missing");
 
-        // Geocode the query first
-        const geoUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(query)}&key=${key}`;
-        const geoRes = await fetch(geoUrl).then(res => res.json());
+        // Construct search query
+        const searchQuery = sector ? `${sector} in ${query}` : query;
 
-        if (geoRes.status !== 'OK') {
-            throw new Error("Location not found");
+        // Geocode the location/query first to get coordinates
+        const geoUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(query)}&key=${key}`;
+        const geoResult = await fetch(geoUrl).then(res => res.json());
+
+        if (geoResult.status !== 'OK') {
+            throw new Error(`Location "${query}" not found. Please enter a valid city or address.`);
         }
 
-        const { lat, lng } = geoRes.results[0].geometry.location;
-        const businesses = await broadAreaSearch(lat, lng, radius);
+        const { lat, lng } = geoResult.results[0].geometry.location;
+        const businesses = await broadAreaSearch(lat, lng, radius, sector || query);
+
+        // Check if leads are already in the database
+        const placeIds = businesses.map(b => b.place_id);
+        if (placeIds.length > 0) {
+            const placeholders = placeIds.map(() => '?').join(',');
+            const existingLeads = await db.execute({
+                sql: `SELECT l.*, a.qualification_score 
+                      FROM leads l 
+                      LEFT JOIN lead_analyses a ON l.id = a.lead_id 
+                      WHERE l.place_id IN (${placeholders})`,
+                args: placeIds
+            });
+
+            // Merge existing data
+            const existingMap = new Map(existingLeads.rows.map((row: any) => [row.place_id, row]));
+
+            businesses.forEach(b => {
+                const existing = existingMap.get(b.place_id);
+                if (existing) {
+                    b.in_pipeline = true;
+                    b.status = existing.status;
+                    b.analysis = {
+                        qualification_score: existing.qualification_score
+                    };
+                }
+            });
+        }
 
         return { success: true, businesses };
     } catch (error: any) {
@@ -69,7 +99,7 @@ export async function getLeadDetailsAction(placeId: string) {
     }
 }
 
-export async function qualifyLeadAction(lead: any, language: 'fr' | 'en' = 'fr') {
+export async function qualifyLeadAction(lead: any, language: 'fr' | 'en' = 'fr', mode: 'rapid' | 'deep' = 'deep') {
     try {
         let { place_id, name, website, phone } = lead;
         let updatedDetails: any = {};
@@ -84,7 +114,7 @@ export async function qualifyLeadAction(lead: any, language: 'fr' | 'en' = 'fr')
         // 2. If we already have a website, launch scraper immediately in parallel
         let scrapePromise = null;
         if (website) {
-            scrapePromise = scrapeWebsite(website);
+            scrapePromise = scrapeWebsite(website, mode === 'rapid');
         }
 
         // 3. Await details if we needed them
@@ -94,7 +124,7 @@ export async function qualifyLeadAction(lead: any, language: 'fr' | 'en' = 'fr')
                 website = details.website;
                 updatedDetails.website = website;
                 // Launch scraper now that we found the website
-                scrapePromise = scrapeWebsite(website);
+                scrapePromise = scrapeWebsite(website, mode === 'rapid');
             }
             if (details.phone && !phone) {
                 phone = details.phone;
@@ -113,7 +143,7 @@ export async function qualifyLeadAction(lead: any, language: 'fr' | 'en' = 'fr')
 
         // 4.5 Fetch Top Competitors
         let competitors: Business[] = [];
-        if (lead.location?.lat && lead.location?.lng) {
+        if (mode === 'deep' && lead.location?.lat && lead.location?.lng) {
             // We use the first 'type' as the keyword for competitors, or default to their name
             const keyword = lead.types?.[0] || name;
             try {
@@ -144,10 +174,11 @@ export async function qualifyLeadAction(lead: any, language: 'fr' | 'en' = 'fr')
             scrapedData?.description || scrapedData?.title || 'No content found',
             JSON.stringify({ emails: scrapedData?.emails || [], title: scrapedData?.title || '' }),
             lead.address || undefined,
-            socialDataStr || undefined,
+            mode === 'deep' ? socialDataStr : undefined,
             scrapedData?.techStack || undefined,
             competitors || [],
-            language
+            language,
+            mode
         );
 
         return {

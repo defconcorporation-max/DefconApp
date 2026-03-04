@@ -29,7 +29,7 @@ export interface SocialProfile {
     scraped: boolean; // whether we got real data
 }
 
-export async function scrapeWebsite(url: string): Promise<ScrapedData> {
+export async function scrapeWebsite(url: string, homepageOnly: boolean = false): Promise<ScrapedData> {
     try {
         const response = await axios.get(url, {
             timeout: 10000,
@@ -92,8 +92,8 @@ export async function scrapeWebsite(url: string): Promise<ScrapedData> {
         const uniqueSocialLinks = Array.from(new Set(socialLinks));
         const uniqueContactPages = Array.from(new Set(contactPages)).slice(0, 3); // Max 3 contact pages
 
-        // 3. If no emails found, crawl contact pages IN PARALLEL
-        if (emails.length === 0 && uniqueContactPages.length > 0) {
+        // 3. If no emails found, crawl contact pages IN PARALLEL (Skip if homepageOnly)
+        if (!homepageOnly && emails.length === 0 && uniqueContactPages.length > 0) {
             await Promise.all(uniqueContactPages.map(async (contactUrl) => {
                 try {
                     const contactRes = await axios.get(contactUrl, {
@@ -140,7 +140,10 @@ export async function scrapeWebsite(url: string): Promise<ScrapedData> {
             .map(e => e.toLowerCase());
 
         const socialContextFromSite = extractSocialContextFromSite($, bodyText);
-        const socialProfiles = await buildSocialProfiles(uniqueSocialLinks);
+        let socialProfiles: SocialProfile[] = [];
+        if (!homepageOnly) {
+            socialProfiles = await buildSocialProfiles(uniqueSocialLinks);
+        }
 
         // 4. Detect Technology Stack
         const techStack = extractTechStack(response.data);

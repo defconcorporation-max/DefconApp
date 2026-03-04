@@ -45,7 +45,8 @@ export async function analyzeClient(
     socialData?: string,
     techStack?: any,
     competitors: any[] = [],
-    language: 'fr' | 'en' = 'fr'
+    language: 'fr' | 'en' = 'fr',
+    mode: 'rapid' | 'deep' = 'deep'
 ): Promise<ClientAnalysis> {
     const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
@@ -96,7 +97,22 @@ export async function analyzeClient(
         ? `\n    Top Local Competitors:\n${competitors.map(c => `    - ${c.name} (${c.rating} stars, ${c.user_ratings_total} reviews)`).join('\n')}\n`
         : '';
 
-    const prompt = `
+    const rapidPrompt = `
+    Conduct a RAPID audit for this business.
+    Business Name: ${businessName}
+    Location/Address: ${address || 'Unknown'}
+    Website Content Snippet: ${websiteContent.substring(0, 1000)}
+    ${techSection}
+    
+    Provide a JSON response with:
+    1. "summary": A 1-sentence description of what they do.
+    2. "qualificationScore": A score from 1 to 10 based on digital presence.
+    3. "brandVibe": A 3-word vibe description.
+    
+    Response must be valid JSON only.
+    `;
+
+    const deepPrompt = `
     Analyze the following business to see how a digital agency/software consultancy could help them.
     Business Name: ${businessName}
     Location/Address: ${address || 'Unknown'}
@@ -119,7 +135,9 @@ export async function analyzeClient(
 
     CRITICAL: painPoints and suggestions must be arrays of plain strings.
     Response must be valid JSON only.
-  `;
+    `;
+
+    const prompt = mode === 'rapid' ? rapidPrompt : deepPrompt;
 
     const result = await model.generateContent(prompt);
     const response = await result.response;

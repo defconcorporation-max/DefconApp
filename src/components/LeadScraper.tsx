@@ -54,15 +54,15 @@ export default function LeadScraper() {
 
     const handleSearch = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!query || !sector) {
-            toast.error("Please enter a sector and location");
+        if (!query) {
+            toast.error("Please enter a location or query");
             return;
         }
         setIsSearching(true);
         setSelectedLead(null);
         setSelectedForBatch(new Set()); // Reset batch selection on new search
         try {
-            const res = await searchLeadsAction(`${sector} in ${query}`, radius);
+            const res = await searchLeadsAction(query, sector || undefined, radius);
             if (res.success) {
                 setSearchResults(res.businesses || []);
                 toast.success(`Found ${res.businesses?.length} leads`);
@@ -74,10 +74,10 @@ export default function LeadScraper() {
         }
     };
 
-    const handleQualify = async (lead: any) => {
+    const handleQualify = async (lead: any, mode: 'rapid' | 'deep' = 'deep') => {
         setIsQualifying(true);
         try {
-            const res = await qualifyLeadAction(lead);
+            const res = await qualifyLeadAction(lead, 'fr', mode);
             if (res.success) {
                 const updatedLead = {
                     ...lead,
@@ -87,7 +87,11 @@ export default function LeadScraper() {
                 };
                 setSelectedLead(updatedLead);
                 setSearchResults(prev => prev.map(b => b.place_id === lead.place_id ? updatedLead : b));
-                toast.success("AI Analysis Complete");
+                if (mode === 'deep') {
+                    toast.success("Deep Analysis Complete");
+                } else {
+                    toast.success("Flash Audit Complete");
+                }
             } else {
                 toast.error(res.error || "Qualification failed");
             }
@@ -109,18 +113,17 @@ export default function LeadScraper() {
         });
     };
 
-    const handleBatchQualify = async () => {
+    const handleBatchQualify = async (mode: 'rapid' | 'deep' = 'rapid') => {
         const leadsToQualify = searchResults.filter(l => selectedForBatch.has(l.place_id));
         if (leadsToQualify.length === 0) return;
 
         setIsBatchQualifying(true);
         setBatchProgress({ current: 0, total: leadsToQualify.length });
 
-        // We run them sequentially to avoid rate-limiting the Gemini API
         for (let i = 0; i < leadsToQualify.length; i++) {
             const lead = leadsToQualify[i];
             try {
-                const res = await qualifyLeadAction(lead);
+                const res = await qualifyLeadAction(lead, 'fr', mode);
                 if (res.success) {
                     const updatedLead = {
                         ...lead,
@@ -138,7 +141,35 @@ export default function LeadScraper() {
 
         setIsBatchQualifying(false);
         setSelectedForBatch(new Set());
-        toast.success(`Batch qualification complete (${leadsToQualify.length} leads)`);
+        toast.success(`Batch ${mode} qualification complete`);
+    };
+
+    // Drag & Drop Handlers
+    const handleDragStart = (e: React.DragEvent, lead: Lead) => {
+        e.dataTransfer.setData('leadId', lead.id?.toString() || '');
+    };
+
+    const handleDragOver = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+    };
+
+    const handleDrop = async (e: React.DragEvent, newStatus: string) => {
+        e.preventDefault();
+        const leadIdStr = e.dataTransfer.getData('leadId');
+        if (!leadIdStr) return;
+
+        const leadId = parseInt(leadIdStr);
+        setPipelineLeads(prev => prev.map(l => l.id === leadId ? { ...l, status: newStatus } : l));
+
+        try {
+            await updateLeadStatusAction(leadId, newStatus);
+            toast.success(`Moved to ${newStatus.replace('_', ' ')}`);
+        } catch (error) {
+            toast.error("Failed to update status");
+            const refreshed = await getPipelineLeads();
+            setPipelineLeads(refreshed);
+        }
     };
 
     const handleSaveToPipeline = async (lead: any) => {
@@ -277,20 +308,37 @@ export default function LeadScraper() {
                                     </div>
                                     <div className="flex-1 flex justify-between items-start overflow-hidden">
                                         <div className="flex-1 min-w-0 pr-2">
-                                            <h3 className="font-bold text-white text-sm truncate">{lead.name}</h3>
+                                            <div className="flex items-center gap-2">
+                                                <h3 className="font-bold text-white text-sm truncate">{lead.name}</h3>
+                                                {lead.in_pipeline && (
+                                                    <span className="text-[8px] px-1.5 py-0.5 rounded-md bg-indigo-500/20 text-indigo-400 border border-indigo-500/20 font-bold uppercase tracking-wider shrink-0">
+                                                        Pipeline
+                                                    </span>
+                                                )}
+                                            </div>
                                             <p className="text-[var(--text-tertiary)] text-[10px] flex items-center gap-1 mt-1 truncate">
                                                 <MapPin size={10} className="shrink-0" /> <span className="truncate">{lead.address}</span>
                                             </p>
                                         </div>
-                                        {lead.rating && (
-                                            <span className="shrink-0 text-[10px] font-black text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded-lg border border-amber-400/20 whitespace-nowrap">
-                                                ★ {lead.rating}
-                                            </span>
-                                        )}
+                                        <div className="flex flex-col items-end gap-1">
+                                            {lead.rating && (
+                                                <span className="shrink-0 text-[10px] font-black text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded-lg border border-amber-400/20 whitespace-nowrap">
+                                                    ★ {lead.rating}
+                                                </span>
+                                            )}
+                                            {lead.in_pipeline && lead.status && (
+                                                <span className="text-[9px] text-white/40 italic capitalize">{lead.status.replace('_', ' ')}</span>
+                                            )}
+                                        </div>
                                     </div>
                                     {/* Indicator if already qualified */}
-                                    {lead.analysis && (
-                                        <div className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.5)] shrink-0"></div>
+                                    {(lead.analysis || lead.in_pipeline) && (
+                                        <div className="flex flex-col items-center gap-1 shrink-0">
+                                            <div className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.5)]"></div>
+                                            {lead.analysis?.qualification_score && (
+                                                <span className="text-[9px] font-bold text-emerald-400">{lead.analysis.qualification_score}/10</span>
+                                            )}
+                                        </div>
                                     )}
                                 </motion.div>
                             ))}
@@ -336,12 +384,20 @@ export default function LeadScraper() {
                                             <X size={20} />
                                         </button>
                                         <button
-                                            onClick={handleBatchQualify}
+                                            onClick={() => handleBatchQualify('rapid')}
                                             disabled={isBatchQualifying}
                                             className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl flex items-center gap-2 transition-all disabled:opacity-50"
                                         >
-                                            {isBatchQualifying ? <Loader2 className="animate-spin" size={16} /> : <Target size={16} />}
-                                            {isBatchQualifying ? 'Processing...' : 'Sniper Mode'}
+                                            {isBatchQualifying ? <Loader2 className="animate-spin" size={16} /> : <Sparkles size={16} />}
+                                            Flash Audit
+                                        </button>
+                                        <button
+                                            onClick={() => handleBatchQualify('deep')}
+                                            disabled={isBatchQualifying}
+                                            className="px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold rounded-xl flex items-center gap-2 transition-all disabled:opacity-50 shadow-lg shadow-purple-500/20"
+                                        >
+                                            {isBatchQualifying ? <Loader2 className="animate-spin" size={16} /> : <Gavel size={16} />}
+                                            Deep Dive
                                         </button>
                                     </div>
                                 </motion.div>
@@ -424,14 +480,24 @@ export default function LeadScraper() {
                                             <p className="text-[var(--text-tertiary)] text-sm mb-8 text-center max-w-sm">
                                                 Our AI will scrape the website, analyze their digital presence, and identify high-value pain points.
                                             </p>
-                                            <button
-                                                onClick={() => handleQualify(selectedLead)}
-                                                disabled={isQualifying}
-                                                className="px-10 py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-black uppercase tracking-widest transition-all shadow-xl shadow-indigo-500/40 disabled:opacity-50 flex items-center gap-3"
-                                            >
-                                                {isQualifying ? <Loader2 className="animate-spin" /> : <Sparkles size={20} />}
-                                                {isQualifying ? "Analyzing..." : "Qualify Lead"}
-                                            </button>
+                                            <div className="flex gap-4 w-full max-w-lg">
+                                                <button
+                                                    onClick={() => handleQualify(selectedLead, 'rapid')}
+                                                    disabled={isQualifying}
+                                                    className="flex-1 py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-black uppercase tracking-widest transition-all shadow-xl shadow-indigo-500/40 disabled:opacity-50 flex items-center justify-center gap-3"
+                                                >
+                                                    {isQualifying ? <Loader2 className="animate-spin" /> : <Sparkles size={20} />}
+                                                    Flash Audit
+                                                </button>
+                                                <button
+                                                    onClick={() => handleQualify(selectedLead, 'deep')}
+                                                    disabled={isQualifying}
+                                                    className="flex-1 py-4 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-2xl font-black uppercase tracking-widest transition-all shadow-xl shadow-purple-500/40 disabled:opacity-50 flex items-center justify-center gap-3"
+                                                >
+                                                    {isQualifying ? <Loader2 className="animate-spin" /> : <Gavel size={20} />}
+                                                    Deep Dive
+                                                </button>
+                                            </div>
                                         </div>
                                     ) : (
                                         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
@@ -660,7 +726,12 @@ export default function LeadScraper() {
                     {pipelineColumns.map(col => {
                         const leads = pipelineLeads.filter(l => l.status === col.id);
                         return (
-                            <div key={col.id} className="space-y-6 min-w-[300px]">
+                            <div
+                                key={col.id}
+                                className="space-y-6 min-w-[300px]"
+                                onDragOver={handleDragOver}
+                                onDrop={(e) => handleDrop(e, col.id)}
+                            >
                                 <div className="flex items-center justify-between px-2">
                                     <div className="flex items-center gap-3">
                                         <div className={`w-3 h-3 rounded-full ${col.color}`}></div>
@@ -677,7 +748,10 @@ export default function LeadScraper() {
                                         <motion.div
                                             key={lead.id}
                                             layoutId={`lead-${lead.id}`}
-                                            className="pro-dashboard-card p-5 rounded-3xl border border-white/5 bg-[#09090b]/40 hover:border-indigo-500/30 transition-all group relative"
+                                            draggable
+                                            onDragStart={(e) => handleDragStart(e as any, lead)}
+                                            onClick={() => setSelectedLead(lead)}
+                                            className="pro-dashboard-card p-5 rounded-3xl border border-white/5 bg-[#09090b]/40 hover:border-indigo-500/30 transition-all group relative cursor-pointer active:cursor-grabbing"
                                         >
                                             <div className="flex justify-between items-start mb-3">
                                                 <h4 className="font-bold text-white text-sm leading-tight group-hover:text-indigo-400 transition-colors">

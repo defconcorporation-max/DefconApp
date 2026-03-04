@@ -15,13 +15,20 @@ export interface Business {
         lat: number;
         lng: number;
     };
+    // Optional metadata for CRM
+    in_pipeline?: boolean;
+    status?: string;
+    analysis?: {
+        qualification_score?: number;
+    };
 }
 
 export async function searchNearby(
     lat: number,
     lng: number,
     radius: number = 500,
-    type: string = 'establishment'
+    type: string = 'establishment',
+    keyword?: string
 ): Promise<Business[]> {
     if (!GOOGLE_MAPS_API_KEY) {
         throw new Error('Google Maps API key is missing');
@@ -37,6 +44,7 @@ export async function searchNearby(
                 location: `${lat},${lng}`,
                 radius: radius,
                 type: type,
+                keyword: keyword,
                 key: GOOGLE_MAPS_API_KEY,
                 pagetoken: pageToken,
             },
@@ -104,6 +112,7 @@ export async function broadAreaSearch(
     centerLat: number,
     centerLng: number,
     totalRadius: number,
+    keyword?: string,
     gridStep: number = 1000 // meters (increased for speed and coverage)
 ): Promise<Business[]> {
     const businesses = new Map<string, Business>();
@@ -123,7 +132,7 @@ export async function broadAreaSearch(
         for (let j = -steps; j <= steps; j++) {
             const lat = centerLat + i * latStep;
             const lng = centerLng + j * lngStep;
-            tasks.push(searchNearby(lat, lng, gridStep));
+            tasks.push(searchNearby(lat, lng, gridStep, 'establishment', keyword));
         }
     }
 
