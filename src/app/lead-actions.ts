@@ -17,6 +17,7 @@ export interface Lead {
     user_ratings_total?: number;
     status: string;
     notes?: string;
+    last_contact_at?: string;
     created_at?: string;
     // Joined data
     analysis?: {
@@ -350,6 +351,22 @@ export async function updateLeadStatusAction(leadId: number, status: string) {
 export async function deleteLeadAction(leadId: number) {
     await db.execute({
         sql: "DELETE FROM leads WHERE id = ?",
+        args: [leadId]
+    });
+    revalidatePath('/leads');
+}
+
+export async function updateLeadNotesAction(leadId: number, notes: string) {
+    await db.execute({
+        sql: "UPDATE leads SET notes = ? WHERE id = ?",
+        args: [notes, leadId]
+    });
+    revalidatePath('/leads');
+}
+
+export async function markLeadContactedAction(leadId: number) {
+    await db.execute({
+        sql: "UPDATE leads SET last_contact_at = CURRENT_TIMESTAMP WHERE id = ?",
         args: [leadId]
     });
     revalidatePath('/leads');

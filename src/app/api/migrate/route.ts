@@ -245,9 +245,11 @@ export async function GET() {
                 user_ratings_total INTEGER,
                 status TEXT DEFAULT 'New',
                 notes TEXT,
+                last_contact_at TIMESTAMP,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         `);
+        try { await turso.execute('ALTER TABLE leads ADD COLUMN last_contact_at TIMESTAMP'); results.push('✓ leads.last_contact_at added'); } catch { }
         results.push('✓ leads table');
 
         // ── Lead Scraped Data ──

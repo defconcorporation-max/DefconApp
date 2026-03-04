@@ -6,12 +6,13 @@ import {
     Search, MapPin, Sparkles, Loader2, Globe, Phone, Mail,
     Bookmark, BookmarkCheck, CheckCircle2, AlertTriangle, ExternalLink, Trash2, ArrowRight,
     Gavel, Target, TrendingUp, ChevronRight, X, Copy, MailPlus,
-    LayoutDashboard, Instagram, Facebook, Linkedin, Briefcase
+    LayoutDashboard, Instagram, Facebook, Linkedin, Briefcase,
+    History, Calendar, Clock
 } from 'lucide-react';
 import {
     searchLeadsAction, qualifyLeadAction, saveLeadToPipeline,
     getPipelineLeads, updateLeadStatusAction, deleteLeadAction,
-    getLeadDetailsAction, Lead
+    getLeadDetailsAction, updateLeadNotesAction, markLeadContactedAction, Lead
 } from '@/app/lead-actions';
 import toast from 'react-hot-toast';
 
@@ -25,6 +26,8 @@ export default function LeadScraper() {
     const [pipelineLeads, setPipelineLeads] = useState<Lead[]>([]);
     const [selectedLead, setSelectedLead] = useState<any | null>(null);
     const [isQualifying, setIsQualifying] = useState<'rapid' | 'deep' | null>(null);
+    const [isNotesModalOpen, setIsNotesModalOpen] = useState(false);
+    const [tempNotes, setTempNotes] = useState('');
 
     // Batch Mode State
     const [selectedForBatch, setSelectedForBatch] = useState<Set<string>>(new Set());
@@ -42,13 +45,44 @@ export default function LeadScraper() {
 
     const handleSelectLead = async (lead: any) => {
         setSelectedLead(lead);
+        if (view === 'pipeline') {
+            setTempNotes(lead.notes || '');
+            setIsNotesModalOpen(true);
+        }
         if (!lead.phone || !lead.website) {
             const res = await getLeadDetailsAction(lead.place_id);
             if (res.success && res.details) {
                 const updated = { ...lead, ...res.details };
                 setSelectedLead((prev: any) => prev?.place_id === lead.place_id ? updated : prev);
                 setSearchResults((prev: any[]) => prev.map(b => b.place_id === lead.place_id ? { ...b, ...res.details } : b));
+                if (view === 'pipeline') {
+                    setPipelineLeads((prev: any) => prev.map((l: any) => l.place_id === lead.place_id ? { ...l, ...res.details } : l));
+                }
             }
+        }
+    };
+
+    const handleSaveNotes = async () => {
+        if (!selectedLead?.id) return;
+        try {
+            await updateLeadNotesAction(selectedLead.id, tempNotes);
+            setPipelineLeads(prev => prev.map(l => l.id === selectedLead.id ? { ...l, notes: tempNotes } : l));
+            toast.success("Notes saved");
+        } catch (e) {
+            toast.error("Failed to save notes");
+        }
+    };
+
+    const handleMarkContacted = async () => {
+        if (!selectedLead?.id) return;
+        try {
+            await markLeadContactedAction(selectedLead.id);
+            const now = new Date().toISOString();
+            setPipelineLeads(prev => prev.map(l => l.id === selectedLead.id ? { ...l, last_contact_at: now } : l));
+            setSelectedLead((prev: any) => ({ ...prev, last_contact_at: now }));
+            toast.success("Contact logged");
+        } catch (e) {
+            toast.error("Failed to log contact");
         }
     };
 
@@ -786,6 +820,11 @@ export default function LeadScraper() {
                                                         <Phone size={10} /> {lead.phone}
                                                     </p>
                                                 )}
+                                                {lead.last_contact_at && (
+                                                    <p className="text-amber-500/80 text-[9px] font-black uppercase tracking-tighter flex items-center gap-1.5 mt-2">
+                                                        <History size={10} /> Contacted {new Date(lead.last_contact_at).toLocaleDateString()}
+                                                    </p>
+                                                )}
                                             </div>
 
                                             <div className="flex items-center justify-between gap-1 pt-4 border-t border-white/5">
@@ -817,6 +856,126 @@ export default function LeadScraper() {
                     })}
                 </div>
             )}
+
+            {/* PIPELINE LEAD DETAIL MODAL */}
+            <AnimatePresence>
+                {isNotesModalOpen && selectedLead && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setIsNotesModalOpen(false)}
+                            className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+                        />
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                            className="relative w-full max-w-2xl bg-[#09090b] border border-white/10 rounded-[40px] shadow-2xl overflow-hidden"
+                        >
+                            <div className="p-8 space-y-8 max-h-[90vh] overflow-y-auto custom-scrollbar">
+                                {/* Header */}
+                                <div className="flex justify-between items-start">
+                                    <div>
+                                        <div className="flex items-center gap-3 mb-2">
+                                            <span className={`w-2 h-2 rounded-full ${pipelineColumns.find(c => c.id === selectedLead.status)?.color || 'bg-gray-500'}`}></span>
+                                            <span className="text-[10px] font-black text-[var(--text-tertiary)] uppercase tracking-widest">{selectedLead.status}</span>
+                                        </div>
+                                        <h2 className="text-3xl font-black text-white leading-tight">{selectedLead.name}</h2>
+                                        <p className="text-[var(--text-tertiary)] text-sm flex items-center gap-2 mt-2">
+                                            <MapPin size={14} /> {selectedLead.address}
+                                        </p>
+                                    </div>
+                                    <button
+                                        onClick={() => setIsNotesModalOpen(false)}
+                                        className="p-3 hover:bg-white/5 rounded-2xl text-[var(--text-tertiary)] transition-colors"
+                                    >
+                                        <X size={24} />
+                                    </button>
+                                </div>
+
+                                {/* Contact Grid */}
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="pro-dashboard-card p-4 rounded-3xl border border-white/5 bg-white/5">
+                                        <span className="text-[9px] font-black text-[var(--text-tertiary)] uppercase tracking-widest block mb-2">Phone</span>
+                                        {selectedLead.phone ? (
+                                            <a href={`tel:${selectedLead.phone}`} className="text-sm font-bold text-white flex items-center gap-2">
+                                                <Phone size={14} className="text-indigo-400" /> {selectedLead.phone}
+                                            </a>
+                                        ) : <p className="text-sm text-white/20 italic">No phone</p>}
+                                    </div>
+                                    <div className="pro-dashboard-card p-4 rounded-3xl border border-white/5 bg-white/5">
+                                        <span className="text-[9px] font-black text-[var(--text-tertiary)] uppercase tracking-widest block mb-2">Website</span>
+                                        {selectedLead.website ? (
+                                            <a href={selectedLead.website} target="_blank" className="text-sm font-bold text-white flex items-center gap-2 hover:text-indigo-400 transition-colors">
+                                                <Globe size={14} className="text-indigo-400" /> Visit Site <ExternalLink size={12} />
+                                            </a>
+                                        ) : <p className="text-sm text-white/20 italic">No website</p>}
+                                    </div>
+                                </div>
+
+                                {/* CRM Actions */}
+                                <div className="space-y-4">
+                                    <div className="flex items-center justify-between">
+                                        <h3 className="text-[10px] font-black text-white uppercase tracking-widest flex items-center gap-2">
+                                            <BookmarkCheck size={14} className="text-indigo-400" /> Notes & Activity
+                                        </h3>
+                                        <button
+                                            onClick={handleMarkContacted}
+                                            className="px-4 py-2 bg-indigo-600/10 hover:bg-indigo-600/20 border border-indigo-600/20 text-indigo-400 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2"
+                                        >
+                                            <Clock size={14} /> Mark Last Action
+                                        </button>
+                                    </div>
+
+                                    {selectedLead.last_contact_at && (
+                                        <div className="bg-amber-500/10 border border-amber-500/20 p-3 rounded-2xl flex items-center gap-3">
+                                            <History size={16} className="text-amber-500" />
+                                            <p className="text-[11px] font-bold text-amber-500">
+                                                Last interaction: {new Date(selectedLead.last_contact_at).toLocaleString('fr-FR', {
+                                                    day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit'
+                                                })}
+                                            </p>
+                                        </div>
+                                    )}
+
+                                    <div className="relative">
+                                        <textarea
+                                            value={tempNotes}
+                                            onChange={(e) => setTempNotes(e.target.value)}
+                                            placeholder="Add details about your last call, client interest, follow-up date..."
+                                            className="w-full bg-black/40 border border-white/10 rounded-3xl p-6 text-sm text-white min-h-[150px] focus:outline-none focus:border-indigo-500 transition-all custom-scrollbar placeholder:text-white/10"
+                                        />
+                                        <button
+                                            onClick={handleSaveNotes}
+                                            className="absolute bottom-4 right-4 px-6 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg"
+                                        >
+                                            Save Notes
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* Score & Analysis Summary if available */}
+                                {selectedLead.analysis && (
+                                    <div className="p-6 bg-white/5 border border-white/5 rounded-3xl space-y-4">
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-2">
+                                                <Sparkles className="text-indigo-400" size={16} />
+                                                <span className="text-[10px] font-black text-white uppercase tracking-widest">AI Audit Insight</span>
+                                            </div>
+                                            <span className="text-indigo-400 font-black text-sm">{selectedLead.analysis.qualification_score}/10</span>
+                                        </div>
+                                        <p className="text-xs text-[var(--text-tertiary)] italic leading-relaxed">
+                                            "{selectedLead.analysis.summary}"
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }
