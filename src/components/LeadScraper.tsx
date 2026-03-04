@@ -956,21 +956,163 @@ export default function LeadScraper() {
                                     </div>
                                 </div>
 
-                                {/* Score & Analysis Summary if available */}
-                                {selectedLead.analysis && (
-                                    <div className="p-6 bg-white/5 border border-white/5 rounded-3xl space-y-4">
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-2">
-                                                <Sparkles className="text-indigo-400" size={16} />
-                                                <span className="text-[10px] font-black text-white uppercase tracking-widest">AI Audit Insight</span>
-                                            </div>
-                                            <span className="text-indigo-400 font-black text-sm">{selectedLead.analysis.qualification_score}/10</span>
+                                {/* RE-QUALIFICATION / AUDIT SECTION */}
+                                {(!selectedLead.analysis || selectedLead.analysis.mode === 'rapid') && (
+                                    <div className="flex flex-col items-center justify-center p-8 bg-indigo-500/5 border border-dashed border-indigo-500/20 rounded-[32px]">
+                                        <div className="bg-indigo-500/20 p-3 rounded-full mb-4">
+                                            <Sparkles className="text-indigo-400" size={24} />
                                         </div>
-                                        <p className="text-xs text-[var(--text-tertiary)] italic leading-relaxed">
-                                            "{selectedLead.analysis.summary}"
+                                        <h3 className="text-lg font-bold text-white mb-2 text-center">
+                                            {selectedLead.analysis?.mode === 'rapid' ? 'Deep Dive Available' : 'AI Qualification Required'}
+                                        </h3>
+                                        <p className="text-[var(--text-tertiary)] text-xs mb-6 text-center max-w-sm">
+                                            {selectedLead.analysis?.mode === 'rapid'
+                                                ? 'You have a flash audit. Run a Deep Dive for full social analysis and email drafts.'
+                                                : 'Our AI will scrape the website and analyze their digital presence for high-value pain points.'}
                                         </p>
+                                        <div className="flex gap-4 w-full">
+                                            {(!selectedLead.analysis?.mode || selectedLead.analysis.mode !== 'rapid') && (
+                                                <button
+                                                    onClick={() => handleQualify(selectedLead, 'rapid')}
+                                                    disabled={!!isQualifying}
+                                                    className="flex-1 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-black uppercase tracking-widest transition-all shadow-xl shadow-indigo-500/40 disabled:opacity-50 flex items-center justify-center gap-3 text-[10px]"
+                                                >
+                                                    {isQualifying === 'rapid' ? <Loader2 className="animate-spin" /> : <Sparkles size={16} />}
+                                                    Flash Audit
+                                                </button>
+                                            )}
+                                            <button
+                                                onClick={() => handleQualify(selectedLead, 'deep')}
+                                                disabled={!!isQualifying}
+                                                className="flex-1 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-2xl font-black uppercase tracking-widest transition-all shadow-xl shadow-purple-500/40 disabled:opacity-50 flex items-center justify-center gap-3 text-[10px]"
+                                            >
+                                                {isQualifying === 'deep' ? <Loader2 className="animate-spin" /> : <Gavel size={16} />}
+                                                Deep Dive
+                                            </button>
+                                        </div>
                                     </div>
                                 )}
+
+                                {/* FULL AI ANALYSIS DETAILS */}
+                                {selectedLead.analysis && (
+                                    <div className="space-y-6">
+                                        <div className="p-6 rounded-3xl bg-indigo-500/5 border border-indigo-500/10">
+                                            <div className="flex items-center justify-between mb-4">
+                                                <div className="flex items-center gap-2">
+                                                    <Sparkles className="text-indigo-400" size={16} />
+                                                    <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Digital Audit</span>
+                                                </div>
+                                                <span className="text-indigo-400 font-black text-sm">{selectedLead.analysis.qualification_score}/10</span>
+                                            </div>
+
+                                            <div className="mb-6 bg-white/5 p-4 rounded-2xl border border-white/5">
+                                                <span className="text-[9px] font-black text-white/40 uppercase tracking-widest block mb-1">Brand Identity & Vibe</span>
+                                                <p className="text-base font-black text-white leading-tight">
+                                                    {selectedLead.analysis.brandVibe || "Professional / Local"}
+                                                </p>
+                                            </div>
+
+                                            <p className="text-sm text-slate-200 leading-relaxed mb-6 font-medium">
+                                                {selectedLead.analysis.summary}
+                                            </p>
+
+                                            {/* Found Socials */}
+                                            {selectedLead.scrapedData?.socialProfiles && selectedLead.scrapedData.socialProfiles.length > 0 && (
+                                                <div className="flex flex-wrap gap-2 mb-6 text-white text-[10px]">
+                                                    {selectedLead.scrapedData.socialProfiles.map((p: any, i: number) => (
+                                                        <a
+                                                            key={i}
+                                                            href={p.url}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 transition-all font-bold"
+                                                        >
+                                                            {p.platform?.toLowerCase().includes('instagram') && <Instagram size={12} className="text-pink-500" />}
+                                                            {p.platform?.toLowerCase().includes('facebook') && <Facebook size={12} className="text-blue-500" />}
+                                                            {p.platform?.toLowerCase().includes('linkedin') && <Linkedin size={12} className="text-sky-500" />}
+                                                            {p.platform || "Direct Link"}
+                                                        </a>
+                                                    ))}
+                                                </div>
+                                            )}
+
+                                            {/* Deep Social Audit */}
+                                            {selectedLead.analysis.social_json && selectedLead.analysis.social_json.length > 0 && (
+                                                <div className="space-y-4 pt-4 border-t border-white/5">
+                                                    <div className="flex items-center gap-2">
+                                                        <Globe className="text-purple-400" size={16} />
+                                                        <span className="text-[10px] font-black text-purple-400 uppercase tracking-widest">Deep Content Audit</span>
+                                                    </div>
+                                                    <div className="grid grid-cols-1 gap-3">
+                                                        {selectedLead.analysis.social_json.map((insight: any, i: number) => (
+                                                            <div key={i} className="p-4 rounded-2xl bg-white/5 border border-white/5">
+                                                                <div className="flex justify-between items-start mb-3">
+                                                                    <div className="flex items-center gap-2">
+                                                                        <span className="text-xs font-black text-white uppercase tracking-tighter">{insight.platform}</span>
+                                                                        <span className={`text-[8px] font-black px-1.5 py-0.5 rounded-md ${insight.score >= 7 ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'}`}>
+                                                                            {insight.score}/10
+                                                                        </span>
+                                                                    </div>
+                                                                </div>
+                                                                <p className="text-[11px] text-slate-300 leading-relaxed italic mb-2">"{insight.verdict}"</p>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6 pt-6 border-t border-white/5">
+                                                <div className="space-y-3">
+                                                    <span className="text-[9px] font-black text-red-400/80 uppercase flex items-center gap-1.5"><AlertTriangle size={12} /> Pain Points</span>
+                                                    <ul className="space-y-1.5">
+                                                        {selectedLead.analysis.pain_points?.map((p: string, i: number) => (
+                                                            <li key={i} className="text-[11px] text-slate-400 flex items-start gap-2">
+                                                                <span className="text-red-500/40 mt-1.5">•</span> {p}
+                                                            </li>
+                                                        ))}
+                                                    </ul>
+                                                </div>
+                                                <div className="space-y-3">
+                                                    <span className="text-[9px] font-black text-emerald-400/80 uppercase flex items-center gap-1.5"><CheckCircle2 size={12} /> AI Suggestions</span>
+                                                    <ul className="space-y-1.5">
+                                                        {selectedLead.analysis.suggestions?.map((s: string, i: number) => (
+                                                            <li key={i} className="text-[11px] text-slate-400 flex items-start gap-2">
+                                                                <span className="text-emerald-500/40 mt-1.5">✓</span> {s}
+                                                            </li>
+                                                        ))}
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Outreach Email */}
+                                        {selectedLead.analysis.email_draft && (
+                                            <div className="pro-dashboard-card p-6 rounded-3xl bg-black/40 border border-white/5">
+                                                <div className="flex justify-between items-center mb-4">
+                                                    <div className="flex items-center gap-2">
+                                                        <MailPlus className="text-indigo-400" size={16} />
+                                                        <span className="text-[10px] font-black text-white uppercase tracking-widest">Drafted Outreach</span>
+                                                    </div>
+                                                    <button
+                                                        onClick={() => {
+                                                            navigator.clipboard.writeText(selectedLead.analysis.email_draft);
+                                                            toast.success("Email copied");
+                                                        }}
+                                                        className="text-[10px] font-black text-indigo-400 hover:text-indigo-300 uppercase flex items-center gap-1 transition-colors"
+                                                    >
+                                                        <Copy size={12} /> Copy
+                                                    </button>
+                                                </div>
+                                                <div className="bg-black/40 p-5 rounded-2xl border border-white/5">
+                                                    <p className="text-xs text-slate-400 whitespace-pre-wrap leading-relaxed italic">
+                                                        {selectedLead.analysis.email_draft}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
                             </div>
                         </motion.div>
                     </div>
