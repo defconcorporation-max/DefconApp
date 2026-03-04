@@ -7,7 +7,7 @@ import {
     Bookmark, BookmarkCheck, CheckCircle2, AlertTriangle, ExternalLink, Trash2, ArrowRight,
     Gavel, Target, TrendingUp, ChevronRight, X, Copy, MailPlus,
     LayoutDashboard, Instagram, Facebook, Linkedin, Briefcase,
-    History, Calendar, Clock
+    History, Calendar, Clock, Star
 } from 'lucide-react';
 import {
     searchLeadsAction, qualifyLeadAction, saveLeadToPipeline,
@@ -1043,6 +1043,18 @@ export default function LeadScraper() {
                                                         <Globe className="text-purple-400" size={16} />
                                                         <span className="text-[10px] font-black text-purple-400 uppercase tracking-widest">Deep Content Audit</span>
                                                     </div>
+
+                                                    {selectedLead.analysis.contentStrategy && (
+                                                        <div className="p-4 rounded-2xl bg-indigo-600/10 border border-indigo-500/20 mb-3 shadow-inner">
+                                                            <span className="text-[8px] font-black text-indigo-400 uppercase tracking-widest block mb-1 flex items-center gap-1.5">
+                                                                <Star size={8} /> Strategic Content Roadmap
+                                                            </span>
+                                                            <p className="text-[11px] text-indigo-100 font-bold leading-relaxed">
+                                                                {selectedLead.analysis.contentStrategy}
+                                                            </p>
+                                                        </div>
+                                                    )}
+
                                                     <div className="grid grid-cols-1 gap-3">
                                                         {selectedLead.analysis.social_json.map((insight: any, i: number) => (
                                                             <div key={i} className="p-4 rounded-2xl bg-white/5 border border-white/5">

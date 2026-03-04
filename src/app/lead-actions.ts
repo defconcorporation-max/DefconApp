@@ -204,7 +204,9 @@ export async function qualifyLeadAction(lead: any, language: 'fr' | 'en' = 'fr',
                 competitors: rawAnalysis.competitors,
                 email_draft: rawAnalysis.emailDraft,
                 social_verdict: rawAnalysis.socialMedia?.overallVerdict,
-                social_json: rawAnalysis.socialMedia?.insights || []
+                social_json: rawAnalysis.socialMedia?.insights || [],
+                brand_vibe: rawAnalysis.brandVibe,
+                content_strategy: rawAnalysis.socialMedia?.contentStrategy
             }
         };
 
@@ -270,8 +272,8 @@ export async function saveLeadToPipeline(lead: Lead, scrapedData?: any, analysis
         // 3. Save Analysis
         if (analysis) {
             await db.execute({
-                sql: `INSERT INTO lead_analyses (lead_id, summary, pain_points, suggestions, qualification_score, mode, email_draft, social_verdict, social_json) 
-                      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                sql: `INSERT INTO lead_analyses (lead_id, summary, pain_points, suggestions, qualification_score, mode, email_draft, social_verdict, social_json, brand_vibe, content_strategy) 
+                      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                       ON CONFLICT(lead_id) DO UPDATE SET 
                         summary = excluded.summary,
                         pain_points = excluded.pain_points,
@@ -280,7 +282,9 @@ export async function saveLeadToPipeline(lead: Lead, scrapedData?: any, analysis
                         mode = excluded.mode,
                         email_draft = excluded.email_draft,
                         social_verdict = excluded.social_verdict,
-                        social_json = excluded.social_json`,
+                        social_json = excluded.social_json,
+                        brand_vibe = excluded.brand_vibe,
+                        content_strategy = excluded.content_strategy`,
                 args: [
                     leadId,
                     analysis.summary || '',
@@ -290,7 +294,9 @@ export async function saveLeadToPipeline(lead: Lead, scrapedData?: any, analysis
                     analysis.mode || 'deep',
                     analysis.email_draft || '',
                     analysis.social_verdict || '',
-                    JSON.stringify(analysis.social_json || [])
+                    JSON.stringify(analysis.social_json || []),
+                    analysis.brand_vibe || '',
+                    analysis.content_strategy || ''
                 ]
             });
         }
@@ -309,6 +315,7 @@ export async function getPipelineLeads(): Promise<Lead[]> {
             SELECT 
                 l.*,
                 la.summary, la.pain_points, la.suggestions, la.qualification_score, la.email_draft, la.social_verdict, la.social_json as ai_social_json,
+                la.brand_vibe, la.content_strategy,
                 lsd.emails, lsd.social_json, lsd.title as site_title, lsd.description as site_desc
             FROM leads l
             LEFT JOIN lead_analyses la ON l.id = la.lead_id
@@ -325,7 +332,9 @@ export async function getPipelineLeads(): Promise<Lead[]> {
                 qualification_score: r.qualification_score,
                 email_draft: r.email_draft,
                 social_verdict: r.social_verdict,
-                social_json: JSON.parse(r.ai_social_json || '[]')
+                social_json: JSON.parse(r.ai_social_json || '[]'),
+                brandVibe: r.brand_vibe,
+                contentStrategy: r.content_strategy
             } : undefined,
             scrapedData: r.emails ? {
                 emails: JSON.parse(r.emails || '[]'),

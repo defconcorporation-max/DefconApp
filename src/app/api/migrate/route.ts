@@ -282,6 +282,8 @@ export async function GET() {
                 email_draft TEXT,
                 social_verdict TEXT,
                 social_json TEXT, -- AI insights array
+                brand_vibe TEXT,
+                content_strategy TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY(lead_id) REFERENCES leads(id) ON DELETE CASCADE
             )
