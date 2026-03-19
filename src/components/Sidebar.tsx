@@ -6,6 +6,7 @@ import { Home, Users, Briefcase, Video, CreditCard, Settings, Command, Layers, U
 import { useEffect, useState } from 'react';
 import { signOut } from 'next-auth/react';
 import NotificationBell from './NotificationBell';
+import BetaFeedbackWidget from './BetaFeedbackWidget';
 
 export default function Sidebar({ userRole = '' }: { userRole?: string }) {
     const pathname = usePathname();
@@ -126,6 +127,9 @@ export default function Sidebar({ userRole = '' }: { userRole?: string }) {
                                 </>
                             )}
                             <div className="mt-6 pt-4 border-t border-[var(--border-subtle)]">
+                                <BetaFeedbackWidget />
+                            </div>
+                            <div className="mt-6 pt-4 border-t border-[var(--border-subtle)]">
                                 <button
                                     onClick={() => signOut({ callbackUrl: '/login' })}
                                     className="flex items-center gap-3 px-3 py-2 w-full rounded-md text-sm font-medium transition-all duration-200 text-red-400 hover:bg-red-500/10 border border-transparent hover:border-red-500/20"
@@ -167,11 +171,14 @@ export default function Sidebar({ userRole = '' }: { userRole?: string }) {
                         )}
                     </div>
 
-                    <div className="mt-6 pt-4 border-t border-[var(--border-subtle)]">
-                        <Link href="/beta-feedback" className="flex items-center gap-2 px-3 py-2 rounded-md text-xs text-[var(--text-tertiary)] hover:text-violet-400 hover:bg-violet-500/5 transition-colors">
-                            <span>Beta</span>
-                            <span className="text-[10px]">View tickets →</span>
-                        </Link>
+                    <div className="mt-6 pt-6 border-t border-[var(--border-subtle)]">
+                        <div className="flex items-center justify-between mb-2">
+                            <h4 className="text-[10px] font-bold text-[var(--text-tertiary)] uppercase tracking-wider">Beta Testing</h4>
+                            <Link href="/beta-feedback" className="text-[10px] text-violet-400 hover:text-violet-300 transition-colors">
+                                View Tickets
+                            </Link>
+                        </div>
+                        <BetaFeedbackWidget />
                     </div>
                 </div>
 
