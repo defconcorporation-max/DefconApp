@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { Shoot, TeamMember, ShootAssignment } from '@/types';
-import { Video, Calendar, ArrowRight, ExternalLink, Filter, ArrowUpDown, Clock } from 'lucide-react';
+import { Video, Calendar, ArrowRight, ExternalLink, Filter, ArrowUpDown, Clock, Users } from 'lucide-react';
 import ShootAssignmentWidget from '@/components/ShootAssignmentWidget';
 
 interface EnhancedShoot extends Shoot {
@@ -30,6 +30,7 @@ export default function ShootList({ shoots, teamMembers, allAssignments }: Shoot
     const [sortBy, setSortBy] = useState<SortOption>('date');
     const [sortOrder, setSortOrder] = useState<SortOrder>('asc'); // Default Date ASC for calendar feel
     const [filterStatus, setFilterStatus] = useState<string>('All');
+    const [expandedShootId, setExpandedShootId] = useState<number | null>(null);
 
     const filteredAndSortedShoots = useMemo(() => {
         let result = [...shoots];
@@ -102,6 +103,15 @@ export default function ShootList({ shoots, teamMembers, allAssignments }: Shoot
         return groups;
     }, [filteredAndSortedShoots, isSortedByDate]);
 
+    const assignmentsByShootId = useMemo(() => {
+        const map: Record<number, ShootAssignment[]> = {};
+        for (const assignment of allAssignments) {
+            if (!map[assignment.shoot_id]) map[assignment.shoot_id] = [];
+            map[assignment.shoot_id].push(assignment);
+        }
+        return map;
+    }, [allAssignments]);
+
     return (
         <div>
             {/* Toolbar */}
@@ -157,16 +167,16 @@ export default function ShootList({ shoots, teamMembers, allAssignments }: Shoot
                 <div key={groupTitle} className="mb-12">
                     {/* Show Header only if Date sorting (Month groups) or if distinct groups exist */}
                     {isSortedByDate && (
-                        <h2 className="text-lg font-bold text-white mb-6 border-l-4 border-violet-500 pl-4 uppercase tracking-wider sticky top-36 bg-[var(--bg-root)] py-2 z-10 backdrop-blur-md bg-opacity-80">
+                        <h2 className="text-lg font-bold text-white mb-6 border-l-4 border-violet-500 pl-4 uppercase tracking-wider md:sticky top-36 bg-[var(--bg-root)] py-2 z-10 backdrop-blur-md bg-opacity-80">
                             {groupTitle}
                         </h2>
                     )}
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {groupShoots.map(shoot => {
-                            const assignments = allAssignments.filter(a => a.shoot_id === shoot.id);
+                            const assignments = assignmentsByShootId[shoot.id] ?? [];
                             return (
-                                <div key={shoot.id} className={`pro-card p-6 h-full transition-all duration-300 relative group flex flex-col ${shoot.post_prod_status ? 'border-orange-500/30 bg-orange-500/5' : 'hover:border-violet-500/30'}`}>
+                                <div key={shoot.id} className={`pro-card p-6 h-full relative group flex flex-col ${shoot.post_prod_status ? 'border-orange-500/30 bg-orange-500/5' : 'md:hover:border-violet-500/30'} transition-colors duration-200`}>
                                     <div className="flex justify-between items-start mb-4">
                                         <div className="flex flex-col items-center bg-white/5 px-3 py-1 rounded border border-white/5 min-w-[60px] group-hover:bg-violet-500/10 group-hover:border-violet-500/20 group-hover:text-violet-400 transition-colors">
                                             <span className="text-xs text-gray-500 uppercase group-hover:text-violet-400/70">{new Date(shoot.shoot_date).toLocaleString('default', { month: 'short' })}</span>
@@ -224,11 +234,31 @@ export default function ShootList({ shoots, teamMembers, allAssignments }: Shoot
 
                                     {/* Crew Widget */}
                                     <div className="mb-4">
-                                        <ShootAssignmentWidget
-                                            shootId={shoot.id}
-                                            assignments={assignments}
-                                            teamMembers={teamMembers}
-                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setExpandedShootId((prev) => (prev === shoot.id ? null : shoot.id))}
+                                            className="w-full flex items-center justify-between gap-3 text-left px-3 py-2 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)]/40 hover:bg-[var(--bg-surface-hover)] transition-colors"
+                                        >
+                                            <span className="flex items-center gap-2 text-xs text-[var(--text-tertiary)]">
+                                                <Users size={14} />
+                                                Crew
+                                                <span className="text-[10px] text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-1.5 py-0.5 rounded">
+                                                    {assignments.length}
+                                                </span>
+                                            </span>
+                                            <span className="text-[10px] text-[var(--text-tertiary)]">
+                                                {expandedShootId === shoot.id ? 'Masquer' : 'Gérer'}
+                                            </span>
+                                        </button>
+                                        {expandedShootId === shoot.id && (
+                                            <div className="mt-3">
+                                                <ShootAssignmentWidget
+                                                    shootId={shoot.id}
+                                                    assignments={assignments}
+                                                    teamMembers={teamMembers}
+                                                />
+                                            </div>
+                                        )}
                                     </div>
 
                                     <div className="pt-4 mt-auto border-t border-[var(--border-subtle)] flex items-center justify-between text-xs">

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import { Project } from '@/types';
 import { Clock, Filter, Search, SortDesc, ChevronDown, ChevronRight, Briefcase, ArrowUpDown, Hash, DollarSign, Receipt, Send, Check } from 'lucide-react';
@@ -32,6 +32,7 @@ export default function ProjectList({ projects }: ProjectListProps) {
     const [filterStatus, setFilterStatus] = useState<string>('All');
     const [syncingId, setSyncingId] = useState<number | null>(null);
     const [syncedId, setSyncedId] = useState<number | null>(null);
+    const [isMobile, setIsMobile] = useState(false);
 
     const handleSendToExpenses = async (e: React.MouseEvent, projectId: number) => {
         e.preventDefault();
@@ -130,6 +131,22 @@ export default function ProjectList({ projects }: ProjectListProps) {
 
     const sortedMonthKeys = Object.keys(groupedProjects).sort().reverse();
 
+    useEffect(() => {
+        setIsMobile(typeof window !== 'undefined' && window.innerWidth < 768);
+    }, []);
+
+    // Sur mobile, on évite de tout déplier (trop dense) et on garde un meilleur scroll.
+    useEffect(() => {
+        if (!isMobile) return;
+        if (Object.keys(collapsedMonths).length > 0) return;
+        const init: Record<string, boolean> = {};
+        sortedMonthKeys.forEach((k) => {
+            init[k] = true; // true => section collapsed
+        });
+        setCollapsedMonths(init);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isMobile, sortedMonthKeys]);
+
     const toggleMonth = (key: string) => {
         setCollapsedMonths(prev => ({ ...prev, [key]: !prev[key] }));
     };
@@ -193,7 +210,7 @@ export default function ProjectList({ projects }: ProjectListProps) {
             {/* Grouped Month Sections */}
             <div className="space-y-8">
                 {sortedMonthKeys.map(monthKey => (
-                    <div key={monthKey} className="animate-in fade-in duration-500">
+                    <div key={monthKey} className="md:animate-in md:fade-in duration-500">
                         {/* Section Header */}
                         <button
                             onClick={() => toggleMonth(monthKey)}
@@ -218,7 +235,7 @@ export default function ProjectList({ projects }: ProjectListProps) {
                                     <Link
                                         key={project.id}
                                         href={`/projects/${project.id}`}
-                                        className="bg-[#0A0A0A] border border-[var(--border-subtle)] rounded-xl p-5 hover:border-violet-500/50 hover:bg-violet-500/5 transition-all group relative flex flex-col hover:-translate-y-1 hover:shadow-lg hover:shadow-violet-500/10 duration-300"
+                                        className="bg-[#0A0A0A] border border-[var(--border-subtle)] rounded-xl p-5 transition-all group relative flex flex-col md:hover:border-violet-500/50 md:hover:bg-violet-500/5 md:hover:-translate-y-1 md:hover:shadow-lg md:hover:shadow-violet-500/10 duration-300"
                                     >
                                         {/* Header */}
                                         <div className="flex justify-between items-start mb-2">

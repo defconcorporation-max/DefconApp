@@ -3,7 +3,7 @@
 import { createShootAssignment, deleteShootAssignment } from '@/app/actions';
 import { ShootAssignment, TeamMember } from '@/types';
 import { Plus, X, UserPlus } from 'lucide-react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 interface Props {
     shootId: number;
@@ -15,9 +15,9 @@ export default function ShootAssignmentWidget({ shootId, assignments, teamMember
     const [isAdding, setIsAdding] = useState(false);
 
     // Filter out already assigned members
-    const availableMembers = teamMembers.filter(
-        tm => !assignments.some(a => a.member_id === tm.id)
-    );
+    const availableMembers = useMemo(() => {
+        return teamMembers.filter((tm) => !assignments.some((a) => a.member_id === tm.id));
+    }, [teamMembers, assignments]);
 
     return (
         <div className="mt-4 pt-3 border-t border-white/5">
