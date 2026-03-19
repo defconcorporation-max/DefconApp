@@ -74,10 +74,8 @@ export default async function Home() {
             </div>
 
             <CollapsibleSection id="calendar" title="Calendrier" viewAllHref="/availability" viewAllLabel="Voir tout">
-                <div className="overflow-x-auto pb-2 -mx-1">
-                    <div className="min-w-[320px]">
-                        <DashboardCalendar shoots={allShoots} clients={clients} />
-                    </div>
+                <div className="overflow-x-hidden w-full pb-2">
+                    <DashboardCalendar shoots={allShoots} clients={clients} />
                 </div>
             </CollapsibleSection>
 

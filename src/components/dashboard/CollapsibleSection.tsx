@@ -21,7 +21,9 @@ function getStoredState(): Record<SectionId, boolean> {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return DEFAULT_OPEN;
     const parsed = JSON.parse(raw) as Record<string, boolean>;
-    return { ...DEFAULT_OPEN, ...parsed };
+    const state = { ...DEFAULT_OPEN, ...parsed };
+    state.calendar = true; // Toujours afficher le calendrier ouvert à l'ouverture
+    return state;
   } catch {
     return DEFAULT_OPEN;
   }
@@ -45,6 +47,7 @@ export default function CollapsibleSection({ id, title, viewAllHref, viewAllLabe
   const [open, setOpen] = useState(() => getStoredState()[id]);
 
   const toggle = () => {
+    if (id === 'calendar') return; // Calendrier toujours ouvert, pas de collapse
     const next = !open;
     setOpen(next);
     const state = getStoredState();
@@ -57,10 +60,11 @@ export default function CollapsibleSection({ id, title, viewAllHref, viewAllLabe
       <button
         type="button"
         onClick={toggle}
-        className="w-full flex items-center justify-between gap-4 py-2 -my-2 px-1 rounded-lg hover:bg-white/5 transition-colors text-left"
+        className={`w-full flex items-center justify-between gap-4 py-2 -my-2 px-1 rounded-lg transition-colors text-left ${id === 'calendar' ? 'cursor-default' : 'hover:bg-white/5'}`}
       >
         <span className="section-label flex items-center gap-2 text-[var(--text-secondary)] font-bold uppercase tracking-wider text-xs">
-          {open ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+          {id !== 'calendar' && (open ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />)}
+          {id === 'calendar' && <ChevronDown className="w-4 h-4" />}
           {title}
         </span>
         {viewAllHref && viewAllLabel && (

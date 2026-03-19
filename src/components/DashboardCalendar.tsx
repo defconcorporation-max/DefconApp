@@ -22,8 +22,8 @@ const COLORS = [
 
 export default function DashboardCalendar({ shoots, clients = [] }: CalendarProps) {
     const [currentDate, setCurrentDate] = useState(new Date());
-    const [viewMode, setViewMode] = useState<'month' | 'week' | 'day'>('week'); // Default to Week
-    const [isCollapsed, setIsCollapsed] = useState(true);
+    const [viewMode, setViewMode] = useState<'month' | 'week' | 'day'>('week');
+    const [isCollapsed, setIsCollapsed] = useState(false); // Ouvert par défaut pour voir l'horaire
 
     // Modal State
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -373,21 +373,21 @@ export default function DashboardCalendar({ shoots, clients = [] }: CalendarProp
                         </>
                     )}
 
-                    {/* WEEK & DAY VIEW - Time Grid */}
+                    {/* WEEK & DAY VIEW - Time Grid (responsive: toute la semaine sur mobile) */}
                     {(viewMode === 'week' || viewMode === 'day') && (
-                        <div className="flex flex-col bg-[var(--bg-root)] h-[600px] overflow-y-auto relative no-scrollbar">
-                            {/* Header Row */}
-                            <div className="flex border-b border-[var(--border-subtle)] sticky top-0 bg-[var(--bg-root)] z-20">
-                                <div className="w-16 border-r border-[var(--border-subtle)] flex-shrink-0"></div>
+                        <div className="flex flex-col bg-[var(--bg-root)] h-[500px] md:h-[600px] overflow-y-auto overflow-x-hidden relative no-scrollbar w-full">
+                            {/* Header Row - 7 colonnes égales sur mobile */}
+                            <div className="flex border-b border-[var(--border-subtle)] sticky top-0 bg-[var(--bg-root)] z-20 min-w-0">
+                                <div className="w-10 md:w-16 border-r border-[var(--border-subtle)] flex-shrink-0"></div>
                                 {days.map((date, i) => {
                                     if (!date) return null;
                                     const isToday = new Date().toDateString() === date.toDateString();
                                     return (
-                                        <div key={i} className="flex-1 text-center py-3 border-r border-[var(--border-subtle)]/30 min-w-[100px]">
-                                            <div className={`text-xs uppercase font-bold ${isToday ? 'text-indigo-400' : 'text-[var(--text-tertiary)]'}`}>
-                                                {date.toLocaleDateString('en-US', { weekday: 'short' })}
+                                        <div key={i} className="flex-1 min-w-0 text-center py-2 md:py-3 border-r border-[var(--border-subtle)]/30 last:border-r-0">
+                                            <div className={`text-[9px] md:text-xs uppercase font-bold truncate px-0.5 ${isToday ? 'text-indigo-400' : 'text-[var(--text-tertiary)]'}`}>
+                                                {date.toLocaleDateString('fr-FR', { weekday: 'short' })}
                                             </div>
-                                            <div className={`text-sm ${isToday ? 'text-white font-bold' : 'text-[var(--text-secondary)]'}`}>
+                                            <div className={`text-xs md:text-sm ${isToday ? 'text-white font-bold' : 'text-[var(--text-secondary)]'}`}>
                                                 {date.getDate()}
                                             </div>
                                         </div>
@@ -396,24 +396,24 @@ export default function DashboardCalendar({ shoots, clients = [] }: CalendarProp
                             </div>
 
                             {/* Time Grid Body */}
-                            <div className="flex relative">
-                                {/* Time Axis (Hours) */}
-                                <div className="w-16 flex-shrink-0 border-r border-[var(--border-subtle)] bg-[var(--bg-root)] z-10">
+                            <div className="flex relative min-w-0 flex-1">
+                                {/* Time Axis (Hours) - plus étroit sur mobile */}
+                                <div className="w-10 md:w-16 flex-shrink-0 border-r border-[var(--border-subtle)] bg-[var(--bg-root)] z-10">
                                     {Array.from({ length: END_HOUR - START_HOUR + 1 }).map((_, i) => (
-                                        <div key={i} className="h-[48px] border-b border-white/[0.03] text-[10px] text-[var(--text-tertiary)] text-right pr-2 pt-1 font-mono relative">
-                                            <span className="-top-2 relative">{START_HOUR + i}:00</span>
+                                        <div key={i} className="h-[48px] border-b border-white/[0.03] text-[9px] md:text-[10px] text-[var(--text-tertiary)] text-right pr-1 md:pr-2 pt-1 font-mono">
+                                            {START_HOUR + i}h
                                         </div>
                                     ))}
                                 </div>
 
-                                {/* Columns */}
+                                {/* Columns - flex-1 min-w-0 pour que toute la semaine tienne à l'écran */}
                                 {days.map((date, dayIdx) => {
                                     if (!date) return null;
                                     const dateString = date.toISOString().split('T')[0];
                                     const dayShoots = shoots.filter(s => s.shoot_date === dateString);
 
                                     return (
-                                        <div key={dayIdx} className="flex-1 border-r border-[var(--border-subtle)]/30 relative min-w-[100px] group">
+                                        <div key={dayIdx} className="flex-1 min-w-0 border-r border-[var(--border-subtle)]/30 last:border-r-0 relative group">
                                             {/* Horizontal Lines */}
                                             {Array.from({ length: END_HOUR - START_HOUR + 1 }).map((_, i) => (
                                                 <div
@@ -433,15 +433,15 @@ export default function DashboardCalendar({ shoots, clients = [] }: CalendarProp
                                                         key={shoot.id}
                                                         onClick={(e) => handleEventClick(e, shoot)}
                                                         style={style}
-                                                        className={`absolute inset-x-1 ${theme.bg} border ${theme.border} rounded overflow-hidden hover:z-10 hover:opacity-90 transition-colors cursor-pointer group-event`}
+                                                        className={`absolute left-0.5 right-0.5 md:inset-x-1 ${theme.bg} border ${theme.border} rounded overflow-hidden hover:z-10 hover:opacity-90 transition-colors cursor-pointer group-event`}
                                                     >
-                                                        <div className={`h-full w-full border-l-2 p-1 flex flex-col justify-between`} style={{ borderLeftColor: theme.dot.replace('bg-', 'rgb(').replace('500', '400') }}>
-                                                            <div className={`font-medium ${theme.text} text-[10px] leading-tight truncate`}>{shoot.client_company || shoot.client_name}</div>
-                                                            {parseInt(style.height as string) > 25 && (
-                                                                <div className={`text-[10px] ${theme.text} opacity-80 truncate`}>{shoot.title}</div>
+                                                        <div className={`h-full w-full border-l-2 p-0.5 md:p-1 flex flex-col justify-between min-w-0`} style={{ borderLeftColor: theme.dot.replace('bg-', 'rgb(').replace('500', '400') }}>
+                                                            <div className={`font-medium ${theme.text} text-[8px] md:text-[10px] leading-tight truncate`}>{shoot.client_company || shoot.client_name}</div>
+                                                            {parseInt(style.height as string) > 22 && (
+                                                                <div className={`text-[8px] md:text-[10px] ${theme.text} opacity-80 truncate`}>{shoot.title}</div>
                                                             )}
-                                                            {parseInt(style.height as string) > 40 && (
-                                                                <div className={`text-[9px] ${theme.text} opacity-60`}>{shoot.start_time} - {shoot.end_time}</div>
+                                                            {parseInt(style.height as string) > 36 && (
+                                                                <div className={`text-[7px] md:text-[9px] ${theme.text} opacity-60 truncate`}>{shoot.start_time} - {shoot.end_time}</div>
                                                             )}
                                                         </div>
                                                     </div>
