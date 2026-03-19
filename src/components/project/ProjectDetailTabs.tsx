@@ -10,7 +10,9 @@ import ProjectTaskManager from '@/components/ProjectTaskManager';
 import ProjectCostManager from '@/components/ProjectCostManager';
 import ProjectSyncButton from '@/components/ProjectSyncButton';
 import { InvoiceButton } from '@/components/InvoiceButton';
-import type { Project, Shoot, ProjectTask, TaskStage, Client } from '@/types';
+import type { Project, Shoot, ProjectTask, TaskStage, Client, Commission, TeamMember } from '@/types';
+import ProjectPaymentSummary from '@/components/project/ProjectPaymentSummary';
+import ProjectCompensationSection from '@/components/project/ProjectCompensationSection';
 
 type PostProdWorkflow = { id: number; shoot_title?: string; template_name?: string; status?: string; progress?: number };
 
@@ -20,12 +22,15 @@ type ProjectDetailTabsProps = {
   shoots: Shoot[];
   tasks: ProjectTask[];
   stages: TaskStage[];
-  teamMembers: any[];
+  teamMembers: TeamMember[];
   services: any[];
   settings: any;
   projectCosts: any[];
   videosMap: Record<number, any[]>;
   postProdWorkflows: PostProdWorkflow[];
+  projectTotalIncTax: number;
+  paidAmount: number;
+  commissions: Commission[];
 };
 
 const TABS = [
@@ -48,12 +53,19 @@ export default function ProjectDetailTabs({
   projectCosts,
   videosMap,
   postProdWorkflows,
+  projectTotalIncTax,
+  paidAmount,
+  commissions,
 }: ProjectDetailTabsProps) {
   const [activeTab, setActiveTab] = useState<(typeof TABS)[number]['id']>('overview');
 
   const totalTasks = tasks.length;
   const completedTasks = tasks.filter((t) => t.is_completed).length;
   const taskProgress = totalTasks === 0 ? 0 : Math.round((completedTasks / totalTasks) * 100);
+
+  const totalCost = Number(project.total_cost || 0);
+  const totalMargin = (projectTotalIncTax || 0) - totalCost;
+  const marginPercentage = (projectTotalIncTax || 0) > 0 ? (totalMargin / projectTotalIncTax) * 100 : 0;
 
   return (
     <div className="space-y-6">
@@ -105,7 +117,9 @@ export default function ProjectDetailTabs({
               <div className="space-y-3">
                 <div>
                   <div className="text-[10px] text-[var(--text-tertiary)] uppercase">Revenus</div>
-                  <div className="text-xl font-bold text-white">${project.total_revenue?.toLocaleString() || '0'}</div>
+                    <div className="text-xl font-bold text-white">
+                      ${projectTotalIncTax.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                    </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   <div>
@@ -117,9 +131,9 @@ export default function ProjectDetailTabs({
                   </div>
                   <div>
                     <div className="text-[10px] text-[var(--text-tertiary)]">Marge</div>
-                    <div className={(project.total_margin || 0) >= 0 ? 'text-emerald-400' : 'text-red-400'}>
-                      ${project.total_margin?.toLocaleString() || '0'} ({project.margin_percentage ? Math.round(project.margin_percentage) : 0}%)
-                    </div>
+                      <div className={totalMargin >= 0 ? 'text-emerald-400' : 'text-red-400'}>
+                        ${totalMargin.toLocaleString(undefined, { maximumFractionDigits: 0 })} ({Math.round(marginPercentage)}%)
+                      </div>
                   </div>
                 </div>
               </div>
@@ -176,19 +190,25 @@ export default function ProjectDetailTabs({
         <div className="space-y-6 max-w-2xl">
           <div className="pro-dashboard-card p-6 rounded-2xl">
             <h3 className="section-label mb-4">Résumé financier</h3>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <div className="text-[10px] text-[var(--text-tertiary)] uppercase">Revenus</div>
-                <div className="text-2xl font-bold text-white">${project.total_revenue?.toLocaleString() || '0'}</div>
+                <div className="text-[10px] text-[var(--text-tertiary)] uppercase">Revenus (inc. taxes)</div>
+                <div className="text-2xl font-bold text-white">
+                  ${projectTotalIncTax.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                </div>
               </div>
               <div>
-                <div className="text-[10px] text-[var(--text-tertiary)] uppercase flex items-center gap-1">Coût <ProjectSyncButton projectId={project.id} /></div>
-                <div className="text-xl font-medium text-[var(--text-secondary)]">${project.total_cost?.toLocaleString() || '0'}</div>
+                <div className="text-[10px] text-[var(--text-tertiary)] uppercase flex items-center gap-1">
+                  Coût <ProjectSyncButton projectId={project.id} />
+                </div>
+                <div className="text-xl font-medium text-[var(--text-secondary)]">
+                  ${totalCost.toLocaleString()}
+                </div>
               </div>
               <div>
                 <div className="text-[10px] text-[var(--text-tertiary)] uppercase">Marge</div>
-                <div className={`text-xl font-bold ${(project.total_margin || 0) >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                  ${project.total_margin?.toLocaleString() || '0'} ({project.margin_percentage ? Math.round(project.margin_percentage) : 0}%)
+                <div className={`text-xl font-bold ${totalMargin >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                  ${totalMargin.toLocaleString(undefined, { maximumFractionDigits: 0 })} ({Math.round(marginPercentage)}%)
                 </div>
               </div>
             </div>
@@ -201,8 +221,24 @@ export default function ProjectDetailTabs({
               </InvoiceButton>
             </div>
           </div>
+
+          <ProjectPaymentSummary
+            project={{ id: project.id, title: project.title }}
+            clientId={project.client_id}
+            totalIncTax={projectTotalIncTax}
+            paidAmount={paidAmount}
+          />
+
+          <ProjectCompensationSection
+            clientId={project.client_id}
+            projectId={project.id}
+            projectTotalIncTax={projectTotalIncTax}
+            commissions={commissions}
+            teamMembers={teamMembers}
+          />
+
           <div className="pro-dashboard-card p-6 rounded-2xl">
-            <h3 className="section-label mb-4">Détail des coûts</h3>
+            <h3 className="section-label mb-4">Autres coûts</h3>
             <ProjectCostManager projectId={project.id} initialCosts={projectCosts} />
           </div>
         </div>

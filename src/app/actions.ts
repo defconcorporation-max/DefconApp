@@ -308,20 +308,38 @@ export async function getAllCommissions() {
 }
 
 export async function payCommission(id: number) {
+    const { rows } = await db.execute({
+        sql: 'SELECT project_id, client_id FROM commissions WHERE id = ?',
+        args: [id],
+    });
+    const projectId = rows[0]?.project_id ? Number(rows[0].project_id) : null;
+    const clientId = rows[0]?.client_id ? Number(rows[0].client_id) : null;
+
     const date = new Date().toISOString().split('T')[0];
     await db.execute({
         sql: "UPDATE commissions SET status = 'Paid', paid_date = ? WHERE id = ?",
         args: [date, id]
     });
     revalidatePath('/finance');
+    if (projectId) revalidatePath(`/projects/${projectId}`);
+    if (clientId) revalidatePath(`/clients/${clientId}`);
 }
 
 export async function revertCommissionPayment(id: number) {
+    const { rows } = await db.execute({
+        sql: 'SELECT project_id, client_id FROM commissions WHERE id = ?',
+        args: [id],
+    });
+    const projectId = rows[0]?.project_id ? Number(rows[0].project_id) : null;
+    const clientId = rows[0]?.client_id ? Number(rows[0].client_id) : null;
+
     await db.execute({
         sql: "UPDATE commissions SET status = 'Pending', paid_date = NULL WHERE id = ?",
         args: [id]
     });
     revalidatePath('/finance');
+    if (projectId) revalidatePath(`/projects/${projectId}`);
+    if (clientId) revalidatePath(`/clients/${clientId}`);
 }
 
 export async function getShoots(clientId?: number): Promise<Shoot[]> {
@@ -670,7 +688,21 @@ export async function addPayment(formData: FormData) {
 
     revalidatePath('/finance');
     revalidatePath(`/clients/${clientId}`);
+    revalidatePath(`/projects/${projectId}`);
     revalidatePath('/');
+}
+
+export async function getProjectPaidAmount(projectId: number) {
+    const { rows } = await db.execute({
+        sql: `
+        SELECT COALESCE(SUM(amount), 0) as paid_amount
+        FROM payments
+        WHERE project_id = ?
+        `,
+        args: [projectId],
+    });
+
+    return Number(rows[0]?.paid_amount || 0);
 }
 
 export async function getDashboardStats() {
@@ -776,9 +808,12 @@ export async function getFinanceData() {
         (SELECT COALESCE(SUM(ps.rate * ps.quantity), 0) * ?
          FROM project_services ps 
          JOIN projects p ON ps.project_id = p.id 
-         WHERE p.client_id = c.id) as total_revenue
+         WHERE p.client_id = c.id) as total_revenue,
+        (SELECT COALESCE(SUM(pay.amount), 0)
+         FROM payments pay
+         WHERE pay.client_id = c.id) as total_paid
         FROM clients c
-        ORDER BY total_revenue DESC
+        ORDER BY total_paid DESC
         `,
         args: [taxMultiplier]
     });

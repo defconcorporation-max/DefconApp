@@ -1,4 +1,4 @@
-import { getClients, getAllShoots, getDashboardStats, getPipelineStages, getAllDashboardTasks, getAgencies, getActivities } from './actions';
+import { getClients, getAllShoots, getDashboardStats, getPipelineStages, getAllDashboardTasks, getAgencies, getActivities, getFinanceData } from './actions';
 import Link from 'next/link';
 import DashboardCalendar from '@/components/DashboardCalendar';
 import ClientKanban from '@/components/ClientKanban';
@@ -20,6 +20,7 @@ export default async function Home() {
     let tasks: any[] = [];
     let activities: any[] = [];
     let error = null;
+    let financeData: any = null;
 
     try {
         const results = await Promise.all([
@@ -29,15 +30,17 @@ export default async function Home() {
             getPipelineStages(),
             getAllDashboardTasks(),
             getAgencies(),
-            getActivities()
+            getActivities(),
+            getFinanceData(),
         ]);
 
-        [clients, allShoots, stats, stages, tasks, , activities] = results;
+        [clients, allShoots, stats, stages, tasks, , activities, financeData] = results;
         if (!Array.isArray(tasks)) tasks = [];
     } catch (e: any) {
         console.warn('Dashboard Data Fetch Error:', e);
         error = e.message || 'Unknown database error';
         stats = { totalProjects: 0, totalShoots: 0, activeClients: 0, totalClients: 0, upcomingShoots: 0 };
+        financeData = null;
     }
 
     const kpis = [
@@ -45,6 +48,10 @@ export default async function Home() {
         { label: 'Shoots', value: stats?.totalShoots ?? 0 },
         { label: 'Clients', value: `${stats?.activeClients ?? 0} / ${stats?.totalClients ?? 0}` },
         { label: 'Upcoming', value: stats?.upcomingShoots ?? 0 },
+        {
+            label: 'Encaissements',
+            value: `$${Number(financeData?.stats?.revenueWithTax || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}`,
+        },
     ];
 
     return (
@@ -72,6 +79,46 @@ export default async function Home() {
                     Voir le planning →
                 </Link>
             </div>
+
+            {financeData?.clients?.length > 0 && (
+                <div className="bg-[#0A0A0A] border border-[var(--border-subtle)] rounded-2xl overflow-hidden">
+                    <div className="p-4 border-b border-[var(--border-subtle)] flex items-center justify-between bg-white/5">
+                        <h3 className="section-label mb-0">Cash collected par client</h3>
+                        <Link href="/finance" className="text-xs text-violet-400 hover:text-violet-300 transition-colors">
+                            Voir Finance →
+                        </Link>
+                    </div>
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-sm text-left">
+                            <thead className="bg-white/5 text-[var(--text-tertiary)] uppercase text-xs font-medium">
+                                <tr>
+                                    <th className="px-4 py-3">Client</th>
+                                    <th className="px-4 py-3 text-center">Projets</th>
+                                    <th className="px-4 py-3 text-right">Cash</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-[var(--border-subtle)]">
+                                {financeData.clients.slice(0, 5).map((client: any) => (
+                                    <tr key={client.id} className="hover:bg-white/5 transition-colors">
+                                        <td className="px-4 py-3">
+                                            <div className="font-bold text-white">{client.company_name}</div>
+                                            <div className="text-xs text-[var(--text-tertiary)]">{client.name}</div>
+                                        </td>
+                                        <td className="px-4 py-3 text-center">
+                                            <span className="bg-white/10 text-white px-2 py-0.5 rounded text-xs font-mono">
+                                                {client.project_count}
+                                            </span>
+                                        </td>
+                                        <td className="px-4 py-3 text-right font-mono font-bold text-emerald-400">
+                                            ${Number(client.total_paid || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            )}
 
             <CollapsibleSection id="calendar" title="Calendrier" viewAllHref="/availability" viewAllLabel="Voir tout">
                 <div className="overflow-x-hidden w-full pb-2">

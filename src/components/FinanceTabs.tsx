@@ -112,9 +112,9 @@ export default function FinanceTabs({ data, commissions, settings, projectValues
                         <RevenueChart data={data.revenueChart} />
 
                         {/* Client Performance Table */}
-                        <div className="bg-[#0A0A0A] border border-[var(--border-subtle)] rounded-2xl overflow-hidden">
+                            <div className="bg-[#0A0A0A] border border-[var(--border-subtle)] rounded-2xl overflow-hidden">
                             <div className="p-6 border-b border-[var(--border-subtle)] flex justify-between items-center bg-white/5">
-                                <h3 className="font-bold flex items-center gap-2 text-sm"><Users size={16} className="text-[var(--text-tertiary)]" /> Top Performing Clients</h3>
+                                <h3 className="font-bold flex items-center gap-2 text-sm"><Users size={16} className="text-[var(--text-tertiary)]" /> Top Clients (Cash)</h3>
                             </div>
                             <div className="overflow-x-auto">
                                 <table className="w-full text-sm text-left">
@@ -122,7 +122,7 @@ export default function FinanceTabs({ data, commissions, settings, projectValues
                                         <tr>
                                             <th className="px-6 py-4">Client</th>
                                             <th className="px-6 py-4 text-center">Projects</th>
-                                            <th className="px-6 py-4 text-right">Total Revenue</th>
+                                                <th className="px-6 py-4 text-right">Cash Collected</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-[var(--border-subtle)]">
@@ -136,7 +136,7 @@ export default function FinanceTabs({ data, commissions, settings, projectValues
                                                     <span className="bg-white/10 text-white px-2 py-0.5 rounded text-xs">{client.project_count}</span>
                                                 </td>
                                                 <td className="px-6 py-4 text-right font-mono font-bold text-emerald-400">
-                                                    ${client.total_revenue.toLocaleString()}
+                                                    ${(client.total_paid ?? 0).toLocaleString()}
                                                 </td>
                                             </tr>
                                         ))}
