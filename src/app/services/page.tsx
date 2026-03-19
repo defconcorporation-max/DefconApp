@@ -1,4 +1,4 @@
-import { getServices, createService } from '@/app/actions';
+import { getServices, createService } from '@/lib/actions/project-services';
 import { Service } from '@/types';
 import Link from 'next/link';
 import { ArrowLeft, Plus } from 'lucide-react';

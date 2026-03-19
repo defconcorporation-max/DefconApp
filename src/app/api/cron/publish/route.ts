@@ -6,9 +6,12 @@ import { publishToFacebook, publishToInstagram, publishToLinkedIn, publishToTikT
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
-    // 1. Security Check
+    const secret = process.env.CRON_SECRET;
+    if (!secret) {
+        return new NextResponse('Cron not configured', { status: 503 });
+    }
     const authHeader = req.headers.get('authorization');
-    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    if (authHeader !== `Bearer ${secret}`) {
         return new NextResponse('Unauthorized', { status: 401 });
     }
 

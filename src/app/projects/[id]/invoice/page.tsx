@@ -1,5 +1,6 @@
 
-import { getProjectById, getProjectServices, getClient, getSettings } from '@/app/actions';
+import { getProjectById, getClient, getSettings } from '@/app/actions';
+import { getProjectServices } from '@/lib/actions/project-services';
 import { Project, ProjectService } from '@/types';
 import Link from 'next/link';
 

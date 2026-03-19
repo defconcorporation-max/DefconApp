@@ -1,5 +1,6 @@
 import { turso } from '@/lib/turso';
 import { NextResponse } from 'next/server';
+import { notFoundInProduction } from '@/lib/api-dev-only';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,6 +10,9 @@ export const dynamic = 'force-dynamic';
  * Replaces: /api/fix-shoots-schema, /api/fix-team-schema, /api/fix-team-schema-force, /api/migrate-agencies
  */
 export async function GET() {
+    const blocked = notFoundInProduction();
+    if (blocked) return blocked;
+
     const results: string[] = [];
 
     try {

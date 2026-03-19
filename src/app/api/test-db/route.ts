@@ -1,8 +1,12 @@
 import { NextResponse } from 'next/server';
 import { getShootVolumeData, getProjectOriginData, getProjectCompletionData, getSettings, getTaskStages } from '@/app/actions';
 import { getPostProdTemplates } from '@/app/post-prod-actions';
+import { notFoundInProduction } from '@/lib/api-dev-only';
 
 export async function GET() {
+    const blocked = notFoundInProduction();
+    if (blocked) return blocked;
+
     try {
         const results: any = {};
 

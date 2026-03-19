@@ -1,10 +1,12 @@
-import { getProjectById, getProjectShoots, getTeamMembers, getClient, getProjectTasks, getTaskStages, getShootVideos, getAgencies, getProjectPostProdWorkflows, getProjectServices, getSettings, getProjectCosts, getCommissions, getProjectPaidAmount } from '@/app/actions';
+import { getProjectById, getProjectShoots, getTeamMembers, getClient, getProjectTasks, getTaskStages, getShootVideos, getAgencies, getProjectPostProdWorkflows, getSettings, getProjectCosts, getCommissions, getProjectPaidAmount } from '@/app/actions';
+import { getProjectServices, getServices } from '@/lib/actions/project-services';
 import { Project, Shoot, ProjectTask, TaskStage, Client } from '@/types';
 import Link from 'next/link';
 import { Calendar } from 'lucide-react';
 import ProjectTitleEditor from '@/components/ProjectTitleEditor';
 import ProjectDetailTabs from '@/components/project/ProjectDetailTabs';
 import PageLayout from '@/components/layout/PageLayout';
+import { subtotalPreTaxFromLines, taxMultiplierFromRates } from '@/lib/finance/tax';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,13 +26,14 @@ export default async function ProjectDetailsPage({ params }: { params: Promise<{
         );
     }
 
-    const [shoots, client, tasks, stages, teamMembers, services, settings, projectCosts, agencies, postProdWorkflows, commissions, paidAmount] = await Promise.all([
+    const [shoots, client, tasks, stages, teamMembers, services, serviceCatalog, settings, projectCosts, agencies, postProdWorkflows, commissions, paidAmount] = await Promise.all([
         getProjectShoots(projectId),
         getClient(project.client_id),
         getProjectTasks(projectId),
         getTaskStages(),
         getTeamMembers(),
         getProjectServices(projectId),
+        getServices(),
         getSettings(),
         getProjectCosts(projectId),
         getAgencies(),
@@ -52,8 +55,8 @@ export default async function ProjectDetailsPage({ params }: { params: Promise<{
     const tvqRate = Number((settings as any)?.tax_tvq_rate ?? 9.975);
     const safeTps = Number.isFinite(tpsRate) ? tpsRate : 5;
     const safeTvq = Number.isFinite(tvqRate) ? tvqRate : 9.975;
-    const taxMultiplier = 1 + (safeTps + safeTvq) / 100;
-    const subtotalPreTax = (services as any[]).reduce((sum, s) => sum + (Number(s.rate) || 0) * (Number(s.quantity) || 0), 0);
+    const taxMultiplier = taxMultiplierFromRates(safeTps, safeTvq);
+    const subtotalPreTax = subtotalPreTaxFromLines(services as any[]);
     const projectTotalIncTax = subtotalPreTax * taxMultiplier;
 
     return (
@@ -102,6 +105,7 @@ export default async function ProjectDetailsPage({ params }: { params: Promise<{
                 stages={stagesData}
                 teamMembers={teamMembers}
                 services={services}
+                serviceCatalog={serviceCatalog as any[]}
                 settings={settings}
                 projectCosts={projectCosts}
                 videosMap={videosMap}

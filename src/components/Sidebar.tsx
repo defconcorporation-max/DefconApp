@@ -19,6 +19,7 @@ export default function Sidebar({ userRole = '' }: { userRole?: string }) {
     };
 
     const isAdmin = userRole === 'Admin' || userRole === 'Team';
+    const canAccessFinance = userRole === 'Admin';
 
     const sectionDaily = [
         { href: '/', label: 'Dashboard', icon: Home },
@@ -30,6 +31,7 @@ export default function Sidebar({ userRole = '' }: { userRole?: string }) {
         { href: '/leads', label: 'Leads', icon: Target },
         { href: '/clients', label: 'Clients', icon: Users },
         { href: '/projects', label: 'Projects', icon: Briefcase },
+        ...(canAccessFinance ? [{ href: '/finance', label: 'Finance', icon: CreditCard }] as const : []),
     ];
     const sectionCreative = [
         { href: '/creative-studio', label: 'Creative Studio', icon: Sparkles },

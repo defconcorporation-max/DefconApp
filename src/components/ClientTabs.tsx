@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { LayoutDashboard, Folder, Fingerprint, Lightbulb, User, Calendar, DollarSign, CreditCard, Share2, Video } from 'lucide-react';
+import { LayoutDashboard, Folder, Fingerprint, Lightbulb, User, Calendar, Share2, Video } from 'lucide-react';
 import { Client, Project, SocialLink, Commission, Idea, Payment, Credential, SocialAccount, SocialPost, TeamMember } from '@/types';
 import ProjectManager from '@/components/ProjectManager';
 import ClientProfileEditor from '@/components/ClientProfileEditor';
@@ -54,7 +54,9 @@ export default function ClientTabs({
         { id: 'ideas', label: 'Ideas', icon: <Lightbulb size={16} /> },
     ];
 
-    const totalRevenue = projects.reduce((sum, p) => sum + (p.total_value || 0), 0);
+    const totalProjectsPreTax = projects.reduce((sum, p) => sum + (p.total_value || 0), 0);
+    const totalPaid = payments.filter((p) => p.status === 'Paid').reduce((s, p) => s + (Number(p.amount) || 0), 0);
+    const pendingCommissions = commissions.filter((c) => c.status === 'Pending').length;
 
     return (
         <div>
@@ -109,8 +111,18 @@ export default function ClientTabs({
                                         </div>
                                     </div>
                                     <div className="flex justify-between items-center p-3 rounded hover:bg-[var(--bg-surface)] text-sm group cursor-default transition-colors border-t border-[var(--border-subtle)] mt-2 pt-3">
-                                        <span className="text-[var(--text-secondary)]">Total Revenue</span>
-                                        <span className="text-emerald-400 font-bold font-mono text-lg">${totalRevenue.toLocaleString()}</span>
+                                        <span className="text-[var(--text-secondary)]">Valeur projets (HT)</span>
+                                        <span className="text-emerald-400 font-bold font-mono text-lg">${totalProjectsPreTax.toLocaleString()}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center p-3 rounded hover:bg-[var(--bg-surface)] text-sm">
+                                        <span className="text-[var(--text-secondary)]">Paiements reçus</span>
+                                        <span className="text-white font-mono font-medium">${totalPaid.toLocaleString()}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center p-3 rounded hover:bg-[var(--bg-surface)] text-sm">
+                                        <span className="text-[var(--text-secondary)]">Commissions en attente</span>
+                                        <span className={pendingCommissions > 0 ? 'text-amber-400 font-medium' : 'text-[var(--text-tertiary)]'}>
+                                            {pendingCommissions}
+                                        </span>
                                     </div>
                                 </div>
                             </div>

@@ -1,9 +1,13 @@
 import { turso } from '@/lib/turso';
 import { NextResponse } from 'next/server';
+import { notFoundInProduction } from '@/lib/api-dev-only';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
+    const blocked = notFoundInProduction();
+    if (blocked) return blocked;
+
     try {
         console.log('--- Force Fixing Shoot Assignments Schema ---');
 

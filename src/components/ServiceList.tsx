@@ -1,7 +1,7 @@
 'use client';
 
 import { Service } from '@/types';
-import { updateService, deleteService } from '@/app/actions';
+import { updateService, deleteService } from '@/lib/actions/project-services';
 import { Trash2, Edit2, Save, X } from 'lucide-react';
 import { useState } from 'react';
 

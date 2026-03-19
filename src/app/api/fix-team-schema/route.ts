@@ -1,7 +1,11 @@
 import { turso } from '@/lib/turso';
 import { NextResponse } from 'next/server';
+import { notFoundInProduction } from '@/lib/api-dev-only';
 
 export async function GET() {
+    const blocked = notFoundInProduction();
+    if (blocked) return blocked;
+
     try {
         await turso.execute(`
             CREATE TABLE IF NOT EXISTS team_members (

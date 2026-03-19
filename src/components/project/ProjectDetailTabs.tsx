@@ -13,6 +13,8 @@ import { InvoiceButton } from '@/components/InvoiceButton';
 import type { Project, Shoot, ProjectTask, TaskStage, Client, Commission, TeamMember } from '@/types';
 import ProjectPaymentSummary from '@/components/project/ProjectPaymentSummary';
 import ProjectCompensationSection from '@/components/project/ProjectCompensationSection';
+import ProjectBillingLines from '@/components/project/ProjectBillingLines';
+import type { Service } from '@/types';
 
 type PostProdWorkflow = { id: number; shoot_title?: string; template_name?: string; status?: string; progress?: number };
 
@@ -49,6 +51,7 @@ export default function ProjectDetailTabs({
   stages,
   teamMembers,
   services,
+  serviceCatalog,
   settings,
   projectCosts,
   videosMap,
@@ -116,7 +119,7 @@ export default function ProjectDetailTabs({
               </h3>
               <div className="space-y-3">
                 <div>
-                  <div className="text-[10px] text-[var(--text-tertiary)] uppercase">Revenus</div>
+                  <div className="text-[10px] text-[var(--text-tertiary)] uppercase">Revenus (TTC)</div>
                     <div className="text-xl font-bold text-white">
                       ${projectTotalIncTax.toLocaleString(undefined, { maximumFractionDigits: 2 })}
                     </div>
@@ -187,7 +190,9 @@ export default function ProjectDetailTabs({
       )}
 
       {activeTab === 'financials' && (
-        <div className="space-y-6 max-w-2xl">
+        <div className="space-y-6 max-w-3xl">
+          <ProjectBillingLines projectId={project.id} initialLines={services} catalog={serviceCatalog} />
+
           <div className="pro-dashboard-card p-6 rounded-2xl">
             <h3 className="section-label mb-4">Résumé financier</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
