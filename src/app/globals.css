@@ -25,9 +25,11 @@
 
   --accent-primary: #ffffff;
   --accent-blue: #60a5fa;
-  /* Lighter Blue */
   --accent-violet: #a78bfa;
-  /* Lighter Violet */
+
+  /* Page layout */
+  --page-header-gap: 1.5rem;
+  --page-section-gap: 1.5rem;
 }
 
 body {
@@ -61,12 +63,8 @@ body {
 }
 
 .pro-card:hover {
-  background-color: rgba(39, 39, 42, 0.6);
-  border-color: rgba(139, 92, 246, 0.3);
-  /* Violet glowing border */
-  box-shadow: 0 8px 24px -8px rgba(0, 0, 0, 0.5), 0 0 20px rgba(139, 92, 246, 0.1);
-  /* Violet glow */
-  transform: translateY(-2px);
+  background-color: rgba(39, 39, 42, 0.55);
+  border-color: rgba(255, 255, 255, 0.1);
 }
 
 .pro-dashboard-card {
@@ -85,9 +83,37 @@ body {
 
 .pro-dashboard-card:hover {
   background-color: rgba(39, 39, 42, 0.7);
+  border-color: rgba(139, 92, 246, 0.25);
+  box-shadow: 0 10px 24px -8px rgba(0, 0, 0, 0.4);
+}
+
+/* Card hierarchy: level 1 = hero/primary, level 2 = standard, level 3 = subtle */
+.pro-card-hero {
+  background-color: rgba(39, 39, 42, 0.6);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  padding: 1.5rem;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 10px 24px -8px rgba(0, 0, 0, 0.3);
+}
+.pro-card-hero:hover {
   border-color: rgba(139, 92, 246, 0.4);
-  transform: translateY(-4px);
-  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.7), 0 0 30px rgba(139, 92, 246, 0.15);
+  box-shadow: 0 12px 28px -8px rgba(0, 0, 0, 0.4), 0 0 24px rgba(139, 92, 246, 0.12);
+}
+
+.pro-card-tertiary {
+  background-color: rgba(39, 39, 42, 0.35);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 8px;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+.pro-card-tertiary:hover {
+  background-color: rgba(39, 39, 42, 0.5);
+  border-color: rgba(255, 255, 255, 0.08);
 }
 
 /* Fix native select/option visibility in dark mode */
@@ -180,6 +206,14 @@ h2,
 h3 {
   font-weight: 500;
   letter-spacing: -0.02em;
+}
+
+.section-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
 }
 
 /* Custom Gradients for "Ultra Modern" feel */

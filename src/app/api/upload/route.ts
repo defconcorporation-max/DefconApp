@@ -1,10 +1,15 @@
 import { put } from '@vercel/blob';
 import { NextResponse } from 'next/server';
+import { auth } from '@/auth';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: Request) {
     try {
+        const session = await auth();
+        if (!session?.user) {
+            return NextResponse.json({ error: 'Unauthorized', success: false }, { status: 401 });
+        }
         if (!process.env.BLOB_READ_WRITE_TOKEN) {
             return NextResponse.json({
                 error: 'BLOB_READ_WRITE_TOKEN is not set. Go to Vercel → Storage → Create Blob Store.',

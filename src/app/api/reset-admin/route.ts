@@ -4,7 +4,15 @@ import bcrypt from 'bcryptjs';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+/** Désactivé en production. En dev, exiger RESET_ADMIN_SECRET dans le header X-Reset-Admin-Secret. */
+export async function GET(request: Request) {
+    if (process.env.NODE_ENV === 'production') {
+        return NextResponse.json({ error: 'Not available in production' }, { status: 404 });
+    }
+    const secret = request.headers.get('X-Reset-Admin-Secret');
+    if (process.env.RESET_ADMIN_SECRET && secret !== process.env.RESET_ADMIN_SECRET) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     try {
         const rawPassword = 'admin';
         const hashedPassword = await bcrypt.hash(rawPassword, 10);

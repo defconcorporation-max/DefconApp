@@ -5,7 +5,6 @@ import { usePathname } from 'next/navigation';
 import { Home, Users, Briefcase, Video, CreditCard, Settings, Command, Layers, UserPlus, BookOpen, Building, Calendar, Shield, Activity, LogOut, Sparkles, Target } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { signOut } from 'next-auth/react';
-import BetaFeedbackWidget from './BetaFeedbackWidget';
 import NotificationBell from './NotificationBell';
 
 export default function Sidebar({ userRole = '' }: { userRole?: string }) {
@@ -20,19 +19,22 @@ export default function Sidebar({ userRole = '' }: { userRole?: string }) {
 
     const isAdmin = userRole === 'Admin' || userRole === 'Team';
 
-    const mainLinks = [
+    const sectionDaily = [
         { href: '/', label: 'Dashboard', icon: Home },
-        { href: '/leads', label: 'Leads', icon: Target },
-        { href: '/clients', label: 'Clients', icon: Users },
-        { href: '/projects', label: 'Projects', icon: Briefcase },
         { href: '/shoots', label: 'Shoots', icon: Video },
         { href: '/availability', label: 'Availability', icon: Calendar },
         { href: '/post-production', label: 'Post-Production', icon: Layers },
+    ];
+    const sectionClients = [
+        { href: '/leads', label: 'Leads', icon: Target },
+        { href: '/clients', label: 'Clients', icon: Users },
+        { href: '/projects', label: 'Projects', icon: Briefcase },
+    ];
+    const sectionCreative = [
         { href: '/creative-studio', label: 'Creative Studio', icon: Sparkles },
         { href: '/actors', label: 'Actors', icon: UserPlus },
     ];
-
-    const adminLinks = [
+    const sectionAdmin = [
         { href: '/analytics', label: 'Analytics', icon: Activity },
         { href: '/agencies', label: 'Agencies', icon: Building },
         { href: '/team', label: 'Team', icon: UserPlus },
@@ -40,6 +42,25 @@ export default function Sidebar({ userRole = '' }: { userRole?: string }) {
         { href: '/services', label: 'Services', icon: BookOpen },
         { href: '/settings', label: 'Settings', icon: Settings },
     ];
+
+    const linkClass = (isActive: boolean) =>
+        `flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 group ${isActive
+            ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20'
+            : 'text-[var(--text-secondary)] hover:bg-[var(--bg-surface-hover)] hover:text-white'
+        }`;
+    const sectionLabel = 'px-3 pb-2 pt-4 first:pt-0 text-[10px] font-bold text-[var(--text-tertiary)] uppercase tracking-wider';
+
+    const renderLinks = (links: typeof sectionDaily, pathname: string) =>
+        links.map((link) => {
+            const Icon = link.icon;
+            const isActive = pathname ? (pathname === link.href || (link.href !== '/' && pathname.startsWith(link.href))) : false;
+            return (
+                <Link key={link.href} href={link.href} className={linkClass(isActive)}>
+                    <Icon className={`w-4 h-4 ${isActive ? 'text-indigo-400' : 'text-[var(--text-tertiary)] group-hover:text-white'}`} />
+                    {link.label}
+                </Link>
+            );
+        });
 
     return (
         <>
@@ -72,51 +93,37 @@ export default function Sidebar({ userRole = '' }: { userRole?: string }) {
                     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setOpen(false)} />
                     <aside className="fixed right-0 top-16 bottom-0 w-64 bg-[var(--bg-surface)]/70 backdrop-blur-xl border-l border-[var(--border-subtle)] p-6 overflow-y-auto animate-in slide-in-from-right duration-200">
                         <div className="space-y-1">
-                            {mainLinks.map((link) => {
-                                const Icon = link.icon;
-                                const isActive = pathname ? (pathname === link.href || (link.href !== '/' && pathname.startsWith(link.href))) : false;
-
-                                return (
-                                    <Link
-                                        key={link.href}
-                                        href={link.href}
-                                        onClick={() => setOpen(false)}
-                                        className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 group ${isActive
-                                            ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20'
-                                            : 'text-[var(--text-secondary)] hover:bg-[var(--bg-surface-hover)] hover:text-white'
-                                            }`}
-                                    >
-                                        <Icon className={`w-4 h-4 ${isActive ? 'text-indigo-400' : 'text-[var(--text-tertiary)] group-hover:text-white'}`} />
-                                        {link.label}
-                                    </Link>
-                                );
-                            })}
-
+                            <div className={sectionLabel}>Au quotidien</div>
+                            {sectionDaily.map((link) => (
+                                <Link key={link.href} href={link.href} onClick={() => setOpen(false)} className={linkClass(!!pathname && (pathname === link.href || (link.href !== '/' && pathname.startsWith(link.href))))}>
+                                    <link.icon className={`w-4 h-4 ${pathname && (pathname === link.href || (link.href !== '/' && pathname.startsWith(link.href))) ? 'text-indigo-400' : 'text-[var(--text-tertiary)] group-hover:text-white'}`} />
+                                    {link.label}
+                                </Link>
+                            ))}
+                            <div className={sectionLabel}>Clients & projets</div>
+                            {sectionClients.map((link) => (
+                                <Link key={link.href} href={link.href} onClick={() => setOpen(false)} className={linkClass(!!pathname && (pathname === link.href || (link.href !== '/' && pathname.startsWith(link.href))))}>
+                                    <link.icon className={`w-4 h-4 ${pathname && (pathname === link.href || (link.href !== '/' && pathname.startsWith(link.href))) ? 'text-indigo-400' : 'text-[var(--text-tertiary)] group-hover:text-white'}`} />
+                                    {link.label}
+                                </Link>
+                            ))}
+                            <div className={sectionLabel}>Créatif</div>
+                            {sectionCreative.map((link) => (
+                                <Link key={link.href} href={link.href} onClick={() => setOpen(false)} className={linkClass(!!pathname && (pathname === link.href || (link.href !== '/' && pathname.startsWith(link.href))))}>
+                                    <link.icon className={`w-4 h-4 ${pathname && (pathname === link.href || (link.href !== '/' && pathname.startsWith(link.href))) ? 'text-indigo-400' : 'text-[var(--text-tertiary)] group-hover:text-white'}`} />
+                                    {link.label}
+                                </Link>
+                            ))}
                             {isAdmin && (
-                                <div className="mt-6 pt-4 border-t border-[var(--border-subtle)] space-y-1">
-                                    <div className="px-3 pb-2 text-[10px] font-bold text-[var(--text-tertiary)] uppercase tracking-wider">
-                                        Workspace
-                                    </div>
-                                    {adminLinks.map((link) => {
-                                        const Icon = link.icon;
-                                        const isActive = pathname ? (pathname === link.href || (link.href !== '/' && pathname.startsWith(link.href))) : false;
-
-                                        return (
-                                            <Link
-                                                key={link.href}
-                                                href={link.href}
-                                                onClick={() => setOpen(false)}
-                                                className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 group ${isActive
-                                                    ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20'
-                                                    : 'text-[var(--text-secondary)] hover:bg-[var(--bg-surface-hover)] hover:text-white'
-                                                    }`}
-                                            >
-                                                <Icon className={`w-4 h-4 ${isActive ? 'text-indigo-400' : 'text-[var(--text-tertiary)] group-hover:text-white'}`} />
-                                                {link.label}
-                                            </Link>
-                                        );
-                                    })}
-                                </div>
+                                <>
+                                    <div className={sectionLabel}>Workspace</div>
+                                    {sectionAdmin.map((link) => (
+                                        <Link key={link.href} href={link.href} onClick={() => setOpen(false)} className={linkClass(!!pathname && (pathname === link.href || (link.href !== '/' && pathname.startsWith(link.href))))}>
+                                            <link.icon className={`w-4 h-4 ${pathname && (pathname === link.href || (link.href !== '/' && pathname.startsWith(link.href))) ? 'text-indigo-400' : 'text-[var(--text-tertiary)] group-hover:text-white'}`} />
+                                            {link.label}
+                                        </Link>
+                                    ))}
+                                </>
                             )}
                             <div className="mt-6 pt-4 border-t border-[var(--border-subtle)]">
                                 <button
@@ -146,62 +153,25 @@ export default function Sidebar({ userRole = '' }: { userRole?: string }) {
                     </div>
 
                     <div className="space-y-1">
-                        {mainLinks.map((link) => {
-                            const Icon = link.icon;
-                            // Safe check for pathname
-                            const isActive = pathname ? (pathname === link.href || (link.href !== '/' && pathname.startsWith(link.href))) : false;
-
-                            return (
-                                <Link
-                                    key={link.href}
-                                    href={link.href}
-                                    className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 group ${isActive
-                                        ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20'
-                                        : 'text-[var(--text-secondary)] hover:bg-[var(--bg-surface-hover)] hover:text-white'
-                                        }`}
-                                >
-                                    <Icon className={`w-4 h-4 ${isActive ? 'text-indigo-400' : 'text-[var(--text-tertiary)] group-hover:text-white'}`} />
-                                    {link.label}
-                                </Link>
-                            );
-                        })}
-
+                        <div className={sectionLabel}>Au quotidien</div>
+                        {renderLinks(sectionDaily, pathname || '')}
+                        <div className={sectionLabel}>Clients & projets</div>
+                        {renderLinks(sectionClients, pathname || '')}
+                        <div className={sectionLabel}>Créatif</div>
+                        {renderLinks(sectionCreative, pathname || '')}
                         {isAdmin && (
-                            <div className="mt-8 pt-4 border-t border-[var(--border-subtle)] space-y-1">
-                                <div className="px-3 pb-2 text-[10px] font-bold text-[var(--text-tertiary)] uppercase tracking-wider">
-                                    Workspace
-                                </div>
-                                {adminLinks.map((link) => {
-                                    const Icon = link.icon;
-                                    const isActive = pathname ? (pathname === link.href || (link.href !== '/' && pathname.startsWith(link.href))) : false;
-
-                                    return (
-                                        <Link
-                                            key={link.href}
-                                            href={link.href}
-                                            className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 group ${isActive
-                                                ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20'
-                                                : 'text-[var(--text-secondary)] hover:bg-[var(--bg-surface-hover)] hover:text-white'
-                                                }`}
-                                        >
-                                            <Icon className={`w-4 h-4 ${isActive ? 'text-indigo-400' : 'text-[var(--text-tertiary)] group-hover:text-white'}`} />
-                                            {link.label}
-                                        </Link>
-                                    );
-                                })}
-                            </div>
+                            <>
+                                <div className={sectionLabel}>Workspace</div>
+                                {renderLinks(sectionAdmin, pathname || '')}
+                            </>
                         )}
                     </div>
 
-                    {/* Beta Feedback Widget */}
-                    <div className="mt-6 pt-6 border-t border-[var(--border-subtle)]">
-                        <div className="flex items-center justify-between mb-2">
-                            <h4 className="text-[10px] font-bold text-[var(--text-tertiary)] uppercase tracking-wider">Beta Testing</h4>
-                            <Link href="/beta-feedback" className="text-[10px] text-violet-400 hover:text-violet-300 transition-colors">
-                                View Tickets
-                            </Link>
-                        </div>
-                        <BetaFeedbackWidget />
+                    <div className="mt-6 pt-4 border-t border-[var(--border-subtle)]">
+                        <Link href="/beta-feedback" className="flex items-center gap-2 px-3 py-2 rounded-md text-xs text-[var(--text-tertiary)] hover:text-violet-400 hover:bg-violet-500/5 transition-colors">
+                            <span>Beta</span>
+                            <span className="text-[10px]">View tickets →</span>
+                        </Link>
                     </div>
                 </div>
 

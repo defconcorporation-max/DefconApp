@@ -118,7 +118,13 @@ const config = {
             }
         })
     ],
-    secret: process.env.AUTH_SECRET || 'dummy-secret-for-build',
+    secret: (() => {
+        const secret = process.env.AUTH_SECRET;
+        if (process.env.NODE_ENV === 'production' && !secret) {
+            throw new Error('AUTH_SECRET must be set in production. Set it in your environment variables.');
+        }
+        return secret || 'dummy-secret-for-build';
+    })(),
     callbacks: {
         async jwt({ token, user, account }: any) {
             if (user) {

@@ -4,6 +4,7 @@ import { ArrowRight, Users, ExternalLink } from 'lucide-react';
 import { auth } from '@/auth';
 import { getBadgeClasses } from '@/lib/colors';
 import CreateClientButton from '@/components/CreateClientButton';
+import PageLayout from '@/components/layout/PageLayout';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,20 +18,13 @@ export default async function ClientsPage() {
     const isAdmin = userRole === 'Admin' || userRole === 'Team';
 
     return (
-        <main className="min-h-screen p-4 md:p-8 pb-20">
-            <header className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4 border-b border-[var(--border-subtle)] pb-6">
-                <div>
-                    <h1 className="text-2xl font-bold tracking-tight text-white mb-2 flex items-center gap-2">
-                        <Users className="w-6 h-6 text-indigo-400" />
-                        Clients
-                    </h1>
-                    <p className="text-[var(--text-tertiary)] text-sm">Manage your client relationships and portfolios.</p>
-                </div>
-                {isAdmin && (
-                    <CreateClientButton />
-                )}
-            </header>
-
+        <PageLayout
+            breadcrumbs={[{ label: 'Dashboard', href: '/' }, { label: 'Clients' }]}
+            title="Clients"
+            subtitle="Gérer vos relations clients et portfolios."
+            actions={isAdmin ? <CreateClientButton /> : undefined}
+            compact
+        >
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {clients.map(client => (
                     <Link href={`/clients/${client.id}`} key={client.id} className="group">
@@ -62,16 +56,16 @@ export default async function ClientsPage() {
 
                 {/* Empty State */}
                 {clients.length === 0 && (
-                    <div className="col-span-full py-20 text-center border border-dashed border-[var(--border-subtle)] rounded-xl bg-[var(--bg-surface)]/50">
+                    <div className="col-span-full py-20 text-center border border-dashed border-[var(--border-subtle)] rounded-xl bg-[var(--bg-surface)]/50 pro-card-tertiary">
                         <Users className="w-12 h-12 text-[var(--text-tertiary)] mx-auto mb-4 opacity-50" />
-                        <h3 className="text-lg font-medium text-white mb-2">No Clients Yet</h3>
-                        <p className="text-[var(--text-tertiary)] text-sm mb-6">Get started by creating your first client relationship.</p>
-                        <Link href="/" className="px-4 py-2 bg-[var(--bg-surface-hover)] hover:bg-[var(--border-subtle)] rounded text-sm text-white transition-colors">
-                            Go to Dashboard
+                        <h3 className="text-lg font-medium text-white mb-2">Aucun client</h3>
+                        <p className="text-[var(--text-tertiary)] text-sm mb-6">Créez votre premier client pour commencer.</p>
+                        <Link href="/" className="px-4 py-2 pro-button-primary rounded text-sm">
+                            Aller au dashboard
                         </Link>
                     </div>
                 )}
             </div>
-        </main>
+        </PageLayout>
     );
 }
