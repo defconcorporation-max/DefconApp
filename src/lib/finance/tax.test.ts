@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { subtotalPreTaxFromLines, taxMultiplierFromRates, totalIncTaxFromSubtotal } from './tax';
+import { subtotalPreTaxFromLines, taxAmountsFromSubtotal, taxMultiplierFromRates, totalIncTaxFromSubtotal } from './tax';
 
 describe('taxMultiplierFromRates', () => {
     it('default-ish QC rates', () => {
@@ -28,5 +28,13 @@ describe('totalIncTaxFromSubtotal', () => {
     it('applies multiplier', () => {
         const total = totalIncTaxFromSubtotal(1000, 5, 9.975);
         expect(total).toBeCloseTo(1149.75, 2);
+    });
+});
+
+describe('taxAmountsFromSubtotal', () => {
+    it('computes TPS/TVQ from HT subtotal', () => {
+        const { tps, tvq } = taxAmountsFromSubtotal(1000, 5, 9.975);
+        expect(tps).toBeCloseTo(50, 6);
+        expect(tvq).toBeCloseTo(99.75, 6);
     });
 });

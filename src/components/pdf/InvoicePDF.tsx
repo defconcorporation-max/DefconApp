@@ -1,6 +1,7 @@
 import React from 'react';
 import { Page, Text, View, Document, StyleSheet, Font } from '@react-pdf/renderer';
 import { Project, Client, ProjectService, Settings } from '@/types';
+import { taxAmountsFromSubtotal } from '@/lib/finance/tax';
 
 // Register fonts if needed, otherwise use standard fonts
 // Font.register({ family: 'Inter', src: '...' });
@@ -140,8 +141,7 @@ interface InvoicePDFProps {
 export const InvoicePDF = ({ project, client, services, settings, invoiceNumber, date }: InvoicePDFProps) => {
     // Calculate totals
     const subtotal = services.reduce((acc, s) => acc + (s.rate * s.quantity), 0);
-    const tps = subtotal * (settings.tax_tps_rate / 100);
-    const tvq = subtotal * (settings.tax_tvq_rate / 100);
+    const { tps, tvq } = taxAmountsFromSubtotal(subtotal, settings.tax_tps_rate, settings.tax_tvq_rate);
     const total = subtotal + tps + tvq;
 
     const formatCurrency = (amount: number) => {

@@ -4,6 +4,7 @@ import { turso as db } from '@/lib/turso';
 import { revalidatePath } from 'next/cache';
 import { Client, Shoot, ShootVideo, ShootVideoNote, PipelineStage, Task, SocialLink, ContentIdea, Project, Commission, TeamMember, Payment, Credential, ShootWithClient, BetaFeedback, ShootAssignment } from '@/types';
 import { auth } from '@/auth';
+import { taxAmountsFromSubtotal, taxMultiplierFromRates } from '@/lib/finance/tax';
 
 async function getAgencyFilter() {
     const session = await auth();
@@ -781,7 +782,7 @@ export async function getFinanceData() {
     const tvq = Number(settings.tax_tvq_rate);
     const safeTps = Number.isFinite(tps) ? tps : 5;
     const safeTvq = Number.isFinite(tvq) ? tvq : 9.975;
-    const taxMultiplier = 1 + (safeTps + safeTvq) / 100;
+    const taxMultiplier = taxMultiplierFromRates(safeTps, safeTvq);
 
 
     // 1. Total Collected
@@ -882,8 +883,7 @@ export async function getFinanceData() {
     const globalProjectValueIncTax = globalProjectValuePreTax * taxMultiplier;
     const pendingRevenueIncTax = Math.max(0, globalProjectValueIncTax - revenueWithTax);
 
-    const tpsCollected = revenuePreTax * (settings.tax_tps_rate / 100);
-    const tvqCollected = revenuePreTax * (settings.tax_tvq_rate / 100);
+    const { tps: tpsCollected, tvq: tvqCollected } = taxAmountsFromSubtotal(revenuePreTax, safeTps, safeTvq);
 
     const tpsOwed = Math.max(0, tpsCollected - totalExpenseTps);
     const tvqOwed = Math.max(0, tvqCollected - totalExpenseTvq);
