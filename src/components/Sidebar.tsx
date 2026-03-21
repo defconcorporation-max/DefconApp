@@ -202,6 +202,51 @@ export default function Sidebar({ userRole = '' }: { userRole?: string }) {
                     </button>
                 </div>
             </aside>
+
+            {/* Mobile Bottom Navigation Bar */}
+            <nav className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-[#09090b]/80 backdrop-blur-xl border-t border-white/5 px-6 flex items-center justify-between z-50 pb-safe">
+                <Link 
+                    href="/" 
+                    className={`flex flex-col items-center gap-1 ${pathname === '/' ? 'text-indigo-400' : 'text-[var(--text-tertiary)]'}`}
+                >
+                    <Home size={20} className={pathname === '/' ? 'animate-pulse' : ''} />
+                    <span className="text-[10px] font-bold uppercase tracking-tighter">Home</span>
+                </Link>
+                <Link 
+                    href="/shoots" 
+                    className={`flex flex-col items-center gap-1 ${pathname?.startsWith('/shoots') ? 'text-indigo-400' : 'text-[var(--text-tertiary)]'}`}
+                >
+                    <Video size={20} />
+                    <span className="text-[10px] font-bold uppercase tracking-tighter">Shoots</span>
+                </Link>
+                <Link 
+                    href="/projects" 
+                    className={`flex flex-col items-center gap-1 ${pathname?.startsWith('/projects') ? 'text-indigo-400' : 'text-[var(--text-tertiary)]'}`}
+                >
+                    <Briefcase size={20} />
+                    <span className="text-[10px] font-bold uppercase tracking-tighter">Projects</span>
+                </Link>
+                {canAccessFinance && (
+                    <Link 
+                        href="/finance" 
+                        className={`flex flex-col items-center gap-1 ${pathname?.startsWith('/finance') ? 'text-indigo-400' : 'text-[var(--text-tertiary)]'}`}
+                    >
+                        <CreditCard size={20} />
+                        <span className="text-[10px] font-bold uppercase tracking-tighter">Finance</span>
+                    </Link>
+                )}
+                <button 
+                    onClick={() => setOpen(true)}
+                    className="flex flex-col items-center gap-1 text-[var(--text-tertiary)]"
+                >
+                    <div className="w-5 h-5 flex flex-col justify-center gap-1">
+                        <div className="w-full h-0.5 bg-current rounded-full" />
+                        <div className="w-full h-0.5 bg-current rounded-full" />
+                        <div className="w-full h-0.5 bg-current rounded-full" />
+                    </div>
+                    <span className="text-[10px] font-bold uppercase tracking-tighter">Menu</span>
+                </button>
+            </nav>
         </>
     );
 }

@@ -875,7 +875,7 @@ export async function getFinanceData() {
     const expenses = expensesRes.rows as any[];
     const totalExpensesPreTax = expenses.reduce((acc, curr) => acc + curr.amount_pre_tax, 0);
     const totalExpenseTps = expenses.reduce((acc, curr) => acc + curr.tps_amount, 0);
-    const totalExpenseTvq = expenses.reduce((acc, curr) => acc + curr.tvq_amount, 0);
+    const totalExpenseTvq = expenses.reduce((acc: number, curr: any) => acc + curr.tvq_amount, 0);
 
     const revenueWithTax = totalCollectedRevenue.total;
     const revenuePreTax = revenueWithTax / taxMultiplier;
@@ -1217,22 +1217,80 @@ export async function updateProjectDetails(formData: FormData) {
 export async function createProject(formData: FormData) {
     const clientId = Number(formData.get('clientId'));
     const title = formData.get('title') as string;
-
-    const status = formData.get('status') as string;
+    const status = formData.get('status') as string || 'Concept';
     const dueDate = formData.get('dueDate') as string;
+    const templateId = formData.get('templateId') as string;
 
     if (!clientId || !title) return;
 
     await ensureProjectFeatures();
 
-    await db.execute({
+    const projectRes = await db.execute({
         sql: 'INSERT INTO projects (client_id, title, status, due_date) VALUES (?, ?, ?, ?)',
         args: [clientId, title, status, dueDate]
     });
 
+    const projectId = Number(projectRes.lastInsertRowid);
+
+    // Template Logic
+    if (templateId && templateId !== 'none') {
+        const today = new Date();
+        const formatDate = (d: Date) => d.toISOString().split('T')[0];
+
+        if (templateId === 'reel_pack') {
+            // 4 Shoots, 1 video each
+            for (let i = 1; i <= 4; i++) {
+                const shootDate = new Date(today);
+                shootDate.setDate(today.getDate() + (i * 7)); // One per week
+
+                const shootRes = await db.execute({
+                    sql: 'INSERT INTO shoots (client_id, project_id, title, shoot_date, status, color) VALUES (?, ?, ?, ?, ?, ?)',
+                    args: [clientId, projectId, `Reel #${i} - ${title}`, formatDate(shootDate), 'Planned', 'violet']
+                });
+
+                const shootId = Number(shootRes.lastInsertRowid);
+                await db.execute({
+                    sql: 'INSERT INTO shoot_videos (shoot_id, title) VALUES (?, ?)',
+                    args: [shootId, `Final Reel #${i}`]
+                });
+            }
+        } else if (templateId === 'podcast') {
+            // 1 Shoot, 3 videos
+            const shootRes = await db.execute({
+                sql: 'INSERT INTO shoots (client_id, project_id, title, shoot_date, status, color) VALUES (?, ?, ?, ?, ?, ?)',
+                args: [clientId, projectId, `Podcast Recording - ${title}`, formatDate(today), 'Planned', 'emerald']
+            });
+            const shootId = Number(shootRes.lastInsertRowid);
+            
+            const vids = ['Full Episode', 'Short Clip #1', 'Short Clip #2'];
+            for (const v of vids) {
+                await db.execute({
+                    sql: 'INSERT INTO shoot_videos (shoot_id, title) VALUES (?, ?)',
+                    args: [shootId, v]
+                });
+            }
+        } else if (templateId === 'bundle_10') {
+            // 2 Shoots, 5 videos each
+            for (let i = 1; i <= 2; i++) {
+                const shootRes = await db.execute({
+                    sql: 'INSERT INTO shoots (client_id, project_id, title, shoot_date, status, color) VALUES (?, ?, ?, ?, ?, ?)',
+                    args: [clientId, projectId, `Batch Shoot #${i}`, formatDate(today), 'Planned', 'blue']
+                });
+                const shootId = Number(shootRes.lastInsertRowid);
+                for (let j = 1; j <= 5; j++) {
+                    await db.execute({
+                        sql: 'INSERT INTO shoot_videos (shoot_id, title) VALUES (?, ?)',
+                        args: [shootId, `Video ${((i - 1) * 5) + j}`]
+                    });
+                }
+            }
+        }
+    }
+
     try {
-        await logActivity('PROJECT_CREATED', `New project: ${title}`, clientId, 'client');
+        await logActivity('PROJECT_CREATED', `New project: ${title}${templateId !== 'none' ? ` (Template: ${templateId})` : ''}`, clientId, 'client');
     } catch (e) { console.error('Log error', e); }
+    
     revalidatePath(`/clients/${clientId}`);
 }
 
@@ -2747,4 +2805,46 @@ export async function getProjectPostProdWorkflows(projectId: number) {
         console.error('getProjectPostProdWorkflows failed:', e);
         return [];
     }
+}
+
+export async function getProfitabilityData() {
+    const session = await auth();
+    const isAdmin = session?.user?.role === 'Admin' || session?.user?.role === 'Team';
+    if (!isAdmin) return [];
+
+    const { rows } = await db.execute(`
+        SELECT 
+            p.id, p.title, p.status, p.created_at,
+            c.company_name as client_name,
+            (SELECT COALESCE(SUM(ps.rate * ps.quantity), 0) FROM project_services ps WHERE ps.project_id = p.id) as revenue_pre_tax,
+            (SELECT COALESCE(SUM(pc.amount), 0) FROM project_costs pc WHERE pc.project_id = p.id) as direct_costs,
+            (SELECT COALESCE(SUM(
+                CASE 
+                    WHEN com.rate_type = 'Fixed' THEN com.rate_value
+                    WHEN com.rate_type = 'Percentage' THEN (SELECT COALESCE(SUM(ps2.rate * ps2.quantity), 0) FROM project_services ps2 WHERE ps2.project_id = p.id) * (com.rate_value / 100)
+                    ELSE 0 
+                END
+            ), 0) FROM commissions com WHERE com.project_id = p.id) as commissions
+        FROM projects p
+        JOIN clients c ON p.client_id = c.id
+        WHERE p.status != 'Archived'
+        ORDER BY p.created_at DESC
+    `);
+
+    return rows.map((r: any) => {
+        const rev = Number(r.revenue_pre_tax);
+        const costs = Number(r.direct_costs);
+        const comms = Number(r.commissions);
+        const grossProfit = rev - costs - comms;
+        const margin = rev > 0 ? (grossProfit / rev) * 100 : 0;
+
+        return {
+            ...r,
+            revenue: rev,
+            direct_costs: costs,
+            commissions: comms,
+            gross_profit: grossProfit,
+            margin_percentage: margin
+        };
+    });
 }

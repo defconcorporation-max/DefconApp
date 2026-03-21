@@ -41,16 +41,16 @@ export default function GlobalQuickCreate({ isAdmin, agencies = [], clients = []
         document.addEventListener('keydown', handleKeyDown);
 
         // Global Event Listener for Command Menu
-        const handleOpenAction = (e: any) => {
+        const handleOpenAction = (e: CustomEvent) => {
             const action = e.detail;
             setActiveModal(action);
             setIsOpen(false); // Close FAB menu if it was open
         };
-        window.addEventListener('open-quick-create', handleOpenAction);
+        window.addEventListener('open-quick-create', handleOpenAction as EventListener);
 
         return () => {
             document.removeEventListener('keydown', handleKeyDown);
-            window.removeEventListener('open-quick-create', handleOpenAction);
+            window.removeEventListener('open-quick-create', handleOpenAction as EventListener);
         };
     }, []);
 
@@ -61,6 +61,7 @@ export default function GlobalQuickCreate({ isAdmin, agencies = [], clients = []
 
     const [projectTitle, setProjectTitle] = useState('');
     const [projectClientId, setProjectClientId] = useState('');
+    const [projectTemplate, setProjectTemplate] = useState('none');
 
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -85,9 +86,8 @@ export default function GlobalQuickCreate({ isAdmin, agencies = [], clients = []
             setClientCompany('');
             setClientAgencyId('');
             router.refresh(); // Refresh current page to show new data
-        } catch (error) {
-            console.error(error);
-            toast.error('Failed to create client');
+        } catch (e: any) {
+            toast.error(e.message || "Failed to create client");
         } finally {
             setIsSubmitting(false);
         }
@@ -102,6 +102,7 @@ export default function GlobalQuickCreate({ isAdmin, agencies = [], clients = []
             formData.append('clientId', projectClientId);
             formData.append('status', 'Concept');
             formData.append('pipelineStage', 'planning');
+            formData.append('templateId', projectTemplate);
 
             const { createProject } = await import('@/app/actions');
             await createProject(formData);
@@ -110,10 +111,10 @@ export default function GlobalQuickCreate({ isAdmin, agencies = [], clients = []
             setActiveModal(null);
             setProjectTitle('');
             setProjectClientId('');
+            setProjectTemplate('none');
             router.refresh();
-        } catch (error) {
-            console.error(error);
-            toast.error('Failed to create project');
+        } catch (e: any) {
+            toast.error(e.message || "Failed to create project");
         } finally {
             setIsSubmitting(false);
         }
@@ -266,28 +267,42 @@ export default function GlobalQuickCreate({ isAdmin, agencies = [], clients = []
                                         value={projectTitle}
                                         onChange={(e) => setProjectTitle(e.target.value)}
                                         placeholder="e.g. Summer Campaign"
-                                        className="w-full bg-[var(--bg-root)] border border-[var(--border-subtle)] rounded-lg py-2.5 px-3 text-sm text-white focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all"
+                                        className="w-full bg-[var(--bg-root)] border border-[var(--border-subtle)] rounded-lg py-2.5 px-3 text-sm text-white focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all font-medium"
                                         required
                                     />
                                 </div>
                                 <div className="space-y-1.5">
-                                    <label className="text-xs font-medium text-[var(--text-secondary)] uppercase">Client</label>
+                                    <label className="text-xs font-medium text-[var(--text-secondary)] uppercase">Assign to Client</label>
                                     <select
                                         value={projectClientId}
                                         onChange={(e) => setProjectClientId(e.target.value)}
                                         className="w-full bg-[var(--bg-root)] border border-[var(--border-subtle)] rounded-lg py-2.5 px-3 text-sm text-white focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all appearance-none"
                                         required
                                     >
-                                        <option value="" disabled>Select a client</option>
+                                        <option value="">Select a Client</option>
                                         {clients.map(c => (
                                             <option key={c.id} value={c.id}>{c.company_name || c.name}</option>
                                         ))}
                                     </select>
                                 </div>
+                                <div className="space-y-1.5">
+                                    <label className="text-xs font-medium text-[var(--text-secondary)] uppercase">Automation Template</label>
+                                    <select
+                                        value={projectTemplate}
+                                        onChange={(e) => setProjectTemplate(e.target.value)}
+                                        className="w-full bg-[var(--bg-root)] border border-[var(--border-subtle)] rounded-lg py-2.5 px-3 text-sm text-white focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all appearance-none border-emerald-500/20"
+                                    >
+                                        <option value="none">Standard (No automation)</option>
+                                        <option value="reel_pack">Reel Pack (4 Shoots + 4 Videos)</option>
+                                        <option value="podcast">Podcast (1 Shoot + 3 Videos)</option>
+                                        <option value="bundle_10">Short-form Bundle (2 Shoots + 10 Videos)</option>
+                                    </select>
+                                    <p className="text-[10px] text-[var(--text-tertiary)] italic">Automatically generates all required shoots and deliverables.</p>
+                                </div>
                                 <div className="pt-2 flex justify-end gap-3">
                                     <button type="button" onClick={() => setActiveModal(null)} className="px-4 py-2 text-sm text-[var(--text-secondary)] hover:text-white transition-colors">Cancel</button>
                                     <button type="submit" disabled={isSubmitting || !projectClientId} className="bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2 rounded-lg text-sm font-medium transition-all shadow-lg shadow-emerald-600/20 disabled:opacity-50">
-                                        {isSubmitting ? 'Saving...' : 'Create Project'}
+                                        {isSubmitting ? 'Creating...' : 'Create Project'}
                                     </button>
                                 </div>
                             </form>

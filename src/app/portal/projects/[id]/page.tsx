@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { LogOut, ArrowLeft, Folder, Video, Calendar, FileText, MessageSquare } from 'lucide-react';
 import ClientDeliverableComments from '@/components/portal/ClientDeliverableComments';
+import ProductionTracker from '@/components/portal/ProductionTracker';
 
 export const dynamic = 'force-dynamic';
 
@@ -59,6 +60,12 @@ export default async function ClientProjectPage({ params }: { params: Promise<{ 
             </header>
 
             <div className="max-w-4xl mx-auto px-4 md:px-8 py-12 space-y-12">
+                {/* PROD TRACKER */}
+                <div className="pro-card p-6 md:p-8">
+                    <h3 className="section-label mb-8">Production Progress</h3>
+                    <ProductionTracker projectStatus={project.status} shoots={shoots} />
+                </div>
+
                 {/* Meta */}
                 <div className="flex justify-between items-start flex-wrap gap-4">
                     <div>

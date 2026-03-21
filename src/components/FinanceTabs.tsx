@@ -6,6 +6,7 @@ import ProjectFinancialList from '@/components/ProjectFinancialList';
 import CommissionTracker from '@/components/CommissionTracker';
 import ExpenseManager from '@/components/ExpenseManager';
 import RevenueChart from '@/components/RevenueChart';
+import ProfitabilityView from '@/components/ProfitabilityView';
 import { Commission, Settings } from '@/types';
 
 interface FinanceTabsProps {
@@ -13,14 +14,16 @@ interface FinanceTabsProps {
     commissions: Commission[];
     settings: Settings;
     projectValues: Record<number, number>;
+    profitabilityData: any[];
 }
 
-export default function FinanceTabs({ data, commissions, settings, projectValues }: FinanceTabsProps) {
+export default function FinanceTabs({ data, commissions, settings, projectValues, profitabilityData }: FinanceTabsProps) {
     const [activeTab, setActiveTab] = useState('overview');
 
     const tabs = [
         { id: 'overview', label: 'Overview', icon: <PieChart size={16} /> },
         { id: 'income', label: 'Income', icon: <DollarSign size={16} /> },
+        { id: 'profitability', label: 'Profitability', icon: <LayoutGrid size={16} /> },
         { id: 'expenses', label: 'Expenses', icon: <Receipt size={16} /> },
         { id: 'commissions', label: 'Commissions', icon: <Users size={16} /> },
     ];
@@ -164,6 +167,11 @@ export default function FinanceTabs({ data, commissions, settings, projectValues
                 {/* COMMISSIONS TAB */}
                 {activeTab === 'commissions' && (
                     <CommissionTracker commissions={commissions} projectValues={projectValues} />
+                )}
+
+                {/* PROFITABILITY TAB */}
+                {activeTab === 'profitability' && (
+                    <ProfitabilityView data={profitabilityData} />
                 )}
 
             </div>

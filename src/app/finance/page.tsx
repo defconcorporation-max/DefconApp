@@ -1,4 +1,4 @@
-import { getAllCommissions, getFinanceData } from '@/app/actions';
+import { getAllCommissions, getFinanceData, getProfitabilityData } from '@/app/actions';
 import FinanceTabs from '@/components/FinanceTabs';
 import PageLayout from '@/components/layout/PageLayout';
 
@@ -7,6 +7,7 @@ export const dynamic = 'force-dynamic';
 export default async function FinancePage() {
   const data = await getFinanceData();
   const commissions = await getAllCommissions();
+  const profitabilityData = await getProfitabilityData();
 
   const projectValues = Object.fromEntries(
     (data.projects || []).map((p: any) => [p.id, p.total_value ?? 0])
@@ -27,6 +28,7 @@ export default async function FinancePage() {
         commissions={commissions}
         settings={data.settings}
         projectValues={projectValues}
+        profitabilityData={profitabilityData}
       />
     </PageLayout>
   );
