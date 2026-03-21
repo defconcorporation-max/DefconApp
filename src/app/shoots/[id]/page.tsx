@@ -14,6 +14,7 @@ import VideoTitleEditor from '@/components/VideoTitleEditor';
 import CreativeDirector from '@/components/shoot/CreativeDirector';
 import ShootPlanPDF from '@/components/shoot/ShootPlanPDF';
 import { ToastForm } from '@/components/ToastForm';
+import PageLayout from '@/components/layout/PageLayout';
 
 export default async function ShootPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
@@ -109,52 +110,44 @@ export default async function ShootPage({ params }: { params: Promise<{ id: stri
     // Or just a save button.
 
     return (
-        <main className="min-h-screen bg-[var(--bg-root)] p-8">
-            <Link
-                href={shoot.project_id ? `/projects/${shoot.project_id}?tab=shoots` : `/clients/${shoot.client_id}`}
-                className="inline-flex items-center text-sm text-[var(--text-tertiary)] hover:text-white mb-6 transition-colors"
-            >
-                ← Back to {shoot.project_title ? `Project: ${shoot.project_title}` : `Client: ${shoot.client_company || shoot.client_name}`}
-            </Link>
-
-            <div className="max-w-4xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <PageLayout
+            breadcrumbs={[
+                { label: 'Dashboard', href: '/' },
+                { label: 'Clients', href: '/clients' },
+                { label: shoot.client_company || shoot.client_name || 'Client', href: `/clients/${shoot.client_id}` },
+                ...(shoot.project_title ? [{ label: shoot.project_title, href: `/projects/${shoot.project_id}` }] : []),
+                { label: shoot.title }
+            ]}
+            title={shoot.title}
+            subtitle={
+                <div className="flex items-center gap-4 mt-2">
+                    <div className={`px-2.5 py-0.5 rounded-full text-[10px] font-medium border items-center gap-1.5 flex uppercase tracking-wide ${shoot.status === 'Completed' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' :
+                        shoot.status === 'Cancelled' ? 'bg-red-500/10 border-red-500/20 text-red-400' :
+                            'bg-indigo-500/10 border-indigo-500/20 text-indigo-400'
+                        }`}>
+                        <div className={`w-1.5 h-1.5 rounded-full ${shoot.status === 'Completed' ? 'bg-emerald-500' : shoot.status === 'Cancelled' ? 'bg-red-500' : 'bg-indigo-500'}`}></div>
+                        {shoot.status || 'Scheduled'}
+                    </div>
+                </div>
+            }
+            actions={
+                <div className="flex items-center gap-3">
+                    <ShootPlanPDF
+                        shootId={shoot.id}
+                        shootTitle={shoot.title}
+                        clientName={shoot.client_company || shoot.client_name}
+                        shootDate={shoot.shoot_date}
+                        concept={shoot.concept || undefined}
+                        mood={shoot.mood || undefined}
+                        shotList={shoot.shot_list || undefined}
+                    />
+                </div>
+            }
+        >
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
                 {/* Main Content: Shot List */}
                 <div className="lg:col-span-2 space-y-8">
-                    <header className="border-b border-[var(--border-subtle)] pb-6">
-                        <h1 className="text-3xl font-medium text-white tracking-tight mb-2">{shoot.title}</h1>
-                        <div className="flex items-center gap-4">
-                            <span className="text-[var(--text-secondary)] flex items-center gap-2">
-                                <Link href={`/clients/${shoot.client_id}`} className="hover:text-white transition-colors hover:underline">
-                                    {shoot.client_company || shoot.client_name}
-                                </Link>
-                                {shoot.project_title && (
-                                    <>
-                                        <span className="text-[var(--text-tertiary)]">•</span>
-                                        <Link href={`/projects/${shoot.project_id}`} className="text-[var(--text-tertiary)] hover:text-white transition-colors hover:underline">
-                                            {shoot.project_title}
-                                        </Link>
-                                    </>
-                                )}
-                            </span>
-                            <div className={`px-2.5 py-0.5 rounded-full text-[10px] font-medium border items-center gap-1.5 flex uppercase tracking-wide ${shoot.status === 'Completed' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' :
-                                shoot.status === 'Cancelled' ? 'bg-red-500/10 border-red-500/20 text-red-400' :
-                                    'bg-indigo-500/10 border-indigo-500/20 text-indigo-400'
-                                }`}>
-                                <div className={`w-1.5 h-1.5 rounded-full ${shoot.status === 'Completed' ? 'bg-emerald-500' : shoot.status === 'Cancelled' ? 'bg-red-500' : 'bg-indigo-500'}`}></div>
-                                {shoot.status || 'Scheduled'}
-                            </div>
-                            <ShootPlanPDF
-                                shootId={shoot.id}
-                                shootTitle={shoot.title}
-                                clientName={shoot.client_company || shoot.client_name}
-                                shootDate={shoot.shoot_date}
-                                concept={shoot.concept || undefined}
-                                mood={shoot.mood || undefined}
-                                shotList={shoot.shot_list || undefined}
-                            />
-                        </div>
-                    </header>
 
                     <div className="mb-6">
                         <AssignmentControl
@@ -469,6 +462,6 @@ export default async function ShootPage({ params }: { params: Promise<{ id: stri
                 </div>
 
             </div>
-        </main>
+        </PageLayout>
     );
 }

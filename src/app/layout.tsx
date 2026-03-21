@@ -60,8 +60,8 @@ export default async function RootLayout({
     <html lang="en">
       <body className={`${inter.className} bg-[#09090b] text-[var(--text-primary)] flex overflow-x-hidden min-h-screen relative`}>
         {/* Ambient Background Glows */}
-        <div className="fixed top-[-20%] left-[-10%] w-[50%] h-[50%] rounded-full bg-violet-900/20 blur-[120px] pointer-events-none z-0" />
-        <div className="fixed bottom-[-20%] right-[-10%] w-[50%] h-[50%] rounded-full bg-indigo-900/20 blur-[120px] pointer-events-none z-0" />
+        <div className="fixed top-[-10%] left-[-10%] w-[60%] h-[60%] rounded-full bg-violet-900/15 blur-[140px] pointer-events-none z-0 mix-blend-screen" />
+        <div className="fixed bottom-[-10%] right-[-10%] w-[60%] h-[60%] rounded-full bg-indigo-900/15 blur-[140px] pointer-events-none z-0 mix-blend-screen" />
         <Toaster
           position="bottom-right"
           toastOptions={{
@@ -82,7 +82,7 @@ export default async function RootLayout({
         {!isPublic && <CommandMenu />}
         {!isPublic && <GlobalQuickCreate isAdmin={isAdmin} clients={clients} agencies={agencies} />}
         <div className={`flex-1 min-w-0 transition-all duration-200 z-10 relative ${!isPublic ? 'md:ml-64 pt-16 md:pt-0' : ''}`}>
-          <div className="animate-in fade-in duration-500 slide-in-from-bottom-2 h-full">
+          <div className="h-full relative z-10">
             {children}
           </div>
         </div>

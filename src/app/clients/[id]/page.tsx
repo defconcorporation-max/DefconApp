@@ -8,8 +8,7 @@ import ClientTabs from '@/components/ClientTabs';
 import ClientAvatar from '@/components/ClientAvatar';
 import ClientValue from '@/components/ClientValue';
 import { auth } from '@/auth';
-
-
+import PageLayout from '@/components/layout/PageLayout';
 
 export default async function ClientPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
@@ -47,38 +46,31 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
     });
 
     return (
-        <main className="min-h-screen pb-20">
-            {/* Header */}
-            <header className="border-b border-[var(--border-subtle)] bg-[var(--bg-root)] sticky top-0 z-50 mb-8">
-                <div className="pro-container h-16 flex justify-between items-center">
-                    <div className="flex items-center gap-6">
-                        <Link href="/" className="text-[var(--text-tertiary)] hover:text-white transition-colors font-mono text-sm">
-                            ← BACK
-                        </Link>
-                        <div className="h-4 w-px bg-[var(--border-subtle)]"></div>
-                        <div className="flex items-center gap-3">
-                            {/* Avatar */}
-                            <ClientAvatar client={client} />
-
-                            <div className="flex flex-col">
-                                <h1 className="text-sm font-bold tracking-wide uppercase leading-tight">{client.company_name}</h1>
-                                <div className="flex items-center gap-2 mt-0.5">
-                                    <span className="pro-badge text-[10px] py-0.5">{client.plan}</span>
-                                    {/* Client Value (Admin Only) */}
-                                    <ClientValue client={client} isAdmin={isAdmin} />
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                        <FolderButton folderPath={client.folder_path} />
-                        <div className="w-px h-4 bg-[var(--border-subtle)]"></div>
-                        <ClientSettingsButton client={client} agencies={agencies} pipelineStages={pipelineStages} />
+        <PageLayout
+            breadcrumbs={[
+                { label: 'Dashboard', href: '/' },
+                { label: 'Clients', href: '/clients' },
+                { label: client.company_name || 'Client' }
+            ]}
+            title={client.company_name}
+            subtitle={
+                <div className="flex items-center gap-3 mt-1">
+                    <ClientAvatar client={client} />
+                    <div className="flex items-center gap-2">
+                        <span className="pro-badge text-[10px] py-0.5">{client.plan}</span>
+                        <ClientValue client={client} isAdmin={isAdmin} />
                     </div>
                 </div>
-            </header>
-
-            <div className="pro-container">
+            }
+            actions={
+                <div className="flex items-center gap-3">
+                    <FolderButton folderPath={client.folder_path} />
+                    <div className="w-px h-4 bg-[var(--border-subtle)]"></div>
+                    <ClientSettingsButton client={client} agencies={agencies} pipelineStages={pipelineStages} />
+                </div>
+            }
+        >
+            <div>
                 <ClientTabs
                     client={client}
                     projects={projects}
@@ -95,6 +87,6 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
                     teamMembers={teamMembers}
                 />
             </div>
-        </main>
+        </PageLayout>
     )
 }
