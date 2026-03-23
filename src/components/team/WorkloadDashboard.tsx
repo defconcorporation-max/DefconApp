@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, CheckSquare, LayoutGrid, CalendarDays } from 'lucide-react';
 import Link from 'next/link';
+import { formatDateKeyLocal, parseDateOnlyLocal, todayDateKeyLocal } from '@/lib/date-local';
 
 interface WorkloadDashboardProps {
     members: any[];
@@ -40,7 +41,7 @@ export default function WorkloadDashboard({ members, workload, startDateStr, end
         const start = new Date(baseStartDate);
         const end = new Date(endDateStr);
         while (start <= end) {
-            dates.push(start.toISOString().split('T')[0]);
+            dates.push(formatDateKeyLocal(start));
             start.setDate(start.getDate() + 1);
         }
     } else if (viewMode === 'weekly') {
@@ -50,12 +51,12 @@ export default function WorkloadDashboard({ members, workload, startDateStr, end
         for (let i = 0; i < 7; i++) {
             const d = new Date(start);
             d.setDate(d.getDate() + i);
-            dates.push(d.toISOString().split('T')[0]);
+            dates.push(formatDateKeyLocal(d));
         }
     } else if (viewMode === 'daily') {
         const start = new Date(baseStartDate);
         start.setDate(start.getDate() + dayOffset);
-        dates.push(start.toISOString().split('T')[0]);
+        dates.push(formatDateKeyLocal(start));
     }
 
     const currentWeekStart = new Date(baseStartDate);
@@ -64,7 +65,7 @@ export default function WorkloadDashboard({ members, workload, startDateStr, end
     currentWeekEnd.setDate(currentWeekEnd.getDate() + 6);
 
     const getDayHeader = (dateStr: string) => {
-        const d = new Date(dateStr);
+        const d = parseDateOnlyLocal(dateStr);
         return {
             dayName: d.toLocaleDateString('en-US', { weekday: 'short' }),
             dayNum: d.getDate(),
@@ -158,7 +159,7 @@ export default function WorkloadDashboard({ members, workload, startDateStr, end
                             {dates.map(dateStr => {
                                 const { dayName, dayNum, fullDate } = getDayHeader(dateStr);
                                 const isWeekend = dayName === 'Sat' || dayName === 'Sun';
-                                const isToday = dateStr === new Date().toISOString().split('T')[0];
+                                const isToday = dateStr === todayDateKeyLocal();
 
                                 return (
                                     <div key={dateStr} className={`flex-1 border-r border-[var(--border-subtle)] last:border-0 flex flex-col items-center justify-center py-2 ${viewMode === 'monthly' ? 'min-w-[40px]' : 'min-w-[160px]'} ${isWeekend ? 'bg-white/5' : ''} ${isToday ? 'bg-indigo-500/10' : ''}`}>

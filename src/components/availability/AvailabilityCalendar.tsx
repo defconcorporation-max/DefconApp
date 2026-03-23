@@ -9,6 +9,7 @@ import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import CalendarHeader from './CalendarHeader';
 import SlotModal from './SlotModal';
+import { parseLocalDateTime } from '@/lib/date-local';
 
 // Utility for merging classes
 function cn(...inputs: ClassValue[]) {
@@ -69,8 +70,8 @@ export default function AvailabilityCalendar({ initialSlots, initialShoots, init
 
     // Helper: Position logic
     const getSlotStyle = (start: string, end: string) => {
-        const startDate = new Date(start);
-        const endDate = new Date(end);
+        const startDate = parseLocalDateTime(start);
+        const endDate = parseLocalDateTime(end);
 
         const startH = getHours(startDate);
         const startM = getMinutes(startDate);

@@ -26,6 +26,7 @@ type ProjectDetailTabsProps = {
   stages: TaskStage[];
   teamMembers: TeamMember[];
   services: any[];
+  serviceCatalog: Service[];
   settings: any;
   projectCosts: any[];
   videosMap: Record<number, any[]>;

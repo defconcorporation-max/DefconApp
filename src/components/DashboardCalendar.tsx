@@ -1,7 +1,8 @@
 'use client';
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { ShootWithClient } from '@/types';
 import { addShoot, updateShoot, deleteShoot, getProjects } from '@/app/actions';
+import { dateKeyFromStored, formatDateKeyLocal, todayDateKeyLocal } from '@/lib/date-local';
 
 interface CalendarProps {
     shoots: ShootWithClient[];
@@ -32,6 +33,82 @@ export default function DashboardCalendar({ shoots, clients = [] }: CalendarProp
     const [availableProjects, setAvailableProjects] = useState<any[]>([]); // New State
     const [selectedTime, setSelectedTime] = useState<string>('');
     const [selectedColor, setSelectedColor] = useState<string>('indigo'); // Default color
+
+    // Drag & Drop State
+    const [dragShootId, setDragShootId] = useState<number | null>(null);
+    const [dropTarget, setDropTarget] = useState<string | null>(null); // "YYYY-MM-DD|HH:MM"
+
+    const handleDragStart = useCallback((e: React.DragEvent, shoot: ShootWithClient) => {
+        e.stopPropagation();
+        setDragShootId(shoot.id);
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', String(shoot.id));
+        // Make the drag image semi-transparent
+        if (e.currentTarget instanceof HTMLElement) {
+            e.currentTarget.style.opacity = '0.5';
+        }
+    }, []);
+
+    const handleDragEnd = useCallback((e: React.DragEvent) => {
+        setDragShootId(null);
+        setDropTarget(null);
+        if (e.currentTarget instanceof HTMLElement) {
+            e.currentTarget.style.opacity = '1';
+        }
+    }, []);
+
+    const handleDragOver = useCallback((e: React.DragEvent, dateStr: string, time?: string) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        setDropTarget(time ? `${dateStr}|${time}` : dateStr);
+    }, []);
+
+    const handleDragLeave = useCallback(() => {
+        setDropTarget(null);
+    }, []);
+
+    const handleDrop = useCallback(async (e: React.DragEvent, dateStr: string, hour?: number) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setDropTarget(null);
+        const shootId = parseInt(e.dataTransfer.getData('text/plain'), 10);
+        if (!shootId || isNaN(shootId)) return;
+        setDragShootId(null);
+
+        const shoot = shoots.find(s => s.id === shootId);
+        if (!shoot) return;
+
+        const formData = new FormData();
+        formData.append('id', String(shootId));
+        formData.append('clientId', String(shoot.client_id));
+        formData.append('title', shoot.title || 'Shoot');
+        formData.append('date', dateStr);
+        formData.append('color', shoot.color || 'indigo');
+        if (shoot.project_id) formData.append('projectId', String(shoot.project_id));
+        formData.append('dueDate', shoot.due_date || '');
+
+        if (hour !== undefined) {
+            const startTime = `${hour.toString().padStart(2, '0')}:00`;
+            formData.append('startTime', startTime);
+            // Keep same duration if shoot had end_time
+            if (shoot.start_time && shoot.end_time) {
+                const [sh, sm] = shoot.start_time.split(':').map(Number);
+                const [eh, em] = shoot.end_time.split(':').map(Number);
+                const durationM = (eh * 60 + em) - (sh * 60 + sm);
+                const newEndM = hour * 60 + durationM;
+                const endH = Math.floor(newEndM / 60);
+                const endMin = newEndM % 60;
+                formData.append('endTime', `${endH.toString().padStart(2, '0')}:${endMin.toString().padStart(2, '0')}`);
+            } else {
+                formData.append('endTime', shoot.end_time || '');
+            }
+        } else {
+            formData.append('startTime', shoot.start_time || '');
+            formData.append('endTime', shoot.end_time || '');
+        }
+
+        await updateShoot(formData);
+    }, [shoots]);
 
     // Calendar logic
     const year = currentDate.getFullYear();
@@ -127,7 +204,7 @@ export default function DashboardCalendar({ shoots, clients = [] }: CalendarProp
     const handleDateClick = (date: Date) => {
         setEditingShoot(null);
         setSelectedColor('indigo');
-        const dateString = date.toISOString().split('T')[0];
+        const dateString = formatDateKeyLocal(date);
         setSelectedDate(dateString);
         setSelectedTime('09:00');
         setIsModalOpen(true);
@@ -136,7 +213,7 @@ export default function DashboardCalendar({ shoots, clients = [] }: CalendarProp
     const handleTimeSlotClick = (date: Date, hour: number, minute: number = 0) => {
         setEditingShoot(null);
         setSelectedColor('indigo');
-        const dateString = date.toISOString().split('T')[0];
+        const dateString = formatDateKeyLocal(date);
         const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
         setSelectedDate(dateString);
         setSelectedTime(timeString);
@@ -319,7 +396,7 @@ export default function DashboardCalendar({ shoots, clients = [] }: CalendarProp
                 {/* View Switcher & Add Button */}
                 {!isCollapsed && (
                     <div className="flex gap-4">
-                        <button onClick={() => { setEditingShoot(null); setSelectedColor('indigo'); setSelectedDate(new Date().toISOString().split('T')[0]); setIsModalOpen(true); }} className="px-3 py-1 text-xs font-medium bg-white text-black rounded hover:bg-gray-200 transition-colors">
+                        <button onClick={() => { setEditingShoot(null); setSelectedColor('indigo'); setSelectedDate(todayDateKeyLocal()); setIsModalOpen(true); }} className="px-3 py-1 text-xs font-medium bg-white text-black rounded hover:bg-gray-200 transition-colors">
                             + Add Event
                         </button>
                         <div className="flex bg-[var(--bg-surface)] rounded-md border border-[var(--border-subtle)] p-0.5">
@@ -347,11 +424,18 @@ export default function DashboardCalendar({ shoots, clients = [] }: CalendarProp
                             <div className="grid grid-cols-7 auto-rows-fr min-h-[400px]">
                                 {days.map((date, idx) => {
                                     if (!date) return <div key={`empty-${idx}`} className="border-b border-r border-[var(--border-subtle)]/50 bg-[var(--bg-root)]/50 min-h-[100px]"></div>;
-                                    const dateString = date.toISOString().split('T')[0];
-                                    const dayShoots = shoots.filter(s => s.shoot_date === dateString);
+                                    const dateString = formatDateKeyLocal(date);
+                                    const dayShoots = shoots.filter(s => dateKeyFromStored(s.shoot_date) === dateString);
                                     const isToday = new Date().toDateString() === date.toDateString();
                                     return (
-                                        <div key={idx} onClick={() => handleDateClick(date)} className={`border-b border-r border-[var(--border-subtle)]/50 p-2 min-h-[100px] hover:bg-[var(--bg-surface-hover)] cursor-pointer group ${isToday ? 'bg-white/[0.02]' : ''}`}>
+                                        <div
+                                            key={idx}
+                                            onClick={() => handleDateClick(date)}
+                                            onDragOver={(e) => handleDragOver(e, dateString)}
+                                            onDragLeave={handleDragLeave}
+                                            onDrop={(e) => handleDrop(e, dateString)}
+                                            className={`border-b border-r border-[var(--border-subtle)]/50 p-2 min-h-[100px] hover:bg-[var(--bg-surface-hover)] cursor-pointer group transition-colors ${isToday ? 'bg-white/[0.02]' : ''} ${dropTarget === dateString ? 'bg-indigo-500/10 ring-1 ring-inset ring-indigo-500/30' : ''}`}
+                                        >
                                             <div className="flex justify-between items-start">
                                                 <span className={`text-xs font-mono mb-2 block ${isToday ? 'text-white font-bold' : 'text-[var(--text-tertiary)]'}`}>{date.getDate()}</span>
                                             </div>
@@ -359,7 +443,14 @@ export default function DashboardCalendar({ shoots, clients = [] }: CalendarProp
                                                 {dayShoots.map(shoot => {
                                                     const theme = getTheme(shoot.color);
                                                     return (
-                                                        <div key={shoot.id} onClick={(e) => handleEventClick(e, shoot)} className={`text-[10px] ${theme.bg} border ${theme.border} ${theme.text} px-1.5 py-0.5 rounded truncate hover:opacity-80 cursor-pointer transition-colors block border-l-2`}>
+                                                        <div
+                                                            key={shoot.id}
+                                                            draggable
+                                                            onDragStart={(e) => handleDragStart(e, shoot)}
+                                                            onDragEnd={handleDragEnd}
+                                                            onClick={(e) => handleEventClick(e, shoot)}
+                                                            className={`text-[10px] ${theme.bg} border ${theme.border} ${theme.text} px-1.5 py-0.5 rounded truncate hover:opacity-80 cursor-grab active:cursor-grabbing transition-colors block border-l-2 ${dragShootId === shoot.id ? 'opacity-50' : ''}`}
+                                                        >
                                                             <span className="opacity-70 mr-1">{shoot.start_time}</span>
                                                             {shoot.title}
                                                         </div>
@@ -409,19 +500,26 @@ export default function DashboardCalendar({ shoots, clients = [] }: CalendarProp
                                 {/* Columns - flex-1 min-w-0 pour que toute la semaine tienne à l'écran */}
                                 {days.map((date, dayIdx) => {
                                     if (!date) return null;
-                                    const dateString = date.toISOString().split('T')[0];
-                                    const dayShoots = shoots.filter(s => s.shoot_date === dateString);
+                                    const dateString = formatDateKeyLocal(date);
+                                    const dayShoots = shoots.filter(s => dateKeyFromStored(s.shoot_date) === dateString);
 
                                     return (
                                         <div key={dayIdx} className="flex-1 min-w-0 border-r border-[var(--border-subtle)]/30 last:border-r-0 relative group">
                                             {/* Horizontal Lines */}
-                                            {Array.from({ length: END_HOUR - START_HOUR + 1 }).map((_, i) => (
-                                                <div
-                                                    key={i}
-                                                    className="h-[48px] border-b border-white/[0.02] hover:bg-white/[0.02] transition-colors"
-                                                    onClick={() => handleTimeSlotClick(date, START_HOUR + i)}
-                                                ></div>
-                                            ))}
+                                            {Array.from({ length: END_HOUR - START_HOUR + 1 }).map((_, i) => {
+                                                const slotHour = START_HOUR + i;
+                                                const slotKey = `${dateString}|${slotHour.toString().padStart(2, '0')}:00`;
+                                                return (
+                                                    <div
+                                                        key={i}
+                                                        className={`h-[48px] border-b border-white/[0.02] hover:bg-white/[0.02] transition-colors ${dropTarget === slotKey ? 'bg-indigo-500/15 ring-1 ring-inset ring-indigo-500/40' : ''}`}
+                                                        onClick={() => handleTimeSlotClick(date, slotHour)}
+                                                        onDragOver={(e) => handleDragOver(e, dateString, `${slotHour.toString().padStart(2, '0')}:00`)}
+                                                        onDragLeave={handleDragLeave}
+                                                        onDrop={(e) => handleDrop(e, dateString, slotHour)}
+                                                    ></div>
+                                                );
+                                            })}
 
                                             {/* Events */}
                                             {dayShoots.map(shoot => {
@@ -431,9 +529,12 @@ export default function DashboardCalendar({ shoots, clients = [] }: CalendarProp
                                                 return (
                                                     <div
                                                         key={shoot.id}
+                                                        draggable
+                                                        onDragStart={(e) => handleDragStart(e, shoot)}
+                                                        onDragEnd={handleDragEnd}
                                                         onClick={(e) => handleEventClick(e, shoot)}
                                                         style={style}
-                                                        className={`absolute left-0.5 right-0.5 md:inset-x-1 ${theme.bg} border ${theme.border} rounded overflow-hidden hover:z-10 hover:opacity-90 transition-colors cursor-pointer group-event`}
+                                                        className={`absolute left-0.5 right-0.5 md:inset-x-1 ${theme.bg} border ${theme.border} rounded overflow-hidden hover:z-10 hover:opacity-90 transition-colors cursor-grab active:cursor-grabbing group-event ${dragShootId === shoot.id ? 'opacity-50 scale-95' : ''}`}
                                                     >
                                                         <div className={`h-full w-full border-l-2 p-0.5 md:p-1 flex flex-col justify-between min-w-0`} style={{ borderLeftColor: theme.dot.replace('bg-', 'rgb(').replace('500', '400') }}>
                                                             <div className={`font-medium ${theme.text} text-[8px] md:text-[10px] leading-tight truncate`}>{shoot.client_company || shoot.client_name}</div>

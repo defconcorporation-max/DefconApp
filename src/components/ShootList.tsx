@@ -3,8 +3,9 @@
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { Shoot, TeamMember, ShootAssignment } from '@/types';
-import { Video, Calendar, ArrowRight, ExternalLink, Filter, ArrowUpDown, Clock, Users } from 'lucide-react';
+import { Video, Calendar, ArrowRight, ExternalLink, Filter, ArrowUpDown, Clock, Users, Search, CalendarRange } from 'lucide-react';
 import ShootAssignmentWidget from '@/components/ShootAssignmentWidget';
+import { dateKeyFromStored, parseDateOnlyLocal } from '@/lib/date-local';
 
 interface EnhancedShoot extends Shoot {
     client_name: string;
@@ -30,14 +31,48 @@ export default function ShootList({ shoots, teamMembers, allAssignments }: Shoot
     const [sortBy, setSortBy] = useState<SortOption>('date');
     const [sortOrder, setSortOrder] = useState<SortOrder>('asc'); // Default Date ASC for calendar feel
     const [filterStatus, setFilterStatus] = useState<string>('All');
+    const [filterProject, setFilterProject] = useState<string>('All');
+    const [filterDateFrom, setFilterDateFrom] = useState<string>('');
+    const [filterDateTo, setFilterDateTo] = useState<string>('');
+    const [searchQuery, setSearchQuery] = useState<string>('');
     const [expandedShootId, setExpandedShootId] = useState<number | null>(null);
+
+    // Extract unique project titles for filter dropdown
+    const uniqueProjects = useMemo(() => {
+        const projects = new Set<string>();
+        shoots.forEach(s => { if (s.project_title) projects.add(s.project_title); });
+        return Array.from(projects).sort();
+    }, [shoots]);
 
     const filteredAndSortedShoots = useMemo(() => {
         let result = [...shoots];
 
-        // Filter
+        // Filter by status
         if (filterStatus !== 'All') {
             result = result.filter(s => s.status === filterStatus);
+        }
+
+        // Filter by project
+        if (filterProject !== 'All') {
+            result = result.filter(s => s.project_title === filterProject);
+        }
+
+        // Filter by date range
+        if (filterDateFrom) {
+            result = result.filter(s => s.shoot_date >= filterDateFrom);
+        }
+        if (filterDateTo) {
+            result = result.filter(s => s.shoot_date <= filterDateTo);
+        }
+
+        // Filter by search query (client name or shoot title)
+        if (searchQuery.trim()) {
+            const q = searchQuery.toLowerCase();
+            result = result.filter(s =>
+                s.client_name?.toLowerCase().includes(q) ||
+                s.title?.toLowerCase().includes(q) ||
+                s.project_title?.toLowerCase().includes(q)
+            );
         }
 
         // Sort
@@ -47,8 +82,8 @@ export default function ShootList({ shoots, teamMembers, allAssignments }: Shoot
 
             switch (sortBy) {
                 case 'date':
-                    valA = new Date(a.shoot_date).getTime();
-                    valB = new Date(b.shoot_date).getTime();
+                    valA = dateKeyFromStored(a.shoot_date);
+                    valB = dateKeyFromStored(b.shoot_date);
                     break;
                 case 'dueDate':
                     valA = a.due_date ? new Date(a.due_date).getTime() : (sortOrder === 'asc' ? 9999999999999 : 0);
@@ -74,7 +109,7 @@ export default function ShootList({ shoots, teamMembers, allAssignments }: Shoot
         });
 
         return result;
-    }, [shoots, sortBy, sortOrder, filterStatus]);
+    }, [shoots, sortBy, sortOrder, filterStatus, filterProject, filterDateFrom, filterDateTo, searchQuery]);
 
     const toggleSort = (option: SortOption) => {
         if (sortBy === option) {
@@ -95,7 +130,7 @@ export default function ShootList({ shoots, teamMembers, allAssignments }: Shoot
 
         const groups: Record<string, EnhancedShoot[]> = {};
         filteredAndSortedShoots.forEach(shoot => {
-            const date = new Date(shoot.shoot_date);
+            const date = parseDateOnlyLocal(shoot.shoot_date);
             const monthKey = date.toLocaleString('default', { month: 'long', year: 'numeric' });
             if (!groups[monthKey]) groups[monthKey] = [];
             groups[monthKey].push(shoot);
@@ -112,28 +147,85 @@ export default function ShootList({ shoots, teamMembers, allAssignments }: Shoot
         return map;
     }, [allAssignments]);
 
+    const hasActiveFilters = filterStatus !== 'All' || filterProject !== 'All' || filterDateFrom || filterDateTo || searchQuery;
+
     return (
         <div>
             {/* Toolbar */}
-            <div className="flex flex-wrap items-center gap-4 mb-6 bg-[#0A0A0A] border border-[var(--border-subtle)] p-3 rounded-lg sticky top-20 z-20 shadow-xl">
-                <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
-                    <Filter size={16} />
-                    <span>Filter:</span>
-                    <select
-                        value={filterStatus}
-                        onChange={(e) => setFilterStatus(e.target.value)}
-                        className="bg-black border border-[var(--border-subtle)] rounded px-2 py-1 text-white text-xs outline-none focus:border-violet-500"
-                    >
-                        <option value="All">All Statuses</option>
-                        <option value="Scheduled">Scheduled</option>
-                        <option value="Completed">Completed</option>
-                        <option value="Cancelled">Cancelled</option>
-                    </select>
+            <div className="flex flex-col gap-3 mb-6 bg-[#0A0A0A] border border-[var(--border-subtle)] p-3 rounded-lg sticky top-20 z-20 shadow-xl">
+                {/* Row 1: Search + Status + Project */}
+                <div className="flex flex-wrap items-center gap-3">
+                    {/* Search */}
+                    <div className="flex items-center gap-2 flex-1 min-w-[200px]">
+                        <Search size={16} className="text-[var(--text-tertiary)]" />
+                        <input
+                            type="text"
+                            placeholder="Rechercher client, shoot, projet..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="flex-1 bg-black border border-[var(--border-subtle)] rounded px-3 py-1.5 text-white text-xs outline-none focus:border-violet-500 placeholder:text-[var(--text-tertiary)]"
+                        />
+                    </div>
+
+                    <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
+                        <Filter size={16} />
+                        <select
+                            value={filterStatus}
+                            onChange={(e) => setFilterStatus(e.target.value)}
+                            className="bg-black border border-[var(--border-subtle)] rounded px-2 py-1 text-white text-xs outline-none focus:border-violet-500"
+                        >
+                            <option value="All">All Statuses</option>
+                            <option value="Scheduled">Scheduled</option>
+                            <option value="Completed">Completed</option>
+                            <option value="Cancelled">Cancelled</option>
+                        </select>
+                    </div>
+
+                    {uniqueProjects.length > 0 && (
+                        <select
+                            value={filterProject}
+                            onChange={(e) => setFilterProject(e.target.value)}
+                            className="bg-black border border-[var(--border-subtle)] rounded px-2 py-1 text-white text-xs outline-none focus:border-violet-500 max-w-[180px] truncate"
+                        >
+                            <option value="All">All Projects</option>
+                            {uniqueProjects.map(p => (
+                                <option key={p} value={p}>{p}</option>
+                            ))}
+                        </select>
+                    )}
+
+                    {/* Date range */}
+                    <div className="flex items-center gap-1 text-xs text-[var(--text-tertiary)]">
+                        <CalendarRange size={14} />
+                        <input
+                            type="date"
+                            value={filterDateFrom}
+                            onChange={(e) => setFilterDateFrom(e.target.value)}
+                            className="bg-black border border-[var(--border-subtle)] rounded px-1.5 py-1 text-white text-xs outline-none focus:border-violet-500 w-[120px]"
+                            placeholder="From"
+                        />
+                        <span>→</span>
+                        <input
+                            type="date"
+                            value={filterDateTo}
+                            onChange={(e) => setFilterDateTo(e.target.value)}
+                            className="bg-black border border-[var(--border-subtle)] rounded px-1.5 py-1 text-white text-xs outline-none focus:border-violet-500 w-[120px]"
+                            placeholder="To"
+                        />
+                    </div>
+
+                    {hasActiveFilters && (
+                        <button
+                            onClick={() => { setFilterStatus('All'); setFilterProject('All'); setFilterDateFrom(''); setFilterDateTo(''); setSearchQuery(''); }}
+                            className="text-[10px] text-red-400 hover:text-red-300 px-2 py-1 rounded border border-red-500/20 bg-red-500/5 hover:bg-red-500/10 transition-colors"
+                        >
+                            ✕ Clear
+                        </button>
+                    )}
                 </div>
 
-                <div className="h-4 w-px bg-[var(--border-subtle)] mx-2 hidden sm:block"></div>
-
-                <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)] flex-1 overflow-x-auto">
+                {/* Row 2: Sort */}
+                <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
                     <ArrowUpDown size={16} />
                     <span>Sort by:</span>
                     <div className="flex gap-1">
@@ -159,6 +251,9 @@ export default function ShootList({ shoots, teamMembers, allAssignments }: Shoot
                             </button>
                         ))}
                     </div>
+                    <span className="ml-auto text-xs text-[var(--text-tertiary)]">
+                        {filteredAndSortedShoots.length} shoot{filteredAndSortedShoots.length !== 1 ? 's' : ''}
+                    </span>
                 </div>
             </div>
 
@@ -179,8 +274,8 @@ export default function ShootList({ shoots, teamMembers, allAssignments }: Shoot
                                 <div key={shoot.id} className={`pro-card p-6 h-full relative group flex flex-col ${shoot.post_prod_status ? 'border-orange-500/30 bg-orange-500/5' : 'md:hover:border-violet-500/30'} transition-colors duration-200`}>
                                     <div className="flex justify-between items-start mb-4">
                                         <div className="flex flex-col items-center bg-white/5 px-3 py-1 rounded border border-white/5 min-w-[60px] group-hover:bg-violet-500/10 group-hover:border-violet-500/20 group-hover:text-violet-400 transition-colors">
-                                            <span className="text-xs text-gray-500 uppercase group-hover:text-violet-400/70">{new Date(shoot.shoot_date).toLocaleString('default', { month: 'short' })}</span>
-                                            <span className="text-xl font-bold">{new Date(shoot.shoot_date).getDate()}</span>
+                                            <span className="text-xs text-gray-500 uppercase group-hover:text-violet-400/70">{parseDateOnlyLocal(shoot.shoot_date).toLocaleString('default', { month: 'short' })}</span>
+                                            <span className="text-xl font-bold">{parseDateOnlyLocal(shoot.shoot_date).getDate()}</span>
                                         </div>
                                         <div className="flex flex-col items-end gap-1">
                                             {/* Agency Badge */}
@@ -265,7 +360,7 @@ export default function ShootList({ shoots, teamMembers, allAssignments }: Shoot
                                         <div className="flex flex-col gap-1">
                                             <span className="text-[var(--text-tertiary)] flex items-center gap-1">
                                                 <Calendar size={12} />
-                                                {new Date(shoot.shoot_date).toLocaleDateString()}
+                                                {parseDateOnlyLocal(shoot.shoot_date).toLocaleDateString()}
                                             </span>
                                             {shoot.due_date && (
                                                 <span className="text-red-400 flex items-center gap-1 font-medium">

@@ -2,6 +2,7 @@
 const nextConfig = {
     output: 'standalone',
     typescript: {
+        // Plusieurs fichiers hors-scope à corriger progressivement (strict)
         ignoreBuildErrors: true,
     },
     async headers() {

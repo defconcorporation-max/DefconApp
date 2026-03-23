@@ -105,7 +105,7 @@ export default function AnalyticsCharts({ volumeData, originData, completionData
                                     contentStyle={{ backgroundColor: '#111', borderColor: '#333', borderRadius: '8px' }}
                                     itemStyle={{ color: '#fff' }}
                                     labelFormatter={(label: any) => formatMonth(label as string)}
-                                    formatter={(value: number) => [formatCurrency(value), 'Revenue']}
+                                    formatter={(value: number | undefined) => [formatCurrency(value ?? 0), 'Revenue']}
                                 />
                                 <Area
                                     type="monotone"
@@ -144,7 +144,7 @@ export default function AnalyticsCharts({ volumeData, originData, completionData
                                     <Tooltip
                                         contentStyle={{ backgroundColor: '#111', borderColor: '#333', borderRadius: '8px' }}
                                         cursor={{ fill: '#ffffff10' }}
-                                        formatter={(value: number) => [formatCurrency(value), 'Revenue']}
+                                        formatter={(value: number | undefined) => [formatCurrency(value ?? 0), 'Revenue']}
                                     />
                                     <Bar dataKey="value" radius={[0, 4, 4, 0]}>
                                         {topClientsData.map((entry, index) => (
@@ -236,7 +236,7 @@ export default function AnalyticsCharts({ volumeData, originData, completionData
                                     <Tooltip
                                         contentStyle={{ backgroundColor: '#111', borderColor: '#333', borderRadius: '8px' }}
                                         cursor={{ fill: '#ffffff10' }}
-                                        formatter={(value: number) => [value, 'Shoots Assigned']}
+                                        formatter={(value: number | undefined) => [value ?? 0, 'Shoots Assigned']}
                                     />
                                     <Bar dataKey="value" name="Shoots" radius={[4, 4, 0, 0]}>
                                         {teamUtilizationData.map((entry, index) => (

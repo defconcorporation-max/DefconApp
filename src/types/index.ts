@@ -52,6 +52,12 @@ export interface Shoot {
     client_id: number;
     title: string;
     shoot_date: string;
+    estimated_hours?: number;
+    actual_hours?: number;
+    internal_cost?: number;
+    external_cost?: number;
+    gear_cost?: number;
+    revenue?: number;
     start_time?: string;
     end_time?: string;
     color?: string;

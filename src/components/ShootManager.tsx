@@ -7,6 +7,7 @@ import { useState, useTransition, useRef } from 'react';
 import { ArrowRight, Video } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import EmptyState from '@/components/EmptyState';
+import { parseDateOnlyLocal } from '@/lib/date-local';
 
 // Sub-component for individual shoot card
 function ShootCard({ shoot, videos, clientId }: { shoot: Shoot & { post_prod_status?: string, post_prod_id?: number }, videos: ShootVideo[], clientId: number }) {
@@ -22,8 +23,8 @@ function ShootCard({ shoot, videos, clientId }: { shoot: Shoot & { post_prod_sta
             <div className="p-4 flex items-center justify-between cursor-pointer hover:bg-white/5 transition-colors" onClick={() => setIsExpanded(!isExpanded)}>
                 <div className="flex gap-4 items-center">
                     <div className="flex flex-col items-center bg-white/5 px-3 py-1 rounded border border-white/5 min-w-[60px]">
-                        <span className="text-xs text-gray-500 uppercase">{new Date(shoot.shoot_date).toLocaleString('default', { month: 'short' })}</span>
-                        <span className="text-xl font-bold">{new Date(shoot.shoot_date).getDate()}</span>
+                        <span className="text-xs text-gray-500 uppercase">{parseDateOnlyLocal(shoot.shoot_date).toLocaleString('default', { month: 'short' })}</span>
+                        <span className="text-xl font-bold">{parseDateOnlyLocal(shoot.shoot_date).getDate()}</span>
                     </div>
                     <div>
                         <div className="flex items-center gap-2">

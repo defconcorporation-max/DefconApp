@@ -2,7 +2,7 @@
 
 import { turso as db } from '@/lib/turso';
 import { revalidatePath } from 'next/cache';
-import { Client, Shoot, ShootVideo, ShootVideoNote, PipelineStage, Task, SocialLink, ContentIdea, Project, Commission, TeamMember, Payment, Credential, ShootWithClient, BetaFeedback, ShootAssignment } from '@/types';
+import { Client, Shoot, ShootVideo, ShootVideoNote, PipelineStage, Task, SocialLink, ContentIdea, Project, Commission, TeamMember, Payment, Credential, ShootWithClient, BetaFeedback, ShootAssignment, Settings } from '@/types';
 import { auth } from '@/auth';
 import { taxAmountsFromSubtotal, taxMultiplierFromRates } from '@/lib/finance/tax';
 
@@ -769,14 +769,19 @@ export async function getFinanceData() {
             revenueChart: [],
             clients: [], // Or fetch agency clients with revenue if acceptable
             projects: [], // Or fetch agency projects
-            settings: { tax_tps_rate: 5, tax_tvq_rate: 9.975 },
+            settings: { id: 1, tax_tps_rate: 5, tax_tvq_rate: 9.975 },
             expensesList: []
         };
     }
 
     // Fetch tax rates
     const settingsRes = await db.execute('SELECT * FROM settings WHERE id = 1');
-    const settings = (settingsRes.rows[0] as unknown as { tax_tps_rate: any, tax_tvq_rate: any }) || { tax_tps_rate: 5, tax_tvq_rate: 9.975 };
+    const rawSettings = settingsRes.rows[0] as unknown as Partial<Settings> | undefined;
+    const settings: Settings = {
+        id: Number(rawSettings?.id ?? 1),
+        tax_tps_rate: Number(rawSettings?.tax_tps_rate ?? 5),
+        tax_tvq_rate: Number(rawSettings?.tax_tvq_rate ?? 9.975),
+    };
 
     const tps = Number(settings.tax_tps_rate);
     const tvq = Number(settings.tax_tvq_rate);
