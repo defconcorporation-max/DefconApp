@@ -1,8 +1,9 @@
 
 import { getProjectById, getClient, getSettings } from '@/app/actions';
 import { getProjectServices } from '@/lib/actions/project-services';
-import { Project, ProjectService } from '@/types';
+import { ProjectService } from '@/types';
 import Link from 'next/link';
+import { subtotalPreTaxFromLines, taxAmountsFromSubtotal, totalIncTaxFromSubtotal } from '@/lib/finance/tax';
 
 import InvoiceActions from '@/components/InvoiceActions';
 
@@ -17,14 +18,12 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
     const services = await getProjectServices(projectId) as ProjectService[];
     const settings = await getSettings();
 
-    // Calculations
-    const tpsRate = settings?.tax_tps_rate || 5;
-    const tvqRate = settings?.tax_tvq_rate || 9.975;
+    const tpsRate = Number.isFinite(Number(settings?.tax_tps_rate)) ? Number(settings?.tax_tps_rate) : 5;
+    const tvqRate = Number.isFinite(Number(settings?.tax_tvq_rate)) ? Number(settings?.tax_tvq_rate) : 9.975;
 
-    const subtotal = services.reduce((acc, curr) => acc + (curr.rate * curr.quantity), 0);
-    const tpsAmount = subtotal * (tpsRate / 100);
-    const tvqAmount = subtotal * (tvqRate / 100);
-    const total = subtotal + tpsAmount + tvqAmount;
+    const subtotal = subtotalPreTaxFromLines(services);
+    const { tps: tpsAmount, tvq: tvqAmount } = taxAmountsFromSubtotal(subtotal, tpsRate, tvqRate);
+    const total = totalIncTaxFromSubtotal(subtotal, tpsRate, tvqRate);
 
     const today = new Date().toLocaleDateString('fr-CA');
 
@@ -105,7 +104,7 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
                 <div className="flex justify-end">
                     <div className="w-64 space-y-2">
                         <div className="flex justify-between text-gray-600">
-                            <span>Subtotal</span>
+                            <span>Sous-total (avant taxes)</span>
                             <span>${subtotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                         </div>
                         <div className="flex justify-between text-gray-600 text-sm">

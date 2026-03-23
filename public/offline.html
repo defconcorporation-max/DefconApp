@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Defcon Hub — Hors ligne</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #050505;
+            color: #e0e0e0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            text-align: center;
+            padding: 2rem;
+        }
+        .container { max-width: 400px; }
+        .icon { font-size: 4rem; margin-bottom: 1.5rem; }
+        h1 { font-size: 1.5rem; margin-bottom: 0.5rem; color: #fff; }
+        p { color: #888; font-size: 0.9rem; line-height: 1.6; margin-bottom: 1.5rem; }
+        button {
+            background: #7c3aed;
+            color: white;
+            border: none;
+            padding: 0.75rem 2rem;
+            border-radius: 0.5rem;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        button:hover { opacity: 0.8; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="icon">📡</div>
+        <h1>Hors ligne</h1>
+        <p>Vous n'êtes pas connecté à Internet. Vérifiez votre connexion et réessayez.</p>
+        <button onclick="location.reload()">Réessayer</button>
+    </div>
+</body>
+</html>

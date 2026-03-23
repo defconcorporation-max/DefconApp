@@ -1,12 +1,7 @@
 'use server';
 
-import { createClient } from '@libsql/client';
+import { turso as client } from '@/lib/turso';
 import { revalidatePath } from 'next/cache';
-
-const client = createClient({
-    url: process.env.TURSO_DATABASE_URL as string,
-    authToken: process.env.TURSO_AUTH_TOKEN as string,
-});
 
 export async function recalculateProjectProfitability(projectId: string) {
     try {

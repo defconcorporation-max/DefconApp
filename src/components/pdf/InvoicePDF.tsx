@@ -1,7 +1,7 @@
 import React from 'react';
 import { Page, Text, View, Document, StyleSheet, Font } from '@react-pdf/renderer';
 import { Project, Client, ProjectService, Settings } from '@/types';
-import { taxAmountsFromSubtotal } from '@/lib/finance/tax';
+import { subtotalPreTaxFromLines, taxAmountsFromSubtotal, totalIncTaxFromSubtotal } from '@/lib/finance/tax';
 
 // Register fonts if needed, otherwise use standard fonts
 // Font.register({ family: 'Inter', src: '...' });
@@ -139,10 +139,11 @@ interface InvoicePDFProps {
 }
 
 export const InvoicePDF = ({ project, client, services, settings, invoiceNumber, date }: InvoicePDFProps) => {
-    // Calculate totals
-    const subtotal = services.reduce((acc, s) => acc + (s.rate * s.quantity), 0);
-    const { tps, tvq } = taxAmountsFromSubtotal(subtotal, settings.tax_tps_rate, settings.tax_tvq_rate);
-    const total = subtotal + tps + tvq;
+    const tpsRate = Number.isFinite(Number(settings.tax_tps_rate)) ? Number(settings.tax_tps_rate) : 5;
+    const tvqRate = Number.isFinite(Number(settings.tax_tvq_rate)) ? Number(settings.tax_tvq_rate) : 9.975;
+    const subtotal = subtotalPreTaxFromLines(services);
+    const { tps, tvq } = taxAmountsFromSubtotal(subtotal, tpsRate, tvqRate);
+    const total = totalIncTaxFromSubtotal(subtotal, tpsRate, tvqRate);
 
     const formatCurrency = (amount: number) => {
         return new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD' }).format(amount);
@@ -212,11 +213,11 @@ export const InvoicePDF = ({ project, client, services, settings, invoiceNumber,
                         <Text style={styles.totalValue}>{formatCurrency(subtotal)}</Text>
                     </View>
                     <View style={styles.totalRow}>
-                        <Text style={styles.totalLabel}>TPS ({settings.tax_tps_rate}%)</Text>
+                        <Text style={styles.totalLabel}>TPS ({tpsRate}%)</Text>
                         <Text style={styles.totalValue}>{formatCurrency(tps)}</Text>
                     </View>
                     <View style={styles.totalRow}>
-                        <Text style={styles.totalLabel}>TVQ ({settings.tax_tvq_rate}%)</Text>
+                        <Text style={styles.totalLabel}>TVQ ({tvqRate}%)</Text>
                         <Text style={styles.totalValue}>{formatCurrency(tvq)}</Text>
                     </View>
                     <View style={styles.grandTotal}>

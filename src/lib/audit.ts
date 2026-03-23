@@ -1,11 +1,6 @@
 'use server';
 
-import { createClient } from '@libsql/client';
-
-const client = createClient({
-    url: process.env.TURSO_DATABASE_URL as string,
-    authToken: process.env.TURSO_AUTH_TOKEN as string,
-});
+import { turso as client } from '@/lib/turso';
 
 export interface AuditLogData {
     companyId?: number;

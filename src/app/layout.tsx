@@ -25,6 +25,12 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   title: "Defcon Console",
   description: "Managing the empire.",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "DefconHub",
+  },
 };
 
 
@@ -86,6 +92,11 @@ export default async function RootLayout({
             {children}
           </div>
         </div>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `if ('serviceWorker' in navigator) { navigator.serviceWorker.register('/sw.js').catch(() => {}); }`,
+          }}
+        />
       </body>
     </html>
   );

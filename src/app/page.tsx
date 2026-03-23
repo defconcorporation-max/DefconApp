@@ -5,6 +5,8 @@ import ClientKanban from '@/components/ClientKanban';
 import TaskManager from '@/components/TaskManager';
 import ActivityFeed from '@/components/ActivityFeed';
 import CollapsibleSection from '@/components/dashboard/CollapsibleSection';
+import ThisWeekSummary from '@/components/dashboard/ThisWeekSummary';
+import AIDailySummary from '@/components/dashboard/AIDailySummary';
 import PageLayout from '@/components/layout/PageLayout';
 import { auth } from '@/auth';
 export const dynamic = 'force-dynamic';
@@ -79,6 +81,12 @@ export default async function Home() {
                     Voir le planning →
                 </Link>
             </div>
+
+            {/* AI Executive Summary */}
+            <AIDailySummary />
+
+            {/* This Week Summary */}
+            <ThisWeekSummary shoots={allShoots} tasks={tasks} />
 
             {financeData?.clients?.length > 0 && (
                 <div className="bg-[#0A0A0A] border border-[var(--border-subtle)] rounded-2xl overflow-hidden">
