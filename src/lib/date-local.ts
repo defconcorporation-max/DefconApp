@@ -3,6 +3,45 @@
  * Ne pas utiliser toISOString().split('T')[0] pour des clés de jour affichées à l’utilisateur.
  */
 
+/** Fuseau calendrier pour l’API / serveur (Vercel = UTC) — défaut Québec. */
+export const DEFAULT_BUSINESS_TIMEZONE =
+    typeof process !== 'undefined' && process.env?.BUSINESS_TIMEZONE
+        ? process.env.BUSINESS_TIMEZONE
+        : 'America/Toronto';
+
+/**
+ * YYYY-MM-DD pour une Date dans un fuseau IANA (ex. serveur en UTC, jour « métier » au Québec).
+ */
+export function formatDateKeyInTimeZone(d: Date, timeZone: string): string {
+    const parts = new Intl.DateTimeFormat('en-CA', {
+        timeZone,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+    }).formatToParts(d);
+    const y = parts.find((p) => p.type === 'year')?.value;
+    const m = parts.find((p) => p.type === 'month')?.value;
+    const day = parts.find((p) => p.type === 'day')?.value;
+    if (!y || !m || !day) return formatDateKeyLocal(d);
+    return `${y}-${m}-${day}`;
+}
+
+/** « Aujourd’hui » côté serveur : aligné sur le fuseau métier, pas sur UTC Vercel. */
+export function todayDateKeyBusiness(timeZone: string = DEFAULT_BUSINESS_TIMEZONE): string {
+    return formatDateKeyInTimeZone(new Date(), timeZone);
+}
+
+/** Ajoute N jours à une clé YYYY-MM-DD (arithmétique calendaire, sans heures). */
+export function addDaysToDateKey(dateKey: string, days: number): string {
+    const [y, mo, d] = dateKey.split('-').map(Number);
+    if (!y || !mo || !d) return dateKey;
+    const x = new Date(Date.UTC(y, mo - 1, d + days));
+    const yy = x.getUTCFullYear();
+    const mm = String(x.getUTCMonth() + 1).padStart(2, '0');
+    const dd = String(x.getUTCDate()).padStart(2, '0');
+    return `${yy}-${mm}-${dd}`;
+}
+
 export function formatDateKeyLocal(d: Date): string {
     const y = d.getFullYear();
     const m = String(d.getMonth() + 1).padStart(2, '0');

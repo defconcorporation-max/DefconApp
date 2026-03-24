@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { turso } from '@/lib/turso';
+import { addDaysToDateKey, todayDateKeyBusiness } from '@/lib/date-local';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,8 +16,9 @@ export async function GET() {
     }
 
     try {
-        const today = new Date().toISOString().split('T')[0];
-        const weekFromNow = new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0];
+        // Fuseau métier (Québec par défaut), pas UTC — cohérent avec shoot_date en base
+        const today = todayDateKeyBusiness();
+        const weekFromNow = addDaysToDateKey(today, 7);
 
         // Gather key metrics in parallel
         const [

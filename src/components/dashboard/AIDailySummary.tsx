@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Sparkles, RefreshCw } from 'lucide-react';
+import { parseDateOnlyLocal } from '@/lib/date-local';
 
 interface SummaryData {
     date: string;
@@ -53,7 +54,13 @@ export default function AIDailySummary() {
                     <div className="text-left">
                         <h3 className="text-sm font-bold text-white">Résumé exécutif</h3>
                         <p className="text-xs text-[var(--text-tertiary)]">
-                            {data?.date ? new Date(data.date + 'T00:00:00').toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }) : ''}
+                            {data?.date
+                                ? parseDateOnlyLocal(data.date).toLocaleDateString('fr-FR', {
+                                      weekday: 'long',
+                                      day: 'numeric',
+                                      month: 'long',
+                                  })
+                                : ''}
                         </p>
                     </div>
                 </div>
