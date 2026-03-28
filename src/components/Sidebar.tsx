@@ -188,8 +188,8 @@ export default function Sidebar({ userRole = '' }: { userRole?: string }) {
                 )}
             </AnimatePresence>
 
-            {/* Desktop Sidebar - Strictly Hidden on Mobile */}
-            <aside className="fixed left-0 top-0 bottom-0 w-64 bg-[#09090b]/40 backdrop-blur-2xl border-r border-white/5 z-40 hidden md:flex flex-col shadow-[4px_0_24px_rgba(0,0,0,0.5)]">
+            {/* Desktop Sidebar - Strictly Force-Hidden on Mobile */}
+            <aside className="fixed left-0 top-0 bottom-0 w-64 bg-[#09090b]/40 backdrop-blur-2xl border-r border-white/5 z-40 max-md:!hidden md:flex flex-col shadow-[4px_0_24px_rgba(0,0,0,0.5)]">
                 <div className="p-6">
                     <div className="flex items-center justify-between mb-8">
                         <div className="flex items-center gap-3">

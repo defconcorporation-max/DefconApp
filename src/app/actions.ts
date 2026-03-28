@@ -751,189 +751,120 @@ export async function getDashboardStats() {
 }
 
 export async function getFinanceData() {
-    const agencyId = await getAgencyFilter();
+    try {
+        const agencyId = await getAgencyFilter();
 
-    // If Agency User, return empty/safe structure (or we could implement agency-specific finance later)
-    if (agencyId) {
-        return {
-            stats: {
-                totalRevenue: 0,
-                revenueWithTax: 0,
-                pendingRevenueWithTax: 0,
-                taxes: { tps: 0, tvq: 0 },
-                taxesOwed: { tps: 0, tvq: 0 },
-                expenses: 0,
-                businessExpenses: 0,
-                netProfit: 0
-            },
-            revenueChart: [],
-            clients: [], // Or fetch agency clients with revenue if acceptable
-            projects: [], // Or fetch agency projects
-            settings: { id: 1, tax_tps_rate: 5, tax_tvq_rate: 9.975 },
-            expensesList: []
+        // If Agency User, return empty/safe structure
+        if (agencyId) {
+            return {
+                stats: { totalRevenue: 0, revenueWithTax: 0, pendingRevenueWithTax: 0, taxes: { tps: 0, tvq: 0 }, taxesOwed: { tps: 0, tvq: 0 }, expenses: 0, businessExpenses: 0, netProfit: 0 },
+                revenueChart: [],
+                clients: [],
+                projects: [],
+                settings: { id: 1, tax_tps_rate: 5, tax_tvq_rate: 9.975 },
+                expensesList: []
+            };
+        }
+
+        // Fetch tax rates
+        const settingsRes = await db.execute('SELECT * FROM settings WHERE id = 1');
+        const rawSettings = settingsRes.rows[0] as unknown as Partial<Settings> | undefined;
+        const settings: Settings = {
+            id: Number(rawSettings?.id ?? 1),
+            tax_tps_rate: Number(rawSettings?.tax_tps_rate ?? 5),
+            tax_tvq_rate: Number(rawSettings?.tax_tvq_rate ?? 9.975),
         };
-    }
 
-    // Fetch tax rates
-    const settingsRes = await db.execute('SELECT * FROM settings WHERE id = 1');
-    const rawSettings = settingsRes.rows[0] as unknown as Partial<Settings> | undefined;
-    const settings: Settings = {
-        id: Number(rawSettings?.id ?? 1),
-        tax_tps_rate: Number(rawSettings?.tax_tps_rate ?? 5),
-        tax_tvq_rate: Number(rawSettings?.tax_tvq_rate ?? 9.975),
-    };
+        const safeTps = Number.isFinite(settings.tax_tps_rate) ? settings.tax_tps_rate : 5;
+        const safeTvq = Number.isFinite(settings.tax_tvq_rate) ? settings.tax_tvq_rate : 9.975;
+        const taxMultiplier = taxMultiplierFromRates(safeTps, safeTvq);
 
-    const tps = Number(settings.tax_tps_rate);
-    const tvq = Number(settings.tax_tvq_rate);
-    const safeTps = Number.isFinite(tps) ? tps : 5;
-    const safeTvq = Number.isFinite(tvq) ? tvq : 9.975;
-    const taxMultiplier = taxMultiplierFromRates(safeTps, safeTvq);
+        // 1. Total Collected
+        const totalCollectedRes = await db.execute('SELECT COALESCE(SUM(amount), 0) as total FROM payments');
+        const totalCollectedRevenue = totalCollectedRes.rows[0] as unknown as { total: number };
 
+        // 2. Total Project Value
+        const totalProjectValueRes = await db.execute("SELECT COALESCE(SUM(ps.rate * ps.quantity), 0) as total FROM project_services ps JOIN projects p ON ps.project_id = p.id WHERE p.status != 'Archived'");
+        const totalProjectValue = totalProjectValueRes.rows[0] as unknown as { total: number };
 
-    // 1. Total Collected
-    const totalCollectedRes = await db.execute(`
-        SELECT COALESCE(SUM(amount), 0) as total 
-        FROM payments
-    `);
-    const totalCollectedRevenue = (totalCollectedRes.rows[0] as unknown as { total: number });
+        // 3. Client Performance
+        const clientsWithRevenueRes = await db.execute({
+            sql: `SELECT c.id, c.name, c.company_name, c.status,
+            (SELECT COUNT(*) FROM projects p WHERE p.client_id = c.id) as project_count,
+            (SELECT COALESCE(SUM(ps.rate * ps.quantity), 0) * ? FROM project_services ps JOIN projects p ON ps.project_id = p.id WHERE p.client_id = c.id) as total_revenue,
+            (SELECT COALESCE(SUM(pay.amount), 0) FROM payments pay WHERE pay.client_id = c.id) as total_paid
+            FROM clients c ORDER BY total_paid DESC`,
+            args: [taxMultiplier]
+        });
 
-    // 2. Total Project Value
-    const totalProjectValueRes = await db.execute(`
-        SELECT COALESCE(SUM(ps.rate * ps.quantity), 0) as total
-        FROM project_services ps
-        JOIN projects p ON ps.project_id = p.id
-        WHERE p.status != 'Archived' 
-    `);
-    const totalProjectValue = (totalProjectValueRes.rows[0] as unknown as { total: number });
+        // 4. Project List
+        const projectsRawRes = await db.execute(`SELECT p.*, c.company_name as client_company, ag.name as agency_name, ag.color as agency_color,
+            (SELECT COALESCE(SUM(rate * quantity), 0) FROM project_services ps WHERE ps.project_id = p.id) as total_value_pre_tax,
+            (SELECT COALESCE(SUM(amount), 0) FROM payments pay WHERE pay.project_id = p.id) as paid_amount
+            FROM projects p JOIN clients c ON p.client_id = c.id LEFT JOIN agencies ag ON c.agency_id = ag.id ORDER BY p.created_at DESC`);
+        
+        const projectsWithValue = (projectsRawRes.rows as any[]).map(p => ({
+            ...p,
+            total_value: p.total_value_pre_tax * taxMultiplier,
+            label_name: p.agency_name,
+            label_color: p.agency_color
+        }));
 
-    // 3. Client Performance
-    const clientsWithRevenueRes = await db.execute({
-        sql: `
-        SELECT c.id, c.name, c.company_name, c.status,
-        (SELECT COUNT(*) FROM projects p WHERE p.client_id = c.id) as project_count,
-        (SELECT COALESCE(SUM(ps.rate * ps.quantity), 0) * ?
-         FROM project_services ps 
-         JOIN projects p ON ps.project_id = p.id 
-         WHERE p.client_id = c.id) as total_revenue,
-        (SELECT COALESCE(SUM(pay.amount), 0)
-         FROM payments pay
-         WHERE pay.client_id = c.id) as total_paid
-        FROM clients c
-        ORDER BY total_paid DESC
-        `,
-        args: [taxMultiplier]
-    });
-    const clientsWithRevenue = clientsWithRevenueRes.rows;
-
-    // 4. Project List
-    const projectsRawRes = await db.execute(`
-        SELECT p.*, c.company_name as client_company,
-        ag.name as agency_name,
-        ag.color as agency_color,
-        (SELECT COALESCE(SUM(rate * quantity), 0) FROM project_services ps WHERE ps.project_id = p.id) as total_value_pre_tax,
-        (SELECT COALESCE(SUM(amount), 0) FROM payments pay WHERE pay.project_id = p.id) as paid_amount
-        FROM projects p
-        JOIN clients c ON p.client_id = c.id
-        LEFT JOIN agencies ag ON c.agency_id = ag.id
-        ORDER BY p.created_at DESC
-    `);
-    const projectsRaw = projectsRawRes.rows as any[];
-
-    const projectsWithValue = projectsRaw.map(p => ({
-        ...p,
-        total_value: p.total_value_pre_tax * taxMultiplier,
-        // map agency props to legacy label props if needed by older components, or just update components
-        label_name: p.agency_name,
-        label_color: p.agency_color
-    }));
-
-    // 5. Commission Expenses
-    // Filter out commissions linked to projects that are not yet "in production" (Planned or Archived)
-    // We only want commissions for Active or Completed projects to show as realized expenses
-    const paidCommissionsRes = await db.execute(`
-        SELECT c.* 
-        FROM commissions c
-        LEFT JOIN projects p ON c.project_id = p.id
-        WHERE c.status = 'Paid'
-        AND (c.project_id IS NULL OR (p.id IS NOT NULL AND p.status NOT IN ('Planned', 'Archived')))
-    `);
-    const paidCommissions = paidCommissionsRes.rows as unknown as Commission[];
-
-    let totalCommissionsPaid = 0;
-    for (const comm of paidCommissions) {
-        if (comm.rate_type === 'Fixed') {
-            totalCommissionsPaid += comm.rate_value;
-        } else {
-            if (comm.project_id) {
-                const projectTotalRes = await db.execute({
-                    sql: "SELECT SUM(rate * quantity) as total FROM project_services WHERE project_id = ?",
-                    args: [comm.project_id]
-                });
+        // 5. Commissions & Expenses
+        const paidCommissionsRes = await db.execute(`SELECT c.* FROM commissions c LEFT JOIN projects p ON c.project_id = p.id WHERE c.status = 'Paid' AND (c.project_id IS NULL OR (p.id IS NOT NULL AND p.status NOT IN ('Planned', 'Archived')))`);
+        const paidCommissions = paidCommissionsRes.rows as unknown as Commission[];
+        
+        let totalCommissionsPaid = 0;
+        for (const comm of paidCommissions) {
+            if (comm.rate_type === 'Fixed') totalCommissionsPaid += comm.rate_value;
+            else if (comm.project_id) {
+                const projectTotalRes = await db.execute({ sql: "SELECT SUM(rate * quantity) as total FROM project_services WHERE project_id = ?", args: [comm.project_id] });
                 const projectTotal = projectTotalRes.rows[0] as unknown as { total: number };
                 totalCommissionsPaid += (projectTotal?.total || 0) * (comm.rate_value / 100);
             }
         }
+
+        const expensesRes = await db.execute('SELECT * FROM expenses');
+        const expenses = expensesRes.rows as any[];
+        const totalExpensesPreTax = expenses.reduce((acc, curr) => acc + curr.amount_pre_tax, 0);
+        const totalExpenseTps = expenses.reduce((acc, curr) => acc + curr.tps_amount, 0);
+        const totalExpenseTvq = expenses.reduce((acc, curr) => acc + curr.tvq_amount, 0);
+
+        const revenueWithTax = totalCollectedRevenue.total;
+        const revenuePreTax = revenueWithTax / taxMultiplier;
+        const { tps: tpsCollected, tvq: tvqCollected } = taxAmountsFromSubtotal(revenuePreTax, safeTps, safeTvq);
+        const netProfit = revenuePreTax - totalCommissionsPaid - totalExpensesPreTax;
+
+        const revenueChartRes = await db.execute(`SELECT strftime('%Y-%m', date) as month, SUM(amount) as total FROM payments GROUP BY month ORDER BY month ASC LIMIT 6`);
+        
+        return {
+            stats: {
+                totalRevenue: Number(revenuePreTax) || 0,
+                revenueWithTax: Number(revenueWithTax) || 0,
+                pendingRevenueWithTax: Math.max(0, (totalProjectValue.total * taxMultiplier) - revenueWithTax),
+                taxes: { tps: tpsCollected, tvq: tvqCollected },
+                taxesOwed: { tps: Math.max(0, tpsCollected - totalExpenseTps), tvq: Math.max(0, tvqCollected - totalExpenseTvq) },
+                expenses: totalCommissionsPaid,
+                businessExpenses: totalExpensesPreTax,
+                netProfit: netProfit
+            },
+            revenueChart: revenueChartRes.rows.map((r: any) => ({ date: r.month, amount: r.total })),
+            clients: clientsWithRevenueRes.rows,
+            projects: projectsWithValue,
+            settings,
+            expensesList: expenses.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+        };
+    } catch (e) {
+        console.error("FINANCE DATA CRASHED:", e);
+        return {
+            stats: { totalRevenue: 0, revenueWithTax: 0, pendingRevenueWithTax: 0, taxes: { tps: 0, tvq: 0 }, taxesOwed: { tps: 0, tvq: 0 }, expenses: 0, businessExpenses: 0, netProfit: 0 },
+            revenueChart: [],
+            clients: [],
+            projects: [],
+            settings: { id: 1, tax_tps_rate: 5, tax_tvq_rate: 9.975 },
+            expensesList: []
+        };
     }
-
-    // 6. Business Expenses
-    const expensesRes = await db.execute('SELECT * FROM expenses');
-    const expenses = expensesRes.rows as any[];
-    const totalExpensesPreTax = expenses.reduce((acc, curr) => acc + curr.amount_pre_tax, 0);
-    const totalExpenseTps = expenses.reduce((acc, curr) => acc + curr.tps_amount, 0);
-    const totalExpenseTvq = expenses.reduce((acc: number, curr: any) => acc + curr.tvq_amount, 0);
-
-    const revenueWithTax = totalCollectedRevenue.total;
-    const revenuePreTax = revenueWithTax / taxMultiplier;
-    const globalProjectValuePreTax = totalProjectValue.total || 0;
-    const globalProjectValueIncTax = globalProjectValuePreTax * taxMultiplier;
-    const pendingRevenueIncTax = Math.max(0, globalProjectValueIncTax - revenueWithTax);
-
-    const { tps: tpsCollected, tvq: tvqCollected } = taxAmountsFromSubtotal(revenuePreTax, safeTps, safeTvq);
-
-    const tpsOwed = Math.max(0, tpsCollected - totalExpenseTps);
-    const tvqOwed = Math.max(0, tvqCollected - totalExpenseTvq);
-
-    const netProfit = revenuePreTax - totalCommissionsPaid - totalExpensesPreTax;
-
-    // 7. Revenue Chart Data (Last 6 Months)
-    const revenueChartRes = await db.execute(`
-        SELECT strftime('%Y-%m', date) as month, SUM(amount) as total
-        FROM payments
-        GROUP BY month
-        ORDER BY month ASC
-        LIMIT 6
-    `);
-    const revenueChartData = revenueChartRes.rows.map((r: any) => ({
-        date: r.month,
-        amount: r.total
-    }));
-
-    const toSafeNumber = (num: number) => Number.isFinite(num) ? num : 0;
-
-    return {
-        stats: {
-            totalRevenue: toSafeNumber(revenuePreTax),
-            revenueWithTax: toSafeNumber(revenueWithTax),
-            pendingRevenueWithTax: toSafeNumber(pendingRevenueIncTax),
-            taxes: {
-                tps: toSafeNumber(tpsCollected),
-                tvq: toSafeNumber(tvqCollected)
-            },
-            taxesOwed: {
-                tps: toSafeNumber(tpsOwed),
-                tvq: toSafeNumber(tvqOwed)
-            },
-            expenses: toSafeNumber(totalCommissionsPaid),
-            businessExpenses: toSafeNumber(totalExpensesPreTax),
-            netProfit: toSafeNumber(netProfit)
-        },
-        revenueChart: revenueChartData,
-
-        clients: clientsWithRevenue,
-        projects: projectsWithValue,
-        settings,
-        expensesList: expenses.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-    };
 }
 
 // Pipeline Stages

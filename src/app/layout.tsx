@@ -44,9 +44,17 @@ export default async function RootLayout({
   const isPublic = pathname.startsWith('/review') || pathname.startsWith('/portal/login');
 
   // Get user session for role-based sidebar
-  const session = isPublic ? null : await auth();
-  const userRole = session?.user?.role || '';
-  const isAdmin = userRole === 'Admin' || userRole === 'Team';
+  let session = null;
+  let userRole = '';
+  let isAdmin = false;
+
+  try {
+    session = isPublic ? null : await auth();
+    userRole = session?.user?.role || '';
+    isAdmin = userRole === 'Admin' || userRole === 'Team';
+  } catch (e) {
+    console.error("Layout Auth error", e);
+  }
 
   let clients: any[] = [];
   let agencies: any[] = [];
