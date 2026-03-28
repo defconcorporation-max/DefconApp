@@ -2,13 +2,14 @@ import { getClients, getAllShoots, getDashboardStats, getPipelineStages, getAllD
 import Link from 'next/link';
 import DashboardCalendar from '@/components/DashboardCalendar';
 import ClientKanban from '@/components/ClientKanban';
-import TaskManager from '@/components/TaskManager';
+import TasksBoard from '@/components/tasks/TasksBoard';
 import ActivityFeed from '@/components/ActivityFeed';
 import CollapsibleSection from '@/components/dashboard/CollapsibleSection';
 import ThisWeekSummary from '@/components/dashboard/ThisWeekSummary';
 import AIDailySummary from '@/components/dashboard/AIDailySummary';
 import PageLayout from '@/components/layout/PageLayout';
 import { auth } from '@/auth';
+import { getTasks } from '@/app/actions/task-actions';
 export const dynamic = 'force-dynamic';
 
 export default async function Home() {
@@ -30,7 +31,7 @@ export default async function Home() {
             getAllShoots(),
             getDashboardStats(),
             getPipelineStages(),
-            getAllDashboardTasks(),
+            getTasks(),
             getAgencies(),
             getActivities(),
             getFinanceData(),
@@ -144,8 +145,8 @@ export default async function Home() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
                 <div className="md:col-span-2">
-                    <CollapsibleSection id="tasks" title="Tâches" viewAllHref="/tasks" viewAllLabel="Voir tout">
-                        <TaskManager initialTasks={tasks} />
+                    <CollapsibleSection id="tasks" title="Tâches" viewAllHref="/tasks" viewAllLabel="Ouvrir le Kanban">
+                        <TasksBoard initialTasks={tasks} />
                     </CollapsibleSection>
                 </div>
                 <div className="md:col-span-1">

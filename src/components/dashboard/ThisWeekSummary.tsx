@@ -29,13 +29,15 @@ export default function ThisWeekSummary({ shoots, tasks, projects }: ThisWeekSum
     const todayShoots = shoots.filter(s => dateKeyFromStored(s.shoot_date) === today);
 
     // Overdue tasks (past due_date, not completed)
-    const overdueTasks = tasks.filter(t =>
-        !t.is_completed && t.due_date && t.due_date < today
-    );
+    const overdueTasks = tasks.filter(t => {
+        const isDone = t.status === 'Done' || t.is_completed;
+        return !isDone && t.due_date && t.due_date < today;
+    });
 
     // Tasks due this week
     const weekTasks = tasks.filter(t => {
-        if (t.is_completed || !t.due_date) return false;
+        const isDone = t.status === 'Done' || t.is_completed;
+        if (isDone || !t.due_date) return false;
         const d = new Date(t.due_date);
         return d >= startOfWeek && d <= endOfWeek;
     });
@@ -69,7 +71,7 @@ export default function ThisWeekSummary({ shoots, tasks, projects }: ThisWeekSum
             label: 'Tâches cette semaine',
             value: weekTasks.length,
             sublabel: weekTasks.length > 0
-                ? `${weekTasks.filter(t => t.is_completed).length}/${weekTasks.length} complétées`
+                ? `${weekTasks.filter(t => t.status === 'Done' || t.is_completed).length}/${weekTasks.length} complétées`
                 : 'Tout est à jour',
             color: 'text-amber-400',
         },
