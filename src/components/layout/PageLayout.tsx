@@ -1,3 +1,5 @@
+'use client';
+
 import Breadcrumb, { BreadcrumbItem } from '@/components/ui/Breadcrumb';
 import { motion } from 'framer-motion';
 
