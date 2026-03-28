@@ -378,7 +378,11 @@ export default function ProjectList({ projects }: ProjectListProps) {
                         title="No Projects Found"
                         description="There are no projects matching your current filters. Try changing your search or creating a new one."
                         actionLabel="Create Project"
-                        onAction={() => window.dispatchEvent(new CustomEvent('open-quick-create', { detail: 'project' }))}
+                        onAction={() => {
+                            if (typeof window !== 'undefined') {
+                                window.dispatchEvent(new CustomEvent('open-quick-create', { detail: 'project' }));
+                            }
+                        }}
                     />
                 </div>
             )}

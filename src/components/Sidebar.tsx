@@ -39,6 +39,7 @@ export default function Sidebar({ userRole = '' }: { userRole?: string }) {
 
     // Open command menu hint
     const openCommandMenu = () => {
+        if (typeof document === 'undefined') return;
         const event = new KeyboardEvent('keydown', { key: 'k', metaKey: true });
         document.dispatchEvent(event);
     };

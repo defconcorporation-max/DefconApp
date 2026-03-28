@@ -73,8 +73,8 @@ export default async function Home() {
             )}
 
             {/* KPI bar - Horizontal Scroll on Mobile */}
-            <div className="relative group">
-                <div className="overflow-x-auto pb-4 -mb-4 scrollbar-hide md:overflow-visible">
+            <div className="relative group w-full min-w-0">
+                <div className="overflow-x-auto pb-4 -mb-4 scrollbar-hide md:overflow-visible w-full">
                     <div className="flex items-center gap-4 md:gap-8 min-w-max md:min-w-0 bg-[#18181b]/40 backdrop-blur-xl border border-white/5 p-4 rounded-3xl shadow-xl">
                         {kpis.map((kpi) => (
                             <div key={kpi.label} className="flex flex-col md:flex-row md:items-baseline gap-1 md:gap-3 px-4 first:pl-2 border-r border-white/5 last:border-0">
