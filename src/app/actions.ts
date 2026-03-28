@@ -2092,6 +2092,10 @@ export async function getAvailabilitySlots() {
     try { await db.execute("ALTER TABLE shoots ADD COLUMN title TEXT DEFAULT ''"); } catch (e) { /* exists */ }
     try { await db.execute('ALTER TABLE shoots ADD COLUMN agency_id INTEGER'); } catch (e) { /* exists */ }
     try { await db.execute("ALTER TABLE shoots ADD COLUMN status TEXT DEFAULT 'Confirmed'"); } catch (e) { /* exists */ }
+    try { await db.execute('ALTER TABLE shoots ADD COLUMN shoot_type TEXT'); } catch (e) { /* exists */ }
+    try { await db.execute('ALTER TABLE shoots ADD COLUMN contact_name TEXT'); } catch (e) { /* exists */ }
+    try { await db.execute('ALTER TABLE shoots ADD COLUMN contact_email TEXT'); } catch (e) { /* exists */ }
+    try { await db.execute('ALTER TABLE shoots ADD COLUMN contact_phone TEXT'); } catch (e) { /* exists */ }
 
     // Fetch Slots (Manual Blocks)
     const { rows: slots } = await db.execute('SELECT * FROM availability_slots ORDER BY start_time ASC');

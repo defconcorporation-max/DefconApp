@@ -1,4 +1,5 @@
 'use server';
+import { revalidatePath } from 'next/cache';
 
 import { turso as db } from '@/lib/turso';
 
@@ -35,15 +36,20 @@ export async function submitPublicShootRequest(formData: FormData) {
     const combinedTitle = `${companyName} - ${requestType === 'shoot' ? projectType : (requestType === 'meeting_30' ? '30m Meeting' : '1h Meeting')}`;
 
     // 2. Insert directly into Shoots table so it shows on calendar
-    await db.execute({
-        sql: `INSERT INTO shoots 
-              (title, shoot_date, start_time, end_time, status, shoot_type, contact_name, contact_email, contact_phone, is_blocking, client_id) 
-              VALUES (?, ?, ?, ?, 'Pending', ?, ?, ?, ?, 0, ?)`,
-        args: [
-            combinedTitle, date, startTime, endTime, requestType, 
-            contactName, email, phone || null, placeholderClientId
-        ]
-    });
+    try {
+        await db.execute({
+            sql: `INSERT INTO shoots 
+                  (title, shoot_date, start_time, end_time, status, shoot_type, contact_name, contact_email, contact_phone, is_blocking, client_id) 
+                  VALUES (?, ?, ?, ?, 'Pending', ?, ?, ?, ?, 0, ?)`,
+            args: [
+                combinedTitle, date, startTime, endTime, requestType, 
+                contactName, email, phone || null, placeholderClientId
+            ]
+        });
+    } catch (e: any) {
+        console.error('Database insertion failed', e);
+        throw new Error('Database error: ' + (e?.message || 'Unknown error'));
+    }
 
     // 3. Trigger Webhook (GHL or anywhere else)
     const webhookUrl = process.env.GHL_WEBHOOK_URL;
@@ -61,6 +67,9 @@ export async function submitPublicShootRequest(formData: FormData) {
             console.error('Webhook payload failed, GHL might not receive it', e);
         }
     }
+
+    revalidatePath('/availability');
+    revalidatePath('/availability/share');
 
     return { success: true };
 }

@@ -63,6 +63,11 @@ export interface Shoot {
     color?: string;
     project_id?: number | null;
     status: string;
+    shoot_type?: string; 
+    contact_name?: string;
+    contact_email?: string;
+    contact_phone?: string;
+    is_blocking?: boolean;
     post_prod_status?: string;
     due_date?: string;
     // Creative Fields
