@@ -103,9 +103,23 @@ export interface PipelineStage {
 
 export interface Task {
     id: number;
-    content: string;
-    is_completed: boolean;
+    title: string;
+    description?: string;
+    status: string;
     order_index: number;
+    created_at: string;
+    updated_at?: string;
+    subtask_count?: number;
+    completed_subtask_count?: number;
+    is_readonly?: boolean;
+    href?: string;
+}
+
+export interface Subtask {
+    id: number;
+    task_id: number;
+    title: string;
+    is_completed: boolean;
     created_at: string;
 }
 

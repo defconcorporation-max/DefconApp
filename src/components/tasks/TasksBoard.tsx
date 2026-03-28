@@ -1,26 +1,28 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { updateTaskStatus, deleteTask, createTask } from '@/app/actions/task-actions';
-import { Plus, GripVertical, CheckCircle2, Circle, MoreHorizontal, Trash, ExternalLink } from 'lucide-react';
-
-interface Task {
-    id: number | string;
-    title: string;
-    description: string;
-    status: string;
-    created_at: string;
-    is_readonly?: boolean;
-    href?: string;
-}
+import { updateTaskStatus, deleteTask, createTask, getTasks } from '@/app/actions/task-actions';
+import { Plus, GripVertical, CheckCircle2, Circle, MoreHorizontal, Trash, ExternalLink, CheckSquare } from 'lucide-react';
+import TaskDetailModal from './TaskDetailModal';
+import { Task } from '@/types';
 
 export default function TasksBoard({ initialTasks }: { initialTasks: Task[] }) {
     const [tasks, setTasks] = useState<Task[]>(initialTasks);
+    const [selectedTask, setSelectedTask] = useState<Task | null>(null);
     
     // Synchronize state with props when dashboard reloads
     useEffect(() => {
         setTasks(initialTasks);
     }, [initialTasks]);
+
+    const refreshTasks = async () => {
+        try {
+            const fresh = await getTasks();
+            setTasks(fresh);
+        } catch (error) {
+            console.error(error);
+        }
+    };
 
     const [newTaskTitle, setNewTaskTitle] = useState('');
     const [addingTo, setAddingTo] = useState<string | null>(null);
@@ -34,7 +36,8 @@ export default function TasksBoard({ initialTasks }: { initialTasks: Task[] }) {
         }
     };
 
-    const handleDelete = async (taskId: number | string) => {
+    const handleDelete = async (e: React.MouseEvent, taskId: number | string) => {
+        e.stopPropagation();
         setTasks(prev => prev.filter(t => t.id !== taskId));
         if (typeof taskId === 'number') {
             await deleteTask(taskId);
@@ -48,7 +51,6 @@ export default function TasksBoard({ initialTasks }: { initialTasks: Task[] }) {
             return;
         }
 
-        // Optimistic UI updates could be added here
         const formData = new FormData();
         formData.append('title', newTaskTitle);
         formData.append('status', status);
@@ -58,9 +60,7 @@ export default function TasksBoard({ initialTasks }: { initialTasks: Task[] }) {
 
         try {
             await createTask(formData);
-            // Refresh logic usually handled by revalidatePath via server actions if we had useRouter().refresh(), 
-            // but Next.js forms or client refresh is fine. For simplicity, we trigger reload or let the user refresh.
-            window.location.reload();
+            refreshTasks();
         } catch (error) {
             console.error(error);
         }
@@ -81,40 +81,65 @@ export default function TasksBoard({ initialTasks }: { initialTasks: Task[] }) {
                             <span className="text-xs bg-white/10 px-2 py-0.5 rounded-full text-white/50">{columnTasks.length}</span>
                         </div>
 
-                        <div className="flex flex-col gap-3 flex-1 overflow-y-auto">
+                        <div className="flex flex-col gap-3 flex-1 overflow-y-auto pr-1 custom-scrollbar">
                             {columnTasks.map(task => (
-                                <div key={task.id} className="bg-[#1a1a1a] border border-white/5 rounded-xl p-4 shadow-sm hover:border-white/10 transition-colors group">
+                                <div 
+                                    key={task.id} 
+                                    onClick={() => !task.is_readonly && setSelectedTask(task)}
+                                    className={`bg-[#1a1a1a] border border-white/5 rounded-2xl p-4 shadow-sm transition-all group ${!task.is_readonly ? 'cursor-pointer hover:border-indigo-500/30 hover:bg-[#1e1e1e]' : ''}`}
+                                >
                                     <div className="flex justify-between items-start gap-2">
-                                        {task.is_readonly ? (
-                                            <a href={task.href} className="font-bold text-sm text-indigo-400 hover:text-indigo-300 transition-colors flex items-center gap-1 group/link">
+                                        {(task as any).is_readonly ? (
+                                            <a href={(task as any).href} className="font-bold text-sm text-indigo-400 hover:text-indigo-300 transition-colors flex items-center gap-1 group/link">
                                                 {task.title}
                                                 <ExternalLink size={12} className="opacity-0 group-hover/link:opacity-100 transition-opacity" />
                                             </a>
                                         ) : (
-                                            <div className="font-medium text-sm text-white/90">{task.title}</div>
+                                            <div className="font-bold text-sm text-white/90 group-hover:text-white transition-colors">{task.title}</div>
                                         )}
                                         
-                                        {!task.is_readonly && (
-                                            <button onClick={() => handleDelete(task.id)} className="text-white/20 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        {!(task as any).is_readonly && (
+                                            <button 
+                                                onClick={(e) => handleDelete(e, task.id)} 
+                                                className="text-white/20 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
+                                            >
                                                 <Trash size={14} />
                                             </button>
                                         )}
                                     </div>
+                                    
                                     {task.description && (
-                                        <div className="text-xs text-white/50 mt-2 line-clamp-2">{task.description}</div>
+                                        <div className="text-xs text-white/40 mt-2 line-clamp-2 leading-relaxed">
+                                            {task.description}
+                                        </div>
                                     )}
+
                                     <div className="mt-4 flex items-center justify-between">
-                                        <div className="text-[10px] text-white/30 font-mono">{new Date(task.created_at).toLocaleDateString()}</div>
+                                        <div className="flex items-center gap-3">
+                                            <div className="text-[10px] text-white/20 font-mono">
+                                                {new Date(task.created_at).toLocaleDateString()}
+                                            </div>
+                                            {task.subtask_count !== undefined && task.subtask_count > 0 && (
+                                                <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-lg text-[9px] font-bold uppercase tracking-wider border ${
+                                                    task.completed_subtask_count === task.subtask_count 
+                                                        ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' 
+                                                        : 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20'
+                                                }`}>
+                                                    <CheckSquare size={10} /> {task.completed_subtask_count}/{task.subtask_count}
+                                                </div>
+                                            )}
+                                        </div>
                                         
-                                        {task.is_readonly ? (
-                                            <span className="text-[10px] bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-2 py-0.5 rounded uppercase tracking-wider font-semibold">
+                                        {(task as any).is_readonly ? (
+                                            <span className="text-[9px] bg-white/5 text-white/30 border border-white/5 px-2 py-0.5 rounded-lg uppercase tracking-wider font-bold">
                                                 Auto-Sync
                                             </span>
                                         ) : (
                                             <select 
+                                                onClick={(e) => e.stopPropagation()}
                                                 value={task.status}
                                                 onChange={(e) => handleStatusChange(task.id, e.target.value)}
-                                                className="text-[10px] bg-black/40 border border-white/10 rounded px-2 py-1 outline-none focus:border-indigo-500/50 text-white/70"
+                                                className="text-[10px] bg-black/40 border border-white/5 rounded-lg px-2 py-1 outline-none focus:border-indigo-500/50 text-white/50 hover:text-white/80 transition-colors"
                                             >
                                                 {statuses.map(s => <option key={s} value={s}>{s}</option>)}
                                             </select>
@@ -124,29 +149,38 @@ export default function TasksBoard({ initialTasks }: { initialTasks: Task[] }) {
                             ))}
 
                             {addingTo === status ? (
-                                <form onSubmit={(e) => handleCreate(e, status)} className="mt-2">
+                                <form onSubmit={(e) => handleCreate(e, status)} className="mt-2" onClick={(e) => e.stopPropagation()}>
                                     <input 
                                         autoFocus
                                         type="text" 
                                         value={newTaskTitle}
                                         onChange={(e) => setNewTaskTitle(e.target.value)}
-                                        onBlur={() => setAddingTo(null)}
-                                        placeholder="Task title..."
-                                        className="w-full bg-[#1a1a1a] border border-indigo-500/50 rounded-xl px-3 py-2 text-sm text-white focus:outline-none"
+                                        onBlur={() => !newTaskTitle.trim() && setAddingTo(null)}
+                                        placeholder="Tâche à faire..."
+                                        className="w-full bg-[#1a1a1a] border border-indigo-500/50 rounded-2xl px-4 py-3 text-sm text-white focus:outline-none placeholder:text-white/20"
                                     />
                                 </form>
                             ) : (
                                 <button 
                                     onClick={() => setAddingTo(status)}
-                                    className="w-full py-2.5 mt-2 flex items-center justify-center gap-2 text-xs font-medium text-white/40 hover:text-white/80 hover:bg-white/5 rounded-xl transition-colors border border-dashed border-white/10 hover:border-white/20"
+                                    className="w-full py-3 mt-2 flex items-center justify-center gap-2 text-xs font-bold text-white/20 hover:text-white/80 hover:bg-white/5 rounded-2xl transition-all border border-dashed border-white/5 hover:border-white/10"
                                 >
-                                    <Plus size={14} /> Add Task
+                                    <Plus size={16} /> Ajouter une tâche
                                 </button>
                             )}
                         </div>
                     </div>
                 );
             })}
+
+            {/* Task Detail Modal */}
+            {selectedTask && (
+                <TaskDetailModal 
+                    task={selectedTask} 
+                    onClose={() => setSelectedTask(null)}
+                    onUpdate={refreshTasks}
+                />
+            )}
         </div>
     );
 }
