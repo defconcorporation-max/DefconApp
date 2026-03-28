@@ -1,32 +1,44 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { updateTaskStatus, deleteTask, createTask } from '@/app/actions/task-actions';
-import { Plus, GripVertical, CheckCircle2, Circle, MoreHorizontal, Trash } from 'lucide-react';
+import { Plus, GripVertical, CheckCircle2, Circle, MoreHorizontal, Trash, ExternalLink } from 'lucide-react';
 
 interface Task {
-    id: number;
+    id: number | string;
     title: string;
     description: string;
     status: string;
     created_at: string;
+    is_readonly?: boolean;
+    href?: string;
 }
 
 export default function TasksBoard({ initialTasks }: { initialTasks: Task[] }) {
     const [tasks, setTasks] = useState<Task[]>(initialTasks);
+    
+    // Synchronize state with props when dashboard reloads
+    useEffect(() => {
+        setTasks(initialTasks);
+    }, [initialTasks]);
+
     const [newTaskTitle, setNewTaskTitle] = useState('');
     const [addingTo, setAddingTo] = useState<string | null>(null);
 
     const statuses = ['Todo', 'In Progress', 'Done'];
 
-    const handleStatusChange = async (taskId: number, newStatus: string) => {
+    const handleStatusChange = async (taskId: number | string, newStatus: string) => {
         setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: newStatus } : t));
-        await updateTaskStatus(taskId, newStatus);
+        if (typeof taskId === 'number') {
+            await updateTaskStatus(taskId, newStatus);
+        }
     };
 
-    const handleDelete = async (taskId: number) => {
+    const handleDelete = async (taskId: number | string) => {
         setTasks(prev => prev.filter(t => t.id !== taskId));
-        await deleteTask(taskId);
+        if (typeof taskId === 'number') {
+            await deleteTask(taskId);
+        }
     };
 
     const handleCreate = async (e: React.FormEvent, status: string) => {
@@ -73,23 +85,40 @@ export default function TasksBoard({ initialTasks }: { initialTasks: Task[] }) {
                             {columnTasks.map(task => (
                                 <div key={task.id} className="bg-[#1a1a1a] border border-white/5 rounded-xl p-4 shadow-sm hover:border-white/10 transition-colors group">
                                     <div className="flex justify-between items-start gap-2">
-                                        <div className="font-medium text-sm text-white/90">{task.title}</div>
-                                        <button onClick={() => handleDelete(task.id)} className="text-white/20 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <Trash size={14} />
-                                        </button>
+                                        {task.is_readonly ? (
+                                            <a href={task.href} className="font-bold text-sm text-indigo-400 hover:text-indigo-300 transition-colors flex items-center gap-1 group/link">
+                                                {task.title}
+                                                <ExternalLink size={12} className="opacity-0 group-hover/link:opacity-100 transition-opacity" />
+                                            </a>
+                                        ) : (
+                                            <div className="font-medium text-sm text-white/90">{task.title}</div>
+                                        )}
+                                        
+                                        {!task.is_readonly && (
+                                            <button onClick={() => handleDelete(task.id)} className="text-white/20 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <Trash size={14} />
+                                            </button>
+                                        )}
                                     </div>
                                     {task.description && (
                                         <div className="text-xs text-white/50 mt-2 line-clamp-2">{task.description}</div>
                                     )}
                                     <div className="mt-4 flex items-center justify-between">
                                         <div className="text-[10px] text-white/30 font-mono">{new Date(task.created_at).toLocaleDateString()}</div>
-                                        <select 
-                                            value={task.status}
-                                            onChange={(e) => handleStatusChange(task.id, e.target.value)}
-                                            className="text-[10px] bg-black/40 border border-white/10 rounded px-2 py-1 outline-none focus:border-indigo-500/50 text-white/70"
-                                        >
-                                            {statuses.map(s => <option key={s} value={s}>{s}</option>)}
-                                        </select>
+                                        
+                                        {task.is_readonly ? (
+                                            <span className="text-[10px] bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-2 py-0.5 rounded uppercase tracking-wider font-semibold">
+                                                Auto-Sync
+                                            </span>
+                                        ) : (
+                                            <select 
+                                                value={task.status}
+                                                onChange={(e) => handleStatusChange(task.id, e.target.value)}
+                                                className="text-[10px] bg-black/40 border border-white/10 rounded px-2 py-1 outline-none focus:border-indigo-500/50 text-white/70"
+                                            >
+                                                {statuses.map(s => <option key={s} value={s}>{s}</option>)}
+                                            </select>
+                                        )}
                                     </div>
                                 </div>
                             ))}

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
 import PublicBookingModal from './PublicBookingModal';
 import { Toaster, toast } from 'react-hot-toast';
@@ -31,7 +31,14 @@ function toDateKey(d: Date) {
 }
 
 export default function PublicCalendar({ busyBlocks }: { busyBlocks: TimeBlock[] }) {
-    const now = new Date();
+    const [now, setNow] = useState(new Date());
+
+    // Periodically update 'now' to ensure 'Today' markers and 'Past' logic stays fresh
+    useEffect(() => {
+        const timer = setInterval(() => setNow(new Date()), 60000);
+        return () => clearInterval(timer);
+    }, []);
+
     const [currentDate, setCurrentDate] = useState(new Date(now.getFullYear(), now.getMonth(), 1));
     const [view, setView] = useState<'month' | 'week'>('week');
     const [selectedWeekStart, setSelectedWeekStart] = useState<Date | null>(() => {
@@ -39,6 +46,7 @@ export default function PublicCalendar({ busyBlocks }: { busyBlocks: TimeBlock[]
         const dayOfWeek = (d.getDay() + 6) % 7;
         const monday = new Date(d);
         monday.setDate(d.getDate() - dayOfWeek);
+        monday.setHours(0, 0, 0, 0); // Correctly normalize to start of week
         return monday;
     });
 
@@ -55,10 +63,12 @@ export default function PublicCalendar({ busyBlocks }: { busyBlocks: TimeBlock[]
     const prevMonth = () => setCurrentDate(new Date(year, month - 1, 1));
     const nextMonth = () => setCurrentDate(new Date(year, month + 1, 1));
     const goToday = () => {
-        setCurrentDate(new Date(now.getFullYear(), now.getMonth(), 1));
-        const dayOfWeek = (now.getDay() + 6) % 7;
-        const monday = new Date(now);
-        monday.setDate(now.getDate() - dayOfWeek);
+        const d = new Date();
+        setCurrentDate(new Date(d.getFullYear(), d.getMonth(), 1));
+        const dayOfWeek = (d.getDay() + 6) % 7;
+        const monday = new Date(d);
+        monday.setDate(d.getDate() - dayOfWeek);
+        monday.setHours(0, 0, 0, 0);
         setSelectedWeekStart(monday);
         setView('week');
     };
@@ -89,10 +99,8 @@ export default function PublicCalendar({ busyBlocks }: { busyBlocks: TimeBlock[]
 
     const getDayStatus = (day: number) => {
         const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-        const date = new Date(year, month, day);
-
-        // Treat as past. If today, check if the entire working day is past 8PM.
-        const isPast = date < new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const todayKey = toDateKey(now);
+        const isPast = dateKey < todayKey;
 
         const busyHours = busyMap.get(dateKey)?.size || 0;
 
@@ -107,6 +115,7 @@ export default function PublicCalendar({ busyBlocks }: { busyBlocks: TimeBlock[]
         const dayOfWeek = (date.getDay() + 6) % 7;
         const monday = new Date(date);
         monday.setDate(date.getDate() - dayOfWeek);
+        monday.setHours(0, 0, 0, 0);
         setSelectedWeekStart(monday);
         setView('week');
     };
@@ -243,7 +252,7 @@ export default function PublicCalendar({ busyBlocks }: { busyBlocks: TimeBlock[]
                             <div className="grid gap-0" style={{ gridTemplateColumns: '50px repeat(7, 1fr)' }}>
                                 <div className="border-b border-r border-white/10 p-2" />
                                 {weekDays.map((day, i) => {
-                                    const isToday = day.toDateString() === now.toDateString();
+                                    const isToday = toDateKey(day) === toDateKey(now);
                                     return (
                                         <div key={i} className={`text-center py-3 border-b border-white/10 ${isToday ? 'bg-indigo-500/10' : ''}`}>
                                             <div className="text-xs font-bold uppercase text-gray-400">
@@ -265,9 +274,15 @@ export default function PublicCalendar({ busyBlocks }: { busyBlocks: TimeBlock[]
                                     </div>
                                     {weekDays.map((day, di) => {
                                         const dateKey = toDateKey(day);
-                                        const isBusy = busyMap.has(dateKey) && busyMap.get(dateKey)!.has(hour);
-                                        const isPast = day < new Date(now.getFullYear(), now.getMonth(), now.getDate());
-                                        const isPastHour = day.toDateString() === now.toDateString() && hour < now.getHours();
+                                        const isBusy = !!busyMap.get(dateKey)?.has(hour);
+                                        
+                                        // Robust comparison using date strings
+                                        const todayKey = toDateKey(now);
+                                        const isPast = dateKey < todayKey;
+                                        const isToday = dateKey === todayKey;
+                                        const isPastHour = isToday && hour < now.getHours();
+
+                                        const statusText = isPast ? 'Passé' : isPastHour ? 'Heure passée' : isBusy ? 'Occupé' : 'Disponible';
 
                                         let cellClass = 'h-10 w-full border-b border-r border-white/5 transition-colors focus:outline-none ';
                                         if (isPast || isPastHour) {
@@ -281,6 +296,7 @@ export default function PublicCalendar({ busyBlocks }: { busyBlocks: TimeBlock[]
                                         return (
                                             <button
                                                 key={di}
+                                                title={`${statusText} (${dateKey} ${hour}:00)`}
                                                 disabled={isPast || isPastHour || !!isBusy}
                                                 onClick={() => setBookingSlot({ date: day, startHour: hour })}
                                                 className={cellClass}
@@ -303,7 +319,7 @@ export default function PublicCalendar({ busyBlocks }: { busyBlocks: TimeBlock[]
                     onClose={() => setBookingSlot(null)}
                     onSuccess={() => {
                         setBookingSlot(null);
-                        toast.success('Booking request submitted! We will contact you shortly.', { style: { background: '#333', color: '#fff' } });
+                        toast.success('Demande envoyée ! Nous vous contacterons sous peu.', { style: { background: '#333', color: '#fff' } });
                     }}
                 />
             )}

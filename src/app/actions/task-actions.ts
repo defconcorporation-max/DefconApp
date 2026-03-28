@@ -5,7 +5,33 @@ import { revalidatePath } from 'next/cache';
 
 export async function getTasks() {
     const { rows } = await db.execute('SELECT * FROM tasks ORDER BY created_at DESC');
-    return rows as unknown as any[];
+    const normalTasks = rows as unknown as any[];
+
+    // Fetch active post-prod projects to merge into Task Board
+    const { rows: postProdRows } = await db.execute(`
+        SELECT p.id, p.status, p.created_at, s.title as shoot_title
+        FROM post_prod_projects p
+        JOIN shoots s ON p.shoot_id = s.id
+        WHERE p.status != 'Completed'
+    `);
+
+    const postProdTasks = postProdRows.map((p: any) => {
+        let mappedStatus = 'Todo';
+        if (p.status === 'In Progress' || p.status === 'In Review') mappedStatus = 'In Progress';
+        if (p.status === 'Approved' || p.status === 'Completed') mappedStatus = 'Done';
+        
+        return {
+            id: `pp_${p.id}`,
+            title: `[Post-Prod] ${p.shoot_title}`,
+            description: `Étape actuelle : ${p.status}`,
+            status: mappedStatus,
+            created_at: p.created_at,
+            is_readonly: true,
+            href: `/post-production/${p.id}`
+        };
+    });
+
+    return [...normalTasks, ...postProdTasks].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 }
 
 export async function createTask(formData: FormData) {
