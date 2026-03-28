@@ -7,6 +7,7 @@ import ActivityFeed from '@/components/ActivityFeed';
 import CollapsibleSection from '@/components/dashboard/CollapsibleSection';
 import ThisWeekSummary from '@/components/dashboard/ThisWeekSummary';
 import AIDailySummary from '@/components/dashboard/AIDailySummary';
+import PendingRequests from '@/components/dashboard/PendingRequests';
 import PageLayout from '@/components/layout/PageLayout';
 import { auth } from '@/auth';
 import { getTasks } from '@/app/actions/task-actions';
@@ -82,6 +83,9 @@ export default async function Home() {
                     Voir le planning →
                 </Link>
             </div>
+
+            {/* Pending Booking Requests */}
+            <PendingRequests shoots={allShoots} />
 
             {/* AI Executive Summary */}
             <AIDailySummary />

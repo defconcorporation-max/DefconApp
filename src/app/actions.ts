@@ -2283,6 +2283,7 @@ export async function approveShoot(id: number) {
         args: [id]
     });
     revalidatePath('/availability');
+    revalidatePath('/');
 }
 
 export async function denyShoot(id: number) {
@@ -2292,6 +2293,7 @@ export async function denyShoot(id: number) {
         args: [id]
     });
     revalidatePath('/availability');
+    revalidatePath('/');
 }
 
 export async function getAvailabilityRequests(agencyId?: number) {
