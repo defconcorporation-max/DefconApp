@@ -36,6 +36,7 @@ export default function ShootList({ shoots, teamMembers, allAssignments }: Shoot
     const [filterDateTo, setFilterDateTo] = useState<string>('');
     const [searchQuery, setSearchQuery] = useState<string>('');
     const [expandedShootId, setExpandedShootId] = useState<number | null>(null);
+    const [showFilters, setShowFilters] = useState(false);
 
     // Extract unique project titles for filter dropdown
     const uniqueProjects = useMemo(() => {
@@ -152,29 +153,37 @@ export default function ShootList({ shoots, teamMembers, allAssignments }: Shoot
     return (
         <div>
             {/* Toolbar */}
-            <div className="flex flex-col gap-3 mb-6 bg-[#0A0A0A] border border-[var(--border-subtle)] p-3 rounded-lg sticky top-20 z-20 shadow-xl">
-                {/* Row 1: Search + Status + Project */}
-                <div className="flex flex-wrap items-center gap-3">
-                    {/* Search */}
-                    <div className="flex items-center gap-2 flex-1 min-w-[200px]">
-                        <Search size={16} className="text-[var(--text-tertiary)]" />
+            <div className="flex flex-col gap-4 mb-8 bg-[#18181b]/60 backdrop-blur-2xl border border-white/5 p-4 rounded-3xl sticky top-4 z-30 shadow-2xl">
+                {/* Mobile Header: Search + Filter Toggle */}
+                <div className="flex items-center gap-3">
+                    <div className="flex-1 relative group">
+                        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] group-focus-within:text-violet-400 transition-colors" />
                         <input
                             type="text"
-                            placeholder="Rechercher client, shoot, projet..."
+                            placeholder="Rechercher..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="flex-1 bg-black border border-[var(--border-subtle)] rounded px-3 py-1.5 text-white text-xs outline-none focus:border-violet-500 placeholder:text-[var(--text-tertiary)]"
+                            className="w-full bg-black/40 border border-white/5 rounded-2xl pl-10 pr-4 py-2 text-sm text-white outline-none focus:border-violet-500/50 focus:bg-black/60 transition-all placeholder:text-[var(--text-tertiary)]"
                         />
                     </div>
+                    
+                    <button 
+                        onClick={() => setShowFilters(!showFilters)}
+                        className={`md:hidden p-2.5 rounded-2xl border transition-all ${showFilters ? 'bg-violet-500/20 border-violet-500/50 text-violet-400' : 'bg-white/5 border-white/5 text-[var(--text-tertiary)]'}`}
+                    >
+                        <Filter size={20} />
+                    </button>
+                </div>
 
+                {/* Desktop Filters / Mobile Collapsible Filters */}
+                <div className={`${showFilters ? 'flex' : 'hidden md:flex'} flex-wrap items-center gap-3 animate-in fade-in slide-in-from-top-2 duration-300`}>
                     <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
-                        <Filter size={16} />
                         <select
                             value={filterStatus}
                             onChange={(e) => setFilterStatus(e.target.value)}
-                            className="bg-black border border-[var(--border-subtle)] rounded px-2 py-1 text-white text-xs outline-none focus:border-violet-500"
+                            className="bg-black/40 border border-white/5 rounded-xl px-3 py-1.5 text-white text-xs outline-none focus:border-violet-500/50"
                         >
-                            <option value="All">All Statuses</option>
+                            <option value="All">Tous les statuts</option>
                             <option value="Scheduled">Scheduled</option>
                             <option value="Completed">Completed</option>
                             <option value="Cancelled">Cancelled</option>
@@ -185,9 +194,9 @@ export default function ShootList({ shoots, teamMembers, allAssignments }: Shoot
                         <select
                             value={filterProject}
                             onChange={(e) => setFilterProject(e.target.value)}
-                            className="bg-black border border-[var(--border-subtle)] rounded px-2 py-1 text-white text-xs outline-none focus:border-violet-500 max-w-[180px] truncate"
+                            className="bg-black/40 border border-white/5 rounded-xl px-3 py-1.5 text-white text-xs outline-none focus:border-violet-500/50 max-w-[180px] truncate"
                         >
-                            <option value="All">All Projects</option>
+                            <option value="All">Tous les projets</option>
                             {uniqueProjects.map(p => (
                                 <option key={p} value={p}>{p}</option>
                             ))}
@@ -195,64 +204,62 @@ export default function ShootList({ shoots, teamMembers, allAssignments }: Shoot
                     )}
 
                     {/* Date range */}
-                    <div className="flex items-center gap-1 text-xs text-[var(--text-tertiary)]">
-                        <CalendarRange size={14} />
+                    <div className="flex items-center gap-2 bg-black/40 border border-white/5 rounded-xl px-2 py-1">
+                        <CalendarRange size={14} className="text-[var(--text-tertiary)]" />
                         <input
                             type="date"
                             value={filterDateFrom}
                             onChange={(e) => setFilterDateFrom(e.target.value)}
-                            className="bg-black border border-[var(--border-subtle)] rounded px-1.5 py-1 text-white text-xs outline-none focus:border-violet-500 w-[120px]"
-                            placeholder="From"
+                            className="bg-transparent border-none p-0 text-white text-[10px] outline-none w-[90px]"
                         />
-                        <span>→</span>
+                        <span className="text-[var(--text-tertiary)]">→</span>
                         <input
                             type="date"
                             value={filterDateTo}
                             onChange={(e) => setFilterDateTo(e.target.value)}
-                            className="bg-black border border-[var(--border-subtle)] rounded px-1.5 py-1 text-white text-xs outline-none focus:border-violet-500 w-[120px]"
-                            placeholder="To"
+                            className="bg-transparent border-none p-0 text-white text-[10px] outline-none w-[90px]"
                         />
                     </div>
 
                     {hasActiveFilters && (
                         <button
                             onClick={() => { setFilterStatus('All'); setFilterProject('All'); setFilterDateFrom(''); setFilterDateTo(''); setSearchQuery(''); }}
-                            className="text-[10px] text-red-400 hover:text-red-300 px-2 py-1 rounded border border-red-500/20 bg-red-500/5 hover:bg-red-500/10 transition-colors"
+                            className="text-[10px] text-red-400 font-bold uppercase tracking-wider px-3 py-1.5 rounded-xl border border-red-500/20 bg-red-500/5 hover:bg-red-500/10 transition-colors"
                         >
-                            ✕ Clear
+                            Reset
                         </button>
                     )}
                 </div>
 
-                {/* Row 2: Sort */}
-                <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
-                    <ArrowUpDown size={16} />
-                    <span>Sort by:</span>
-                    <div className="flex gap-1">
+                {/* Sort Controls */}
+                <div className="flex items-center gap-3 overflow-x-auto pb-1 scrollbar-hide">
+                    <div className="flex items-center gap-2 text-[10px] font-bold text-[var(--text-tertiary)] uppercase tracking-widest whitespace-nowrap">
+                        <ArrowUpDown size={14} />
+                        Tri:
+                    </div>
+                    <div className="flex gap-2">
                         {[
                             { id: 'date', label: 'Date' },
-                            { id: 'dueDate', label: 'Due Date' },
-                            { id: 'agency', label: 'Agency' },
-                            { id: 'client', label: 'Client' },
-                            { id: 'status', label: 'Status' }
+                            { id: 'status', label: 'Statut' },
+                            { id: 'client', label: 'Client' }
                         ].map((opt) => (
                             <button
                                 key={opt.id}
                                 onClick={() => toggleSort(opt.id as SortOption)}
-                                className={`px-3 py-1 rounded text-xs font-medium transition-colors ${sortBy === opt.id
-                                    ? 'bg-violet-600 text-white'
-                                    : 'bg-white/5 text-[var(--text-secondary)] hover:bg-white/10 hover:text-white'
+                                className={`px-4 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all whitespace-nowrap ${sortBy === opt.id
+                                    ? 'bg-violet-600 text-white shadow-lg shadow-violet-600/20'
+                                    : 'bg-white/5 text-[var(--text-tertiary)] hover:bg-white/10 hover:text-white border border-white/5'
                                     }`}
                             >
                                 {opt.label}
                                 {sortBy === opt.id && (
-                                    <span className="ml-1 opacity-70">{sortOrder === 'asc' ? '↑' : '↓'}</span>
+                                    <span className="ml-1.5">{sortOrder === 'asc' ? '↑' : '↓'}</span>
                                 )}
                             </button>
                         ))}
                     </div>
-                    <span className="ml-auto text-xs text-[var(--text-tertiary)]">
-                        {filteredAndSortedShoots.length} shoot{filteredAndSortedShoots.length !== 1 ? 's' : ''}
+                    <span className="ml-auto text-[10px] font-bold text-[var(--text-tertiary)] uppercase tracking-widest whitespace-nowrap">
+                        {filteredAndSortedShoots.length} Résultat{filteredAndSortedShoots.length !== 1 ? 's' : ''}
                     </span>
                 </div>
             </div>
@@ -271,17 +278,17 @@ export default function ShootList({ shoots, teamMembers, allAssignments }: Shoot
                         {groupShoots.map(shoot => {
                             const assignments = assignmentsByShootId[shoot.id] ?? [];
                             return (
-                                <div key={shoot.id} className={`pro-card p-6 h-full relative group flex flex-col ${shoot.post_prod_status ? 'border-orange-500/30 bg-orange-500/5' : 'md:hover:border-violet-500/30'} transition-colors duration-200`}>
-                                    <div className="flex justify-between items-start mb-4">
-                                        <div className="flex flex-col items-center bg-white/5 px-3 py-1 rounded border border-white/5 min-w-[60px] group-hover:bg-violet-500/10 group-hover:border-violet-500/20 group-hover:text-violet-400 transition-colors">
-                                            <span className="text-xs text-gray-500 uppercase group-hover:text-violet-400/70">{parseDateOnlyLocal(shoot.shoot_date).toLocaleString('default', { month: 'short' })}</span>
-                                            <span className="text-xl font-bold">{parseDateOnlyLocal(shoot.shoot_date).getDate()}</span>
+                                <div key={shoot.id} className={`pro-card p-6 h-full relative group flex flex-col ${shoot.post_prod_status ? 'border-amber-500/30 bg-amber-500/5' : 'border-white/5 hover:border-violet-500/50'} transition-all duration-500 rounded-3xl overflow-hidden shadow-xl`}>
+                                    <div className="flex justify-between items-start mb-6">
+                                        <div className="flex flex-col items-center bg-white/5 px-4 py-2 rounded-2xl border border-white/5 min-w-[70px] group-hover:bg-violet-500/20 group-hover:border-violet-500/30 group-hover:text-violet-400 transition-all duration-300 shadow-inner">
+                                            <span className="text-[10px] text-gray-400 uppercase font-black tracking-widest group-hover:text-violet-300">{parseDateOnlyLocal(shoot.shoot_date).toLocaleString('default', { month: 'short' })}</span>
+                                            <span className="text-2xl font-black">{parseDateOnlyLocal(shoot.shoot_date).getDate()}</span>
                                         </div>
-                                        <div className="flex flex-col items-end gap-1">
+                                        <div className="flex flex-col items-end gap-2">
                                             {/* Agency Badge */}
                                             {shoot.agency_name && (
                                                 <span
-                                                    className="px-2 py-0.5 rounded-full text-[10px] uppercase font-bold tracking-wider border mb-1"
+                                                    className="px-3 py-1 rounded-full text-[9px] uppercase font-black tracking-widest border"
                                                     style={{
                                                         backgroundColor: `${shoot.agency_color}20`,
                                                         color: shoot.agency_color,
@@ -293,16 +300,16 @@ export default function ShootList({ shoots, teamMembers, allAssignments }: Shoot
                                             )}
 
                                             {/* Standard Status */}
-                                            <div className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider border ${shoot.status === 'Completed'
-                                                ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                                                : 'bg-blue-500/10 text-blue-400 border-blue-500/20'
+                                            <div className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border ${shoot.status === 'Completed'
+                                                ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+                                                : 'bg-indigo-500/10 text-indigo-400 border-indigo-500/30'
                                                 }`}>
                                                 {shoot.status}
                                             </div>
                                             {/* Post Prod Status Badge */}
                                             {shoot.post_prod_status && (
-                                                <div className="px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider border bg-orange-500/10 text-orange-400 border-orange-500/20 flex items-center gap-1">
-                                                    <span className="w-1 h-1 rounded-full bg-orange-400 animate-pulse"></span>
+                                                <div className="px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border bg-amber-500/20 text-amber-400 border-amber-500/30 flex items-center gap-1">
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
                                                     PP: {shoot.post_prod_status}
                                                 </div>
                                             )}

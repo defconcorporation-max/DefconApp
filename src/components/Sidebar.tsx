@@ -2,15 +2,40 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Users, Briefcase, Video, CreditCard, Settings, Command, Layers, UserPlus, BookOpen, Building, Calendar, Shield, Activity, LogOut, Sparkles, Target, ListTodo } from 'lucide-react';
+import { 
+    Home, 
+    Users, 
+    Briefcase, 
+    Video, 
+    CreditCard, 
+    Settings, 
+    Command, 
+    Layers, 
+    UserPlus, 
+    BookOpen, 
+    Building, 
+    Calendar, 
+    Shield, 
+    Activity, 
+    LogOut, 
+    Sparkles, 
+    Target, 
+    ListTodo, 
+    Plus, 
+    Search, 
+    Zap, 
+    X 
+} from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { signOut } from 'next-auth/react';
+import { motion, AnimatePresence } from 'framer-motion';
 import NotificationBell from './NotificationBell';
 import BetaFeedbackWidget from './BetaFeedbackWidget';
 
 export default function Sidebar({ userRole = '' }: { userRole?: string }) {
     const pathname = usePathname();
     const [open, setOpen] = useState(false);
+    const [quickActionOpen, setQuickActionOpen] = useState(false);
 
     // Open command menu hint
     const openCommandMenu = () => {
@@ -48,9 +73,9 @@ export default function Sidebar({ userRole = '' }: { userRole?: string }) {
     ];
 
     const linkClass = (isActive: boolean) =>
-        `flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 group ${isActive
-            ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20'
-            : 'text-[var(--text-secondary)] hover:bg-[var(--bg-surface-hover)] hover:text-white'
+        `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-300 group ${isActive
+            ? 'bg-gradient-to-r from-indigo-500/20 to-violet-500/10 text-white border border-indigo-500/30 shadow-[0_0_15px_rgba(99,102,241,0.1)]'
+            : 'text-[var(--text-secondary)] hover:bg-white/5 hover:text-white border border-transparent'
         }`;
     const sectionLabel = 'px-3 pb-2 pt-4 first:pt-0 text-[10px] font-bold text-[var(--text-tertiary)] uppercase tracking-wider';
 
@@ -68,34 +93,49 @@ export default function Sidebar({ userRole = '' }: { userRole?: string }) {
 
     return (
         <>
-            {/* Mobile Header - Fixed Top */}
-            <header className="md:hidden fixed top-0 left-0 right-0 h-16 bg-[var(--bg-root)]/80 backdrop-blur-md border-b border-[var(--border-subtle)] px-4 flex items-center justify-between z-50">
+            {/* Mobile Header - Ultra Subtle Fixed Top */}
+            <header className="md:hidden fixed top-0 left-0 right-0 h-16 bg-[#09090b]/40 backdrop-blur-xl border-b border-white/5 px-6 flex items-center justify-between z-[55] transition-all">
                 <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
-                        <span className="font-bold text-white text-lg">D</span>
+                    <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-500 to-violet-600 flex items-center justify-center shadow-xl shadow-indigo-500/20 group cursor-pointer hover:scale-105 transition-transform">
+                        <span className="font-black text-white text-xl">D</span>
                     </div>
-                    <span className="font-bold text-lg tracking-tight text-white">Defcon</span>
+                    <span className="font-black text-xl tracking-tighter text-white uppercase italic">Defcon</span>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-4">
                     <NotificationBell userRole={userRole} />
                     <button
                         onClick={() => setOpen(!open)}
-                        className="p-2 text-white hover:bg-white/10 rounded-md transition-colors"
+                        className={`p-2 rounded-xl transition-all ${open ? 'bg-violet-500 text-white shadow-lg shadow-violet-500/20' : 'text-white hover:bg-white/10'}`}
                     >
-                        {open ? (
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 18 18" /></svg>
-                        ) : (
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="4" x2="20" y1="12" y2="12" /><line x1="4" x2="20" y1="6" y2="6" /><line x1="4" x2="20" y1="18" y2="18" /></svg>
-                        )}
+                        {open ? <X size={24} /> : <Layers size={21} />}
                     </button>
                 </div>
             </header>
 
-            {/* Mobile Drawer */}
-            {open && (
-                <div className="fixed inset-0 z-40 md:hidden">
-                    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setOpen(false)} />
-                    <aside className="fixed right-0 top-16 bottom-0 w-64 bg-[var(--bg-surface)]/70 backdrop-blur-xl border-l border-[var(--border-subtle)] p-6 overflow-y-auto animate-in slide-in-from-right duration-200">
+            {/* Mobile Drawer - Framer Motion Edition */}
+            <AnimatePresence>
+                {open && (
+                    <div className="fixed inset-0 z-[70] md:hidden">
+                        <motion.div 
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="fixed inset-0 bg-black/60 backdrop-blur-md" 
+                            onClick={() => setOpen(false)} 
+                        />
+                        <motion.aside 
+                            initial={{ x: '100%' }}
+                            animate={{ x: 0 }}
+                            exit={{ x: '100%' }}
+                            transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                            className="fixed right-0 top-0 bottom-0 w-80 bg-[#09090b]/80 backdrop-blur-3xl border-l border-white/5 p-8 overflow-y-auto shadow-2xl"
+                        >
+                            <div className="flex justify-between items-center mb-8">
+                                <span className="font-black text-xl tracking-tighter text-white uppercase italic">Menu</span>
+                                <button onClick={() => setOpen(false)} className="p-2 rounded-xl bg-white/5 text-[var(--text-tertiary)] hover:text-white transition-colors">
+                                    <X size={20} />
+                                </button>
+                            </div>
                         <div className="space-y-1">
                             <div className={sectionLabel}>Au quotidien</div>
                             {sectionDaily.map((link) => (
@@ -142,9 +182,10 @@ export default function Sidebar({ userRole = '' }: { userRole?: string }) {
                                 </button>
                             </div>
                         </div>
-                    </aside>
-                </div>
-            )}
+                        </motion.aside>
+                    </div>
+                )}
+            </AnimatePresence>
 
             {/* Desktop Sidebar */}
             <aside className="fixed left-0 top-0 bottom-0 w-64 bg-[#09090b]/40 backdrop-blur-2xl border-r border-white/5 z-40 hidden md:flex flex-col shadow-[4px_0_24px_rgba(0,0,0,0.5)]">
@@ -204,50 +245,95 @@ export default function Sidebar({ userRole = '' }: { userRole?: string }) {
                 </div>
             </aside>
 
-            {/* Mobile Bottom Navigation Bar */}
-            <nav className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-[#09090b]/80 backdrop-blur-xl border-t border-white/5 px-6 flex items-center justify-between z-50 pb-safe">
-                <Link 
-                    href="/" 
-                    className={`flex flex-col items-center gap-1 ${pathname === '/' ? 'text-indigo-400' : 'text-[var(--text-tertiary)]'}`}
-                >
-                    <Home size={20} className={pathname === '/' ? 'animate-pulse' : ''} />
-                    <span className="text-[10px] font-bold uppercase tracking-tighter">Home</span>
-                </Link>
-                <Link 
-                    href="/shoots" 
-                    className={`flex flex-col items-center gap-1 ${pathname?.startsWith('/shoots') ? 'text-indigo-400' : 'text-[var(--text-tertiary)]'}`}
-                >
-                    <Video size={20} />
-                    <span className="text-[10px] font-bold uppercase tracking-tighter">Shoots</span>
-                </Link>
-                <Link 
-                    href="/projects" 
-                    className={`flex flex-col items-center gap-1 ${pathname?.startsWith('/projects') ? 'text-indigo-400' : 'text-[var(--text-tertiary)]'}`}
-                >
-                    <Briefcase size={20} />
-                    <span className="text-[10px] font-bold uppercase tracking-tighter">Projects</span>
-                </Link>
-                {canAccessFinance && (
+            {/* Mobile Bottom Navigation Bar - Floating Dock Edition */}
+            <div className="md:hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-[60] w-[90%] max-w-md">
+                <nav className="relative h-16 bg-[#18181b]/80 backdrop-blur-2xl border border-white/10 rounded-[2.5rem] px-6 flex items-center justify-between shadow-2xl shadow-black/80">
                     <Link 
-                        href="/finance" 
-                        className={`flex flex-col items-center gap-1 ${pathname?.startsWith('/finance') ? 'text-indigo-400' : 'text-[var(--text-tertiary)]'}`}
+                        href="/" 
+                        className={`relative flex flex-col items-center gap-1 transition-all duration-300 ${pathname === '/' ? 'text-white' : 'text-[var(--text-tertiary)]'}`}
                     >
-                        <CreditCard size={20} />
-                        <span className="text-[10px] font-bold uppercase tracking-tighter">Finance</span>
+                        <Home size={22} className={pathname === '/' ? 'stroke-[2.5px]' : ''} />
+                        {pathname === '/' && (
+                            <motion.div layoutId="nav-dot" className="absolute -bottom-2 w-1 h-1 rounded-full bg-indigo-400" />
+                        )}
                     </Link>
-                )}
-                <button 
-                    onClick={() => setOpen(true)}
-                    className="flex flex-col items-center gap-1 text-[var(--text-tertiary)]"
-                >
-                    <div className="w-5 h-5 flex flex-col justify-center gap-1">
-                        <div className="w-full h-0.5 bg-current rounded-full" />
-                        <div className="w-full h-0.5 bg-current rounded-full" />
-                        <div className="w-full h-0.5 bg-current rounded-full" />
+                    
+                    <Link 
+                        href="/shoots" 
+                        className={`relative flex flex-col items-center gap-1 transition-all duration-300 ${pathname?.startsWith('/shoots') ? 'text-white' : 'text-[var(--text-tertiary)]'}`}
+                    >
+                        <Video size={22} className={pathname?.startsWith('/shoots') ? 'stroke-[2.5px]' : ''} />
+                        {pathname?.startsWith('/shoots') && (
+                            <motion.div layoutId="nav-dot" className="absolute -bottom-2 w-1 h-1 rounded-full bg-indigo-400" />
+                        )}
+                    </Link>
+
+                    {/* Quick Action Center Button */}
+                    <div className="relative -top-3">
+                        <motion.button 
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
+                            onClick={() => setQuickActionOpen(!quickActionOpen)}
+                            className="w-14 h-14 rounded-full bg-gradient-to-tr from-indigo-500 to-violet-600 flex items-center justify-center text-white shadow-xl shadow-indigo-500/40 border-4 border-[#18181b]"
+                        >
+                            <motion.div
+                                animate={{ rotate: quickActionOpen ? 45 : 0 }}
+                                transition={{ type: "spring", stiffness: 260, damping: 20 }}
+                            >
+                                <Plus size={28} />
+                            </motion.div>
+                        </motion.button>
+                        
+                        {/* Quick Action Menu */}
+                        <AnimatePresence>
+                            {quickActionOpen && (
+                                <motion.div 
+                                    initial={{ opacity: 0, scale: 0.5, y: 20 }}
+                                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                                    exit={{ opacity: 0, scale: 0.5, y: 20 }}
+                                    className="absolute bottom-20 left-1/2 -translate-x-1/2 w-48 bg-[#18181b] border border-white/10 rounded-2xl p-2 shadow-2xl grid grid-cols-1 gap-1"
+                                >
+                                    {[
+                                        { label: 'Nouveau Shoot', icon: Video, color: 'text-violet-400', href: '/shoots' },
+                                        { label: 'Nouveau Projet', icon: Briefcase, color: 'text-indigo-400', href: '/projects' },
+                                        { label: 'Nouveau Lead', icon: Target, color: 'text-emerald-400', href: '/leads' },
+                                    ].map((action) => (
+                                        <Link 
+                                            key={action.label}
+                                            href={action.href}
+                                            onClick={() => setQuickActionOpen(false)}
+                                            className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/5 transition-colors group"
+                                        >
+                                            <action.icon size={16} className={action.color} />
+                                            <span className="text-xs font-bold text-white uppercase tracking-wider">{action.label}</span>
+                                        </Link>
+                                    ))}
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
                     </div>
-                    <span className="text-[10px] font-bold uppercase tracking-tighter">Menu</span>
-                </button>
-            </nav>
+
+                    <Link 
+                        href="/projects" 
+                        className={`relative flex flex-col items-center gap-1 transition-all duration-300 ${pathname?.startsWith('/projects') ? 'text-white' : 'text-[var(--text-tertiary)]'}`}
+                    >
+                        <Briefcase size={22} className={pathname?.startsWith('/projects') ? 'stroke-[2.5px]' : ''} />
+                        {pathname?.startsWith('/projects') && (
+                            <motion.div layoutId="nav-dot" className="absolute -bottom-2 w-1 h-1 rounded-full bg-indigo-400" />
+                        )}
+                    </Link>
+
+                    <button 
+                        onClick={() => setOpen(true)}
+                        className={`relative flex flex-col items-center gap-1 transition-all duration-300 ${open ? 'text-white' : 'text-[var(--text-tertiary)]'}`}
+                    >
+                        <Layers size={22} className={open ? 'stroke-[2.5px]' : ''} />
+                        {open && (
+                            <motion.div layoutId="nav-dot" className="absolute -bottom-2 w-1 h-1 rounded-full bg-indigo-400" />
+                        )}
+                    </button>
+                </nav>
+            </div>
         </>
     );
 }

@@ -11,6 +11,7 @@ import PendingRequests from '@/components/dashboard/PendingRequests';
 import PageLayout from '@/components/layout/PageLayout';
 import { auth } from '@/auth';
 import { getTasks } from '@/app/actions/task-actions';
+import { ArrowRight } from 'lucide-react';
 export const dynamic = 'force-dynamic';
 
 export default async function Home() {
@@ -71,27 +72,40 @@ export default async function Home() {
                 </div>
             )}
 
-            {/* KPI bar - compact */}
-            <div className="pro-card-tertiary px-4 py-3 flex flex-wrap items-center gap-6 md:gap-8">
-                {kpis.map((kpi) => (
-                    <div key={kpi.label} className="flex items-baseline gap-2">
-                        <span className="text-2xl font-bold text-white tabular-nums">{kpi.value}</span>
-                        <span className="text-xs text-[var(--text-tertiary)] uppercase tracking-wider">{kpi.label}</span>
+            {/* KPI bar - Horizontal Scroll on Mobile */}
+            <div className="relative group">
+                <div className="overflow-x-auto pb-4 -mb-4 scrollbar-hide md:overflow-visible">
+                    <div className="flex items-center gap-4 md:gap-8 min-w-max md:min-w-0 bg-[#18181b]/40 backdrop-blur-xl border border-white/5 p-4 rounded-3xl shadow-xl">
+                        {kpis.map((kpi) => (
+                            <div key={kpi.label} className="flex flex-col md:flex-row md:items-baseline gap-1 md:gap-3 px-4 first:pl-2 border-r border-white/5 last:border-0">
+                                <span className="text-2xl md:text-3xl font-black text-white tabular-nums tracking-tighter transition-all group-hover:text-indigo-400">{kpi.value}</span>
+                                <span className="text-[10px] md:text-xs text-[var(--text-tertiary)] font-bold uppercase tracking-[0.2em]">{kpi.label}</span>
+                            </div>
+                        ))}
+                        <Link href="/availability" className="ml-auto hidden md:flex items-center gap-2 text-xs text-indigo-400 hover:text-white font-bold uppercase tracking-wider bg-indigo-500/10 px-4 py-2 rounded-xl border border-indigo-500/20 transition-all">
+                            Planning <ArrowRight size={14} />
+                        </Link>
                     </div>
-                ))}
-                <Link href="/availability" className="ml-auto text-xs text-violet-400 hover:text-violet-300 font-medium">
-                    Voir le planning →
-                </Link>
+                </div>
             </div>
 
-            {/* Pending Booking Requests */}
-            <PendingRequests shoots={allShoots} />
+            <div className="grid grid-cols-1 gap-8">
+                {/* Pending Booking Requests - High Priority */}
+                <PendingRequests shoots={allShoots} />
 
-            {/* AI Executive Summary */}
-            <AIDailySummary />
+                {/* AI Executive Summary - Strategy Hub */}
+                <div className="relative group">
+                    <div className="absolute inset-0 bg-gradient-to-r from-violet-600/20 to-indigo-600/20 blur-[60px] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+                    <div className="relative">
+                        <AIDailySummary />
+                    </div>
+                </div>
 
-            {/* This Week Summary */}
-            <ThisWeekSummary shoots={allShoots} tasks={tasks} />
+                {/* This Week Summary - Action Center */}
+                <div className="pro-dashboard-card border-white/5 bg-gradient-to-b from-white/5 to-transparent">
+                    <ThisWeekSummary shoots={allShoots} tasks={tasks} />
+                </div>
+            </div>
 
             {financeData?.clients?.length > 0 && (
                 <div className="bg-[#0A0A0A] border border-[var(--border-subtle)] rounded-2xl overflow-hidden">
