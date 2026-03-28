@@ -85,12 +85,16 @@ export default function TasksBoard({ initialTasks }: { initialTasks: Task[] }) {
                             {columnTasks.map(task => (
                                 <div 
                                     key={task.id} 
-                                    onClick={() => !task.is_readonly && setSelectedTask(task)}
-                                    className={`bg-[#1a1a1a] border border-white/5 rounded-2xl p-4 shadow-sm transition-all group ${!task.is_readonly ? 'cursor-pointer hover:border-indigo-500/30 hover:bg-[#1e1e1e]' : ''}`}
+                                    onClick={() => setSelectedTask(task)}
+                                    className={`bg-[#1a1a1a] border border-white/5 rounded-2xl p-4 shadow-sm transition-all group cursor-pointer hover:border-indigo-500/30 hover:bg-[#1e1e1e]`}
                                 >
                                     <div className="flex justify-between items-start gap-2">
                                         {(task as any).is_readonly ? (
-                                            <a href={(task as any).href} className="font-bold text-sm text-indigo-400 hover:text-indigo-300 transition-colors flex items-center gap-1 group/link">
+                                            <a 
+                                                href={(task as any).href} 
+                                                onClick={(e) => e.stopPropagation()}
+                                                className="font-bold text-sm text-indigo-400 hover:text-indigo-300 transition-colors flex items-center gap-1 group/link"
+                                            >
                                                 {task.title}
                                                 <ExternalLink size={12} className="opacity-0 group-hover/link:opacity-100 transition-opacity" />
                                             </a>
@@ -177,6 +181,7 @@ export default function TasksBoard({ initialTasks }: { initialTasks: Task[] }) {
             {selectedTask && (
                 <TaskDetailModal 
                     task={selectedTask} 
+                    is_readonly={selectedTask.is_readonly}
                     onClose={() => setSelectedTask(null)}
                     onUpdate={refreshTasks}
                 />

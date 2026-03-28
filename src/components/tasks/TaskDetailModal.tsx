@@ -18,9 +18,10 @@ interface TaskDetailModalProps {
     task: Task;
     onClose: () => void;
     onUpdate?: () => void;
+    is_readonly?: boolean;
 }
 
-export default function TaskDetailModal({ task, onClose, onUpdate }: TaskDetailModalProps) {
+export default function TaskDetailModal({ task, onClose, onUpdate, is_readonly = false }: TaskDetailModalProps) {
     const [title, setTitle] = useState(task.title);
     const [description, setDescription] = useState(task.description || '');
     const [subtasks, setSubtasks] = useState<Subtask[]>([]);
@@ -29,6 +30,10 @@ export default function TaskDetailModal({ task, onClose, onUpdate }: TaskDetailM
     const [isSaving, setIsSaving] = useState(false);
 
     useEffect(() => {
+        if (is_readonly) {
+            setIsLoadingSubtasks(false);
+            return;
+        }
         const loadSubtasks = async () => {
             try {
                 const data = await getSubtasks(task.id);
@@ -40,9 +45,10 @@ export default function TaskDetailModal({ task, onClose, onUpdate }: TaskDetailM
             }
         };
         loadSubtasks();
-    }, [task.id]);
+    }, [task.id, is_readonly]);
 
     const handleSaveDetails = async () => {
+        if (is_readonly) return;
         setIsSaving(true);
         try {
             await updateTaskDetails(task.id, title, description);
@@ -57,7 +63,7 @@ export default function TaskDetailModal({ task, onClose, onUpdate }: TaskDetailM
 
     const handleAddSubtask = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!newSubtaskTitle.trim()) return;
+        if (is_readonly || !newSubtaskTitle.trim()) return;
 
         const tempId = Math.random();
         const optimisticSubtask: any = {
@@ -83,6 +89,7 @@ export default function TaskDetailModal({ task, onClose, onUpdate }: TaskDetailM
     };
 
     const handleToggleSubtask = async (subtask: Subtask) => {
+        if (is_readonly) return;
         const newStatus = !subtask.is_completed;
         setSubtasks(subtasks.map(s => s.id === subtask.id ? { ...s, is_completed: newStatus } : s));
         
@@ -96,6 +103,7 @@ export default function TaskDetailModal({ task, onClose, onUpdate }: TaskDetailM
     };
 
     const handleDeleteSubtask = async (id: number) => {
+        if (is_readonly) return;
         const original = [...subtasks];
         setSubtasks(subtasks.filter(s => s.id !== id));
         
@@ -134,9 +142,10 @@ export default function TaskDetailModal({ task, onClose, onUpdate }: TaskDetailM
                         <div className="flex-1">
                             <input 
                                 value={title}
+                                readOnly={is_readonly}
                                 onChange={(e) => setTitle(e.target.value)}
                                 onBlur={handleSaveDetails}
-                                className="bg-transparent border-none text-2xl font-black text-white focus:outline-none w-full placeholder:text-white/20"
+                                className={`bg-transparent border-none text-2xl font-black text-white focus:outline-none w-full placeholder:text-white/20 ${is_readonly ? 'cursor-default' : ''}`}
                                 placeholder="Task Title"
                             />
                             <div className="flex items-center gap-4 mt-2">
@@ -150,6 +159,11 @@ export default function TaskDetailModal({ task, onClose, onUpdate }: TaskDetailM
                                 }`}>
                                     {task.status}
                                 </div>
+                                {is_readonly && (
+                                    <div className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                                        Auto-Sync (Read Only)
+                                    </div>
+                                )}
                             </div>
                         </div>
                         <button 
@@ -169,82 +183,85 @@ export default function TaskDetailModal({ task, onClose, onUpdate }: TaskDetailM
                             </div>
                             <textarea 
                                 value={description}
+                                readOnly={is_readonly}
                                 onChange={(e) => setDescription(e.target.value)}
                                 onBlur={handleSaveDetails}
                                 rows={4}
-                                className="w-full bg-white/5 border border-white/5 rounded-2xl p-4 text-sm text-white/70 focus:outline-none focus:border-indigo-500/30 transition-all placeholder:text-white/10 resize-none"
-                                placeholder="Add a more detailed description..."
+                                className={`w-full bg-white/5 border border-white/5 rounded-2xl p-4 text-sm text-white/70 focus:outline-none focus:border-indigo-500/30 transition-all placeholder:text-white/10 resize-none ${is_readonly ? 'cursor-default' : ''}`}
+                                placeholder="No description provided."
                             />
                         </div>
 
                         {/* Subtasks */}
-                        <div className="space-y-4">
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2 text-white/90 font-bold text-sm uppercase tracking-wider">
-                                    <CheckSquare size={16} className="text-indigo-400" />
-                                    Checklist
-                                </div>
-                                <div className="text-[10px] font-black text-indigo-400 bg-indigo-500/10 px-2 py-1 rounded-lg">
-                                    {progress}% Complete
-                                </div>
-                            </div>
-
-                            {/* Progress bar */}
-                            <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
-                                <motion.div 
-                                    initial={{ width: 0 }}
-                                    animate={{ width: `${progress}%` }}
-                                    className="h-full bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.5)]"
-                                />
-                            </div>
-
-                            <div className="space-y-2 mt-4">
-                                {isLoadingSubtasks ? (
-                                    <div className="flex items-center justify-center py-8">
-                                        <Loader2 className="animate-spin text-white/20" size={24} />
+                        {!is_readonly && (
+                            <div className="space-y-4">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2 text-white/90 font-bold text-sm uppercase tracking-wider">
+                                        <CheckSquare size={16} className="text-indigo-400" />
+                                        Checklist
                                     </div>
-                                ) : (
-                                    subtasks.map((st) => (
-                                        <div key={st.id} className="flex items-center gap-3 group px-2 py-1.5 hover:bg-white/5 rounded-xl transition-colors">
-                                            <button 
-                                                onClick={() => handleToggleSubtask(st)}
-                                                className={`transition-colors ${st.is_completed ? 'text-indigo-500' : 'text-white/20 hover:text-white/40'}`}
-                                            >
-                                                {st.is_completed ? <CheckCircle2 size={20} /> : <Circle size={20} />}
-                                            </button>
-                                            <span className={`flex-1 text-sm transition-all ${st.is_completed ? 'text-white/30 line-through' : 'text-white/80'}`}>
-                                                {st.title}
-                                            </span>
-                                            <button 
-                                                onClick={() => handleDeleteSubtask(st.id)}
-                                                className="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-red-500/10 rounded-lg text-white/20 hover:text-red-400 transition-all"
-                                            >
-                                                <Trash2 size={14} />
-                                            </button>
-                                        </div>
-                                    ))
-                                )}
+                                    <div className="text-[10px] font-black text-indigo-400 bg-indigo-500/10 px-2 py-1 rounded-lg">
+                                        {progress}% Complete
+                                    </div>
+                                </div>
 
-                                <form onSubmit={handleAddSubtask} className="flex items-center gap-3 mt-4 px-2">
-                                    <Plus size={20} className="text-white/20" />
-                                    <input 
-                                        type="text"
-                                        placeholder="Add a subtask..."
-                                        value={newSubtaskTitle}
-                                        onChange={(e) => setNewSubtaskTitle(e.target.value)}
-                                        className="flex-1 bg-transparent border-none text-sm text-white focus:outline-none placeholder:text-white/10"
+                                {/* Progress bar */}
+                                <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
+                                    <motion.div 
+                                        initial={{ width: 0 }}
+                                        animate={{ width: `${progress}%` }}
+                                        className="h-full bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.5)]"
                                     />
-                                    {newSubtaskTitle.trim() && (
-                                        <button 
-                                            type="submit"
-                                            className="px-3 py-1 bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] font-black uppercase rounded-lg transition-all"
-                                        >
-                                            Add
-                                        </button>
+                                </div>
+
+                                <div className="space-y-2 mt-4">
+                                    {isLoadingSubtasks ? (
+                                        <div className="flex items-center justify-center py-8">
+                                            <Loader2 className="animate-spin text-white/20" size={24} />
+                                        </div>
+                                    ) : (
+                                        subtasks.map((st) => (
+                                            <div key={st.id} className="flex items-center gap-3 group px-2 py-1.5 hover:bg-white/5 rounded-xl transition-colors">
+                                                <button 
+                                                    onClick={() => handleToggleSubtask(st)}
+                                                    className={`transition-colors ${st.is_completed ? 'text-indigo-500' : 'text-white/20 hover:text-white/40'}`}
+                                                >
+                                                    {st.is_completed ? <CheckCircle2 size={20} /> : <Circle size={20} />}
+                                                </button>
+                                                <span className={`flex-1 text-sm transition-all ${st.is_completed ? 'text-white/30 line-through' : 'text-white/80'}`}>
+                                                    {st.title}
+                                                </span>
+                                                <button 
+                                                    onClick={() => handleDeleteSubtask(st.id)}
+                                                    className="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-red-500/10 rounded-lg text-white/20 hover:text-red-400 transition-all"
+                                                >
+                                                    <Trash2 size={14} />
+                                                </button>
+                                            </div>
+                                        ))
                                     )}
-                                </form>
+
+                                    <form onSubmit={handleAddSubtask} className="flex items-center gap-3 mt-4 px-2">
+                                        <Plus size={20} className="text-white/20" />
+                                        <input 
+                                            type="text"
+                                            placeholder="Add a subtask..."
+                                            value={newSubtaskTitle}
+                                            onChange={(e) => setNewSubtaskTitle(e.target.value)}
+                                            className="flex-1 bg-transparent border-none text-sm text-white focus:outline-none placeholder:text-white/10"
+                                        />
+                                        {newSubtaskTitle.trim() && (
+                                            <button 
+                                                type="submit"
+                                                className="px-3 py-1 bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] font-black uppercase rounded-lg transition-all"
+                                            >
+                                                Add
+                                            </button>
+                                        )}
+                                    </form>
+                                </div>
                             </div>
-                        </div>
+                        )}
                     </div>
 
                     {/* Footer */}

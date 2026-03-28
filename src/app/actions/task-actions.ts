@@ -46,107 +46,154 @@ export async function getTasks() {
 }
 
 export async function createTask(formData: FormData) {
-    const title = formData.get('title') as string;
-    const description = formData.get('description') as string;
-    const status = formData.get('status') as string || 'Todo';
+    try {
+        await ensureSubtasksTable();
+        const title = formData.get('title') as string;
+        const description = formData.get('description') as string;
+        const status = formData.get('status') as string || 'Todo';
 
-    if (!title) throw new Error('Title is required');
+        if (!title) throw new Error('Title is required');
 
-    const res = await db.execute({
-        sql: 'INSERT INTO tasks (title, description, status) VALUES (?, ?, ?)',
-        args: [title, description || null, status]
-    });
+        console.log('📝 Creating task:', { title, status });
+        const res = await db.execute({
+            sql: 'INSERT INTO tasks (title, description, status) VALUES (?, ?, ?)',
+            args: [title, description || null, status]
+        });
 
-    revalidatePath('/tasks');
-    revalidatePath('/');
-    return res.lastInsertRowid;
+        revalidatePath('/tasks');
+        revalidatePath('/');
+        return res.lastInsertRowid;
+    } catch (error: any) {
+        console.error('❌ Error creating task:', error);
+        throw new Error(`Failed to create task: ${error.message}`);
+    }
 }
 
 export async function updateTaskStatus(id: number, status: string) {
-    if (!id || !status) return;
-    await db.execute({
-        sql: 'UPDATE tasks SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
-        args: [status, id]
-    });
-    revalidatePath('/tasks');
-    revalidatePath('/');
+    try {
+        await ensureSubtasksTable();
+        if (!id || !status) return;
+        await db.execute({
+            sql: 'UPDATE tasks SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+            args: [status, id]
+        });
+        revalidatePath('/tasks');
+        revalidatePath('/');
+    } catch (error) {
+        console.error('❌ Error updating task status:', error);
+    }
 }
 
 export async function updateTaskDetails(id: number, title: string, description: string) {
-    if (!id) return;
-    await db.execute({
-        sql: 'UPDATE tasks SET title = ?, description = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
-        args: [title, description, id]
-    });
-    revalidatePath('/tasks');
-    revalidatePath('/');
+    try {
+        await ensureSubtasksTable();
+        if (!id) return;
+        await db.execute({
+            sql: 'UPDATE tasks SET title = ?, description = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+            args: [title, description, id]
+        });
+        revalidatePath('/tasks');
+        revalidatePath('/');
+    } catch (error) {
+        console.error('❌ Error updating task details:', error);
+    }
 }
 
 export async function deleteTask(id: number) {
-    if (!id) return;
-    await db.execute({
-        sql: 'DELETE FROM tasks WHERE id = ?',
-        args: [id]
-    });
-    revalidatePath('/tasks');
-    revalidatePath('/');
+    try {
+        await ensureSubtasksTable();
+        if (!id) return;
+        await db.execute({
+            sql: 'DELETE FROM tasks WHERE id = ?',
+            args: [id]
+        });
+        revalidatePath('/tasks');
+        revalidatePath('/');
+    } catch (error) {
+        console.error('❌ Error deleting task:', error);
+    }
 }
 
 // --- SUBTASKS ACTIONS ---
 
 export async function getSubtasks(taskId: number) {
-    const { rows } = await db.execute({
-        sql: 'SELECT * FROM task_subtasks WHERE task_id = ? ORDER BY created_at ASC',
-        args: [taskId]
-    });
-    return rows as unknown as any[];
+    try {
+        const { rows } = await db.execute({
+            sql: 'SELECT * FROM task_subtasks WHERE task_id = ? ORDER BY created_at ASC',
+            args: [taskId]
+        });
+        return rows as unknown as any[];
+    } catch (error) {
+        console.error('❌ Error fetching subtasks:', error);
+        return [];
+    }
 }
 
 export async function createSubtask(taskId: number, title: string) {
-    await db.execute({
-        sql: 'INSERT INTO task_subtasks (task_id, title, is_completed) VALUES (?, ?, 0)',
-        args: [taskId, title]
-    });
-    revalidatePath('/tasks');
+    try {
+        await ensureSubtasksTable();
+        await db.execute({
+            sql: 'INSERT INTO task_subtasks (task_id, title, is_completed) VALUES (?, ?, 0)',
+            args: [taskId, title]
+        });
+        revalidatePath('/tasks');
+    } catch (error) {
+        console.error('❌ Error creating subtask:', error);
+    }
 }
 
 export async function toggleSubtask(id: number, is_completed: boolean) {
-    await db.execute({
-        sql: 'UPDATE task_subtasks SET is_completed = ? WHERE id = ?',
-        args: [is_completed ? 1 : 0, id]
-    });
-    revalidatePath('/tasks');
+    try {
+        await db.execute({
+            sql: 'UPDATE task_subtasks SET is_completed = ? WHERE id = ?',
+            args: [is_completed ? 1 : 0, id]
+        });
+        revalidatePath('/tasks');
+    } catch (error) {
+        console.error('❌ Error toggling subtask:', error);
+    }
 }
 
 export async function deleteSubtask(id: number) {
-    await db.execute({
-        sql: 'DELETE FROM task_subtasks WHERE id = ?',
-        args: [id]
-    });
-    revalidatePath('/tasks');
+    try {
+        await db.execute({
+            sql: 'DELETE FROM task_subtasks WHERE id = ?',
+            args: [id]
+        });
+        revalidatePath('/tasks');
+    } catch (error) {
+        console.error('❌ Error deleting subtask:', error);
+    }
 }
 
 // --- MIGRATION HELPER ---
 async function ensureSubtasksTable() {
-    await db.execute(`
-        CREATE TABLE IF NOT EXISTS task_subtasks (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            task_id INTEGER NOT NULL,
-            title TEXT NOT NULL,
-            is_completed INTEGER DEFAULT 0,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE
-        )
-    `);
-    
-    // Ensure tasks table has description and title if it was using content/is_completed columns before
     try {
-        await db.execute('ALTER TABLE tasks ADD COLUMN title TEXT');
-    } catch(e) {}
-    try {
-        await db.execute('ALTER TABLE tasks ADD COLUMN description TEXT');
-    } catch(e) {}
-    try {
-        await db.execute('ALTER TABLE tasks ADD COLUMN status TEXT DEFAULT "Todo"');
-    } catch(e) {}
+        await db.execute(`
+            CREATE TABLE IF NOT EXISTS task_subtasks (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                task_id INTEGER NOT NULL,
+                title TEXT NOT NULL,
+                is_completed INTEGER DEFAULT 0,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE
+            )
+        `);
+        
+        // Ensure tasks table has description and title if it was using content/is_completed columns before
+        try {
+            await db.execute('ALTER TABLE tasks ADD COLUMN title TEXT');
+        } catch(e) {}
+        try {
+            await db.execute('ALTER TABLE tasks ADD COLUMN description TEXT');
+        } catch(e) {}
+        try {
+            await db.execute('ALTER TABLE tasks ADD COLUMN status TEXT DEFAULT "Todo"');
+        } catch(e) {}
+        try {
+            await db.execute('ALTER TABLE tasks ADD COLUMN order_index INTEGER DEFAULT 0');
+        } catch(e) {}
+    } catch (error) {
+        console.error('⚠️ Migration Error (non-critical):', error);
+    }
 }
