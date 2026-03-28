@@ -9,7 +9,8 @@ export default auth((req) => {
     const isApiAuthRoute = nextUrl.pathname.startsWith('/api/auth');
     const isLoginRoute = nextUrl.pathname === '/login' || nextUrl.pathname === '/portal/login';
     const isReviewRoute = nextUrl.pathname.startsWith('/review');
-    const isPublicRoute = isLoginRoute || isReviewRoute;
+    const isShareRoute = nextUrl.pathname.startsWith('/availability/share');
+    const isPublicRoute = isLoginRoute || isReviewRoute || isShareRoute;
     const isPortalRoute = nextUrl.pathname.startsWith('/portal');
     const isFinanceRoute = nextUrl.pathname.startsWith('/finance');
     const isSettingsRoute = nextUrl.pathname.startsWith('/settings');

@@ -33,8 +33,14 @@ function toDateKey(d: Date) {
 export default function PublicCalendar({ busyBlocks }: { busyBlocks: TimeBlock[] }) {
     const now = new Date();
     const [currentDate, setCurrentDate] = useState(new Date(now.getFullYear(), now.getMonth(), 1));
-    const [view, setView] = useState<'month' | 'week'>('month');
-    const [selectedWeekStart, setSelectedWeekStart] = useState<Date | null>(null);
+    const [view, setView] = useState<'month' | 'week'>('week');
+    const [selectedWeekStart, setSelectedWeekStart] = useState<Date | null>(() => {
+        const d = new Date();
+        const dayOfWeek = (d.getDay() + 6) % 7;
+        const monday = new Date(d);
+        monday.setDate(d.getDate() - dayOfWeek);
+        return monday;
+    });
 
     // Modal state
     const [bookingSlot, setBookingSlot] = useState<{ date: Date, startHour: number } | null>(null);
@@ -50,8 +56,11 @@ export default function PublicCalendar({ busyBlocks }: { busyBlocks: TimeBlock[]
     const nextMonth = () => setCurrentDate(new Date(year, month + 1, 1));
     const goToday = () => {
         setCurrentDate(new Date(now.getFullYear(), now.getMonth(), 1));
-        setSelectedWeekStart(null);
-        setView('month');
+        const dayOfWeek = (now.getDay() + 6) % 7;
+        const monday = new Date(now);
+        monday.setDate(now.getDate() - dayOfWeek);
+        setSelectedWeekStart(monday);
+        setView('week');
     };
 
     const prevWeek = () => {

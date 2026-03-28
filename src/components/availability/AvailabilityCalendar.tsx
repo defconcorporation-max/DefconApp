@@ -286,8 +286,13 @@ export default function AvailabilityCalendar({ initialSlots, initialShoots, init
 
                                         // Style classes
                                         const baseClasses = "absolute left-1.5 right-1.5 rounded-md border p-1.5 text-xs transition-all shadow-sm";
-                                        // Shoots = Purple/Violet
-                                        const eventClasses = "bg-violet-500/20 border-violet-500/40 text-violet-200 hover:z-20 hover:bg-violet-500/30";
+                                        const isMeeting = shoot.shoot_type === 'meeting_30' || shoot.shoot_type === 'meeting_60';
+                                        
+                                        // Shoots = Purple/Violet, Meetings = Emerald
+                                        const eventClasses = isMeeting 
+                                            ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-200 hover:z-20 hover:bg-emerald-500/30"
+                                            : "bg-violet-500/20 border-violet-500/40 text-violet-200 hover:z-20 hover:bg-violet-500/30";
+                                            
                                         // Blocks/Unavailable = Red
                                         const blockClasses = "bg-red-500/20 border-red-500/40 text-red-200 z-20 hover:z-30 hover:bg-red-500/30 striped-bg";
                                         // Pending
@@ -317,8 +322,8 @@ export default function AvailabilityCalendar({ initialSlots, initialShoots, init
                                                 title={renderAsGeneric ? "Unavailable" : (isPending ? "Pending Request" : (isAdmin ? (isBlocking ? "Click to verify available" : "Click to mark unavailable") : shoot.project_title))}
                                             >
                                                 <div className="flex items-center gap-1 font-mono font-bold text-[10px] opacity-70 mb-0.5">
-                                                    {renderAsGeneric ? <X size={10} /> : (isPending ? <Clock size={10} /> : <Video size={10} />)}
-                                                    {renderAsGeneric ? "Unavailable" : (isPending ? "Request" : "Shoot")}
+                                                    {renderAsGeneric ? <X size={10} /> : (isPending || isMeeting ? <Clock size={10} /> : <Video size={10} />)}
+                                                    {renderAsGeneric ? "Unavailable" : (isPending ? "Request" : (isMeeting ? "Meeting" : "Shoot"))}
                                                     {isAdmin && !renderAsGeneric && !isPending && isBlocking && (
                                                         <div className="ml-auto bg-black/40 text-white rounded p-0.5 opacity-0 group-hover:opacity-100">
                                                             <Check size={8} />

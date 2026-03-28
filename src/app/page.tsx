@@ -144,7 +144,7 @@ export default async function Home() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
                 <div className="md:col-span-2">
-                    <CollapsibleSection id="tasks" title="Tâches" viewAllHref="/" viewAllLabel="Voir tout">
+                    <CollapsibleSection id="tasks" title="Tâches" viewAllHref="/tasks" viewAllLabel="Voir tout">
                         <TaskManager initialTasks={tasks} />
                     </CollapsibleSection>
                 </div>
