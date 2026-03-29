@@ -44,6 +44,7 @@ export async function getTasks() {
                 id: virtualId,
                 title: `[Auto-Sync] ${p.shoot_title}`,
                 description: `Étape actuelle : ${p.status}`,
+                raw_status: p.status, // Add raw_status for linking
                 status: mappedStatus,
                 created_at: p.created_at,
                 is_readonly: true,

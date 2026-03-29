@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
     X, CheckCircle2, Circle, Plus, Trash2, 
     Calendar, AlignLeft, CheckSquare, Clock,
-    Loader2
+    Loader2, ExternalLink
 } from 'lucide-react';
 import { 
     getSubtasks, createSubtask, toggleSubtask, 
@@ -176,20 +176,44 @@ export default function TaskDetailModal({ task, onClose, onUpdate, is_readonly =
 
                     <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-8 custom-scrollbar">
                         {/* Description */}
-                        <div className="space-y-3">
+                        <div className="space-y-4">
                             <div className="flex items-center gap-2 text-white/90 font-bold text-sm uppercase tracking-wider">
                                 <AlignLeft size={16} className="text-indigo-400" />
-                                Description
+                                {is_readonly ? 'Détails de la Production' : 'Description'}
                             </div>
-                            <textarea 
-                                value={description}
-                                readOnly={is_readonly}
-                                onChange={(e) => setDescription(e.target.value)}
-                                onBlur={handleSaveDetails}
-                                rows={4}
-                                className={`w-full bg-white/5 border border-white/5 rounded-2xl p-4 text-sm text-white/70 focus:outline-none focus:border-indigo-500/30 transition-all placeholder:text-white/10 resize-none ${is_readonly ? 'cursor-default' : ''}`}
-                                placeholder="No description provided."
-                            />
+                            
+                            {is_readonly ? (
+                                <div className="p-6 bg-white/5 border border-white/5 rounded-[24px] space-y-4">
+                                    <div className="flex flex-col gap-2">
+                                        <span className="text-[10px] font-black text-white/30 uppercase tracking-widest">Étape Actuelle</span>
+                                        <a 
+                                            href={(task as any).href}
+                                            className="group flex items-center justify-between p-4 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 rounded-2xl transition-all"
+                                        >
+                                            <span className="font-black text-lg text-indigo-400 tracking-tight">
+                                                {task.raw_status || task.description?.replace('Étape actuelle : ', '')}
+                                            </span>
+                                            <div className="flex items-center gap-2 text-xs font-bold text-indigo-400/60 group-hover:text-indigo-400 transition-colors uppercase tracking-widest">
+                                                Voir le projet <ExternalLink size={14} className="group-hover:translate-x-0.5 transition-transform" />
+                                            </div>
+                                        </a>
+                                    </div>
+                                    
+                                    <div className="text-sm text-white/40 leading-relaxed italic">
+                                        Cette tâche est automatiquement synchronisée avec le flux de post-production. 
+                                        Les modifications se font directement dans l'espace de travail du projet.
+                                    </div>
+                                </div>
+                            ) : (
+                                <textarea 
+                                    value={description}
+                                    onChange={(e) => setDescription(e.target.value)}
+                                    onBlur={handleSaveDetails}
+                                    rows={4}
+                                    className="w-full bg-white/5 border border-white/5 rounded-2xl p-4 text-sm text-white/70 focus:outline-none focus:border-indigo-500/30 transition-all placeholder:text-white/10 resize-none"
+                                    placeholder="No description provided."
+                                />
+                            )}
                         </div>
 
                         {/* Subtasks */}

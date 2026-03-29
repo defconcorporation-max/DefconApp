@@ -113,6 +113,7 @@ export interface Task {
     completed_subtask_count?: number;
     is_readonly?: boolean;
     href?: string;
+    raw_status?: string;
 }
 
 export interface Subtask {

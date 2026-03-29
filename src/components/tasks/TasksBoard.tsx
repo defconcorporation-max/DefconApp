@@ -113,8 +113,24 @@ export default function TasksBoard({ initialTasks }: { initialTasks: Task[] }) {
                                     </div>
                                     
                                     {task.description && (
-                                        <div className="text-xs text-white/40 mt-2 line-clamp-2 leading-relaxed">
-                                            {task.description}
+                                        <div className="mt-2">
+                                            {task.raw_status ? (
+                                                <div className="flex flex-wrap gap-2">
+                                                    <span className="text-[10px] text-white/30 uppercase font-black tracking-tighter">Étape actuelle :</span>
+                                                    <a 
+                                                        href={task.href}
+                                                        onClick={(e) => e.stopPropagation()}
+                                                        className="text-[10px] font-bold text-indigo-400 hover:text-indigo-300 bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20 transition-all flex items-center gap-1 group/stage"
+                                                    >
+                                                        {task.raw_status}
+                                                        <ExternalLink size={10} className="group-hover/stage:translate-x-0.5 transition-transform" />
+                                                    </a>
+                                                </div>
+                                            ) : (
+                                                <div className="text-xs text-white/40 line-clamp-2 leading-relaxed italic">
+                                                    {task.description}
+                                                </div>
+                                            )}
                                         </div>
                                     )}
 
