@@ -19,7 +19,8 @@ export async function getTasks() {
 
         // Fetch active post-prod projects to merge into Task Board
         const { rows: postProdRows } = await db.execute(`
-            SELECT p.id, p.status, p.created_at, s.title as shoot_title
+            SELECT p.id, p.status, p.created_at, s.title as shoot_title,
+                (SELECT title FROM post_prod_tasks WHERE project_id = p.id AND is_completed = 0 ORDER BY order_index ASC LIMIT 1) as next_task
             FROM post_prod_projects p
             JOIN shoots s ON p.shoot_id = s.id
             WHERE p.status != 'Completed'
@@ -40,11 +41,13 @@ export async function getTasks() {
             if (p.status === 'In Progress' || p.status === 'In Review') mappedStatus = 'In Progress';
             if (p.status === 'Approved' || p.status === 'Completed') mappedStatus = 'Done';
             
+            const currentStage = p.next_task || p.status;
+
             return {
                 id: virtualId,
                 title: `[Auto-Sync] ${p.shoot_title}`,
-                description: `Étape actuelle : ${p.status}`,
-                raw_status: p.status, // Add raw_status for linking
+                description: `Étape actuelle : ${currentStage}`,
+                raw_status: currentStage, // Use precise stage for linking
                 status: mappedStatus,
                 created_at: p.created_at,
                 is_readonly: true,
