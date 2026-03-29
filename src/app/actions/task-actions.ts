@@ -4,45 +4,60 @@ import { turso as db } from '@/lib/turso';
 import { revalidatePath } from 'next/cache';
 
 export async function getTasks() {
-    await ensureSubtasksTable();
-    
-    // Fetch normal tasks with subtask counts
-    const { rows } = await db.execute(`
-        SELECT t.*, 
-            (SELECT COUNT(*) FROM task_subtasks WHERE task_id = t.id) as subtask_count,
-            (SELECT COUNT(*) FROM task_subtasks WHERE task_id = t.id AND is_completed = 1) as completed_subtask_count
-        FROM tasks t
-        ORDER BY t.created_at DESC
-    `);
-    const normalTasks = rows as unknown as any[];
-
-    // Fetch active post-prod projects to merge into Task Board
-    const { rows: postProdRows } = await db.execute(`
-        SELECT p.id, p.status, p.created_at, s.title as shoot_title
-        FROM post_prod_projects p
-        JOIN shoots s ON p.shoot_id = s.id
-        WHERE p.status != 'Completed'
-    `);
-
-    const postProdTasks = postProdRows.map((p: any) => {
-        let mappedStatus = 'Todo';
-        if (p.status === 'In Progress' || p.status === 'In Review') mappedStatus = 'In Progress';
-        if (p.status === 'Approved' || p.status === 'Completed') mappedStatus = 'Done';
+    try {
+        await ensureSubtasksTable();
         
-        return {
-            id: `pp_${p.id}`,
-            title: `[Post-Prod] ${p.shoot_title}`,
-            description: `Étape actuelle : ${p.status}`,
-            status: mappedStatus,
-            created_at: p.created_at,
-            is_readonly: true,
-            href: `/post-production/${p.id}`,
-            subtask_count: 0,
-            completed_subtask_count: 0
-        };
-    });
+        // Fetch normal tasks with subtask counts
+        const { rows: normalRows } = await db.execute(`
+            SELECT t.*, 
+                (SELECT COUNT(*) FROM task_subtasks WHERE task_id = CAST(t.id AS TEXT)) as subtask_count,
+                (SELECT COUNT(*) FROM task_subtasks WHERE task_id = CAST(t.id AS TEXT) AND is_completed = 1) as completed_subtask_count
+            FROM tasks t
+            ORDER BY t.created_at DESC
+        `);
+        const manualTasks = normalRows as unknown as any[];
 
-    return [...normalTasks, ...postProdTasks].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        // Fetch active post-prod projects to merge into Task Board
+        const { rows: postProdRows } = await db.execute(`
+            SELECT p.id, p.status, p.created_at, s.title as shoot_title
+            FROM post_prod_projects p
+            JOIN shoots s ON p.shoot_id = s.id
+            WHERE p.status != 'Completed'
+        `);
+
+        const virtualTasks = await Promise.all((postProdRows as unknown as any[]).map(async (p: any) => {
+            const virtualId = `pp_${p.id}`;
+            const { rows: counts } = await db.execute({
+                sql: `SELECT 
+                        COUNT(*) as count, 
+                        SUM(CASE WHEN is_completed = 1 THEN 1 ELSE 0 END) as completed 
+                      FROM task_subtasks WHERE task_id = ?`,
+                args: [virtualId]
+            });
+            
+            const stats = counts[0] as any;
+            let mappedStatus = 'Todo';
+            if (p.status === 'In Progress' || p.status === 'In Review') mappedStatus = 'In Progress';
+            if (p.status === 'Approved' || p.status === 'Completed') mappedStatus = 'Done';
+            
+            return {
+                id: virtualId,
+                title: `[Auto-Sync] ${p.shoot_title}`,
+                description: `Étape actuelle : ${p.status}`,
+                status: mappedStatus,
+                created_at: p.created_at,
+                is_readonly: true,
+                href: `/post-production/${p.id}`,
+                subtask_count: Number(stats.count) || 0,
+                completed_subtask_count: Number(stats.completed) || 0
+            };
+        }));
+
+        return [...manualTasks, ...virtualTasks].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    } catch (error) {
+        console.error('❌ Error fetching tasks:', error);
+        return [];
+    }
 }
 
 export async function createTask(formData: FormData) {
@@ -62,7 +77,7 @@ export async function createTask(formData: FormData) {
 
         revalidatePath('/tasks');
         revalidatePath('/');
-        return res.lastInsertRowid;
+        return Number(res.lastInsertRowid);
     } catch (error: any) {
         console.error('❌ Error creating task:', error);
         throw new Error(`Failed to create task: ${error.message}`);
@@ -116,11 +131,11 @@ export async function deleteTask(id: number) {
 
 // --- SUBTASKS ACTIONS ---
 
-export async function getSubtasks(taskId: number) {
+export async function getSubtasks(taskId: string | number) {
     try {
         const { rows } = await db.execute({
             sql: 'SELECT * FROM task_subtasks WHERE task_id = ? ORDER BY created_at ASC',
-            args: [taskId]
+            args: [taskId.toString()]
         });
         return rows as unknown as any[];
     } catch (error) {
@@ -129,16 +144,18 @@ export async function getSubtasks(taskId: number) {
     }
 }
 
-export async function createSubtask(taskId: number, title: string) {
+export async function createSubtask(taskId: string | number, title: string) {
     try {
         await ensureSubtasksTable();
-        await db.execute({
+        const res = await db.execute({
             sql: 'INSERT INTO task_subtasks (task_id, title, is_completed) VALUES (?, ?, 0)',
-            args: [taskId, title]
+            args: [taskId.toString(), title]
         });
         revalidatePath('/tasks');
+        return Number(res.lastInsertRowid);
     } catch (error) {
         console.error('❌ Error creating subtask:', error);
+        return null;
     }
 }
 
@@ -169,14 +186,14 @@ export async function deleteSubtask(id: number) {
 // --- MIGRATION HELPER ---
 async function ensureSubtasksTable() {
     try {
+        // Migration: ensure task_subtasks table exists with TEXT task_id
         await db.execute(`
             CREATE TABLE IF NOT EXISTS task_subtasks (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                task_id INTEGER NOT NULL,
+                task_id TEXT NOT NULL,
                 title TEXT NOT NULL,
                 is_completed INTEGER DEFAULT 0,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
             )
         `);
         
