@@ -55,7 +55,7 @@ export default function PublicBookingModal({ date, startHour, onClose, onSuccess
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-            <div className="bg-[#0A0A0A] border border-[var(--border-subtle)] rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl relative animate-in fade-in zoom-in-95 duration-200">
+            <div className="bg-[#0A0A0A] border border-[var(--border-subtle)] rounded-2xl w-full max-w-lg overflow-y-auto custom-scrollbar shadow-2xl relative animate-in fade-in zoom-in-95 duration-200 max-h-[90vh]">
 
                 {/* Header */}
                 <div className="flex items-center justify-between p-6 border-b border-[var(--border-subtle)] bg-white/[0.02]">

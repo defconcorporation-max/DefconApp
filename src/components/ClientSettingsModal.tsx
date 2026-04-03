@@ -37,7 +37,7 @@ export default function ClientSettingsModal({ client, agencies, pipelineStages, 
 
     return (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
-            <div className="bg-[#0A0A0A] border border-[var(--border-subtle)] rounded-xl w-full max-w-md shadow-2xl relative">
+            <div className="bg-[#0A0A0A] border border-[var(--border-subtle)] rounded-xl w-full max-w-md shadow-2xl relative max-h-[90vh] overflow-y-auto custom-scrollbar">
                 <button
                     onClick={onClose}
                     className="absolute top-4 right-4 text-[var(--text-tertiary)] hover:text-white transition-colors"

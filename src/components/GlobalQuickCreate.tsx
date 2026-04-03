@@ -190,7 +190,7 @@ export default function GlobalQuickCreate({ isAdmin, agencies = [], clients = []
 
                     {/* CLIENT MODAL */}
                     {activeModal === 'client' && (
-                        <div className="bg-[#0f0f0f] border border-[var(--border-subtle)] rounded-xl w-full max-w-sm shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+                        <div className="bg-[#0f0f0f] border border-[var(--border-subtle)] rounded-xl w-full max-w-sm shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto custom-scrollbar">
                             <div className="p-4 border-b border-[var(--border-subtle)] flex justify-between items-center bg-[var(--bg-surface)]">
                                 <h3 className="font-semibold text-white flex items-center gap-2">
                                     <User size={16} className="text-amber-400" />
@@ -249,7 +249,7 @@ export default function GlobalQuickCreate({ isAdmin, agencies = [], clients = []
 
                     {/* PROJECT MODAL */}
                     {activeModal === 'project' && (
-                        <div className="bg-[#0f0f0f] border border-[var(--border-subtle)] rounded-xl w-full max-w-sm shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+                        <div className="bg-[#0f0f0f] border border-[var(--border-subtle)] rounded-xl w-full max-w-sm shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto custom-scrollbar">
                             <div className="p-4 border-b border-[var(--border-subtle)] flex justify-between items-center bg-[var(--bg-surface)]">
                                 <h3 className="font-semibold text-white flex items-center gap-2">
                                     <Briefcase size={16} className="text-emerald-400" />

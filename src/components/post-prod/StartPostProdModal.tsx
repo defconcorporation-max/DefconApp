@@ -44,7 +44,7 @@ export default function StartPostProdModal({ isOpen, onClose, shootId, templates
             <div className="fixed inset-0 bg-black/80 backdrop-blur-sm" aria-hidden="true" />
 
             <div className="fixed inset-0 flex items-center justify-center p-4">
-                <Dialog.Panel className="w-full max-w-2xl bg-[#0A0A0A] border border-[var(--border-subtle)] rounded-2xl overflow-hidden shadow-2xl">
+                <Dialog.Panel className="w-full max-w-2xl bg-[#0A0A0A] border border-[var(--border-subtle)] rounded-2xl overflow-hidden shadow-2xl max-h-[90vh] overflow-y-auto custom-scrollbar">
                     <div className="p-6 border-b border-[var(--border-subtle)] flex justify-between items-center bg-[#111]">
                         <Dialog.Title className="text-xl font-bold">Start Post-Production</Dialog.Title>
                         <button onClick={onClose} className="text-[var(--text-tertiary)] hover:text-white">
